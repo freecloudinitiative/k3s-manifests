@@ -48,7 +48,7 @@ alloy:
       // Scrape Prometheus metrics
       prometheus.scrape "default" {
         targets = [
-          {"__address__" = "prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"},
+          {"__address__" = "kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090"},
         ]
         forward_to = [prometheus.remote_write.default.receiver]
       }
@@ -56,6 +56,6 @@ alloy:
       // Send metrics to Prometheus
       prometheus.remote_write "default" {
         endpoint {
-          url = "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+          url = "http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
         }
       }

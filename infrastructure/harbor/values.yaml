@@ -17,10 +17,9 @@ externalURL: https://harbor.freecloudinitiative.com
 existingSecretAdminPassword: harbor-admin-secret
 secretKeyAdminPassword: secret
 
-nodeSelector:
-  node-tier: high-memory
-
 portal:
+  nodeSelector:
+    node-tier: high-memory
   resources:
     requests:
       cpu: 50m
@@ -30,6 +29,8 @@ portal:
       memory: 128Mi
 
 core:
+  nodeSelector:
+    node-tier: high-memory
   resources:
     requests:
       cpu: 100m
@@ -39,6 +40,8 @@ core:
       memory: 512Mi
 
 jobservice:
+  nodeSelector:
+    node-tier: high-memory
   resources:
     requests:
       cpu: 100m
@@ -48,6 +51,8 @@ jobservice:
       memory: 256Mi
 
 registry:
+  nodeSelector:
+    node-tier: high-memory
   resources:
     requests:
       cpu: 100m
@@ -55,3 +60,21 @@ registry:
     limits:
       cpu: 500m
       memory: 1Gi
+
+trivy:
+  nodeSelector:
+    node-tier: high-memory
+
+exporter:
+  nodeSelector:
+    node-tier: high-memory
+
+database:
+  internal:
+    nodeSelector:
+      node-tier: high-memory
+
+redis:
+  internal:
+    nodeSelector:
+      node-tier: high-memory

@@ -16,7 +16,6 @@ spec:
           - $values/infrastructure/opentelemetry/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
-      path: infrastructure/opentelemetry
       ref: values
   destination:
     server: https://kubernetes.default.svc

@@ -18,6 +18,8 @@ spec:
       targetRevision: HEAD
       path: infrastructure/kyverno
       ref: values
+      directory:
+        include: 'policy-*.yaml'
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno

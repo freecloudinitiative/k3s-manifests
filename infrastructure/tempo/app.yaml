@@ -16,7 +16,6 @@ spec:
           - $values/infrastructure/tempo/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
-      path: infrastructure/tempo
       ref: values
   destination:
     server: https://kubernetes.default.svc

@@ -16,7 +16,6 @@ spec:
           - $values/infrastructure/loki/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
-      path: infrastructure/loki
       ref: values
   destination:
     server: https://kubernetes.default.svc

@@ -7,19 +7,17 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  source:
-    chart: alloy
-    repoURL: https://grafana.github.io/helm-charts
-    targetRevision: 0.2.0
-    helm:
-      values: |
-        alloy:
-          configMap:
-            content: |
-              logging {
-                level  = "info"
-                format = "logfmt"
-              }
+  sources:
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: alloy
+      targetRevision: 0.2.0
+      helm:
+        valueFiles:
+          - $values/infrastructure/alloy/values.yaml
+    - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
+      targetRevision: HEAD
+      path: infrastructure/alloy
+      ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

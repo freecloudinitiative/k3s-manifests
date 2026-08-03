@@ -17,8 +17,8 @@ spec:
           type: ingress
           ingress:
             hosts:
-              core: harbor.local
-        externalURL: http://harbor.local
+              core: harbor.freecloudinitiative.com
+        externalURL: https://harbor.freecloudinitiative.com
   destination:
     server: https://kubernetes.default.svc
     namespace: harbor

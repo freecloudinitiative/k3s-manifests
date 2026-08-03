@@ -2,20 +2,11 @@
 
 This repository manages cluster-wide infrastructure and workloads for a K3s cluster using Argo CD.
 
-## Repository Structure
-
-* **`bootstrap/`**: Contains the root application (`root-app.yaml`) to initialize GitOps.
-* **`infrastructure/`**: Deploys platform charts via Argo CD Applications:
-  * Cert-Manager, Kyverno, Sealed Secrets, Linkerd (Service Mesh).
-  * Prometheus, Grafana, Loki, Tempo, OpenTelemetry (Monitoring Stack).
-  * Gitea, Harbor (Git and Registry).
-* **`applications/`**: Holds custom workloads (e.g., the `sample-app` Helm chart).
-
 ## How to Deploy
 
-1. Update the `repoURL` in the bootstrap manifests to point to your Git repository:
+1. Update the `repoURL` in the bootstrap manifests to point to your Git repository URL:
    - `bootstrap/root-app.yaml`
-   - `infrastructure/user-applications.yaml`
+   - `infrastructure/user-applications/app.yaml`
 2. Push your changes to Git.
 3. Bootstrap the cluster by applying the root application:
    ```bash

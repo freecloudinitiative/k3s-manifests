@@ -8,7 +8,6 @@ metadata:
 spec:
   project: default
   source:
-    # IMPORTANT: Replace this URL with your actual Git repository URL
     repoURL: 'https://github.com/freecloudinitiative/k3s-manifests.git'
     targetRevision: HEAD
     path: applications

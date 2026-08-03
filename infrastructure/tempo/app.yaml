@@ -7,20 +7,16 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  source:
-    chart: tempo
-    repoURL: https://grafana.github.io/helm-charts
-    targetRevision: 1.10.1
-    helm:
-      values: |
-        tempo:
-          storage:
-            trace:
-              backend: local
-              local:
-                path: /var/tempo/traces
-              wal:
-                path: /var/tempo/wal
+  sources:
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: tempo
+      targetRevision: 1.10.1
+      helm:
+        valueFiles:
+          - $values/infrastructure/tempo/values.yaml
+    - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
+      targetRevision: HEAD
+      ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

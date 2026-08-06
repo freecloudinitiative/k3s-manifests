@@ -1,25 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: alloy
+  name: docker-registry
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  sources:
-    - repoURL: https://grafana.github.io/helm-charts
-      chart: alloy
-      targetRevision: 0.2.0
-      helm:
-        valueFiles:
-          - $values/infrastructure/alloy/values.yaml
-    - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
-      targetRevision: HEAD
-      ref: values
+  source:
+    repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
+    targetRevision: HEAD
+    path: infrastructure/docker-registry
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring
+    namespace: docker-registry
   syncPolicy:
     automated:
       prune: true

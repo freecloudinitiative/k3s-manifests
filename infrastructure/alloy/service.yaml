@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy-external
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: alloy
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: alloy
+  ports:
+    - port: 12345
+      targetPort: 12345
+      name: http-metrics

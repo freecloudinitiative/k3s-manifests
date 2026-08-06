@@ -1,28 +1,28 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kyverno
+  name: traefik
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   sources:
-    - repoURL: https://kyverno.github.io/kyverno/
-      chart: kyverno
-      targetRevision: 3.2.6
+    - repoURL: https://traefik.github.io/charts
+      chart: traefik
+      targetRevision: 34.0.0
       helm:
         valueFiles:
-          - $values/infrastructure/kyverno/values.yaml
+          - $values/infrastructure/traefik/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
-      path: infrastructure/kyverno
+      path: infrastructure/traefik
       ref: values
       directory:
-        include: 'policy-*.yaml'
+        include: 'service*.yaml'
   destination:
     server: https://kubernetes.default.svc
-    namespace: kyverno
+    namespace: traefik
   syncPolicy:
     automated:
       prune: true

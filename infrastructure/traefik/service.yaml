@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.30.0-standalone-strict/service-v1.json
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-dashboard-external
+  namespace: traefik
+  labels:
+    app.kubernetes.io/name: traefik
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: traefik
+  ports:
+    - port: 9000
+      targetPort: 9000
+      name: traefik
+    - port: 80
+      targetPort: 8000
+      name: web
+    - port: 443
+      targetPort: 8443
+      name: websecure

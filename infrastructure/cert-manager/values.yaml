@@ -32,6 +32,10 @@ cainjector:
 
 prometheus:
   enabled: true
+  service:
+    enabled: true
+    type: LoadBalancer
+    port: 9402
   servicemonitor:
     enabled: true
     namespace: cert-manager

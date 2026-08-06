@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: docker-registry-pvc
+  namespace: docker-registry
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-registry
+  namespace: docker-registry
+  labels:
+    app: docker-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docker-registry
+  template:
+    metadata:
+      labels:
+        app: docker-registry
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: registry
+          image: registry:2.8.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+              name: registry
+          env:
+            - name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
+              value: "/var/lib/registry"
+            - name: REGISTRY_STORAGE_DELETE_ENABLED
+              value: "true"
+            - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin
+              value: "['*']"
+            - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods
+              value: "['HEAD', 'GET', 'OPTIONS', 'DELETE']"
+            - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers
+              value: "['Authorization', 'Accept', 'Cache-Control']"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+              ephemeral-storage: 500Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+              ephemeral-storage: 2Gi
+          volumeMounts:
+            - name: registry-storage
+              mountPath: "/var/lib/registry"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: registry-storage
+          persistentVolumeClaim:
+            claimName: docker-registry-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-registry
+  namespace: docker-registry
+  labels:
+    app: docker-registry
+spec:
+  type: LoadBalancer
+  selector:
+    app: docker-registry
+  ports:
+    - port: 5000
+      targetPort: 5000
+      name: registry

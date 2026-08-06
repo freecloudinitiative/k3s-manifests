@@ -1,28 +1,28 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kyverno
+  name: metallb
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   sources:
-    - repoURL: https://kyverno.github.io/kyverno/
-      chart: kyverno
-      targetRevision: 3.2.6
+    - repoURL: https://metallb.github.io/metallb
+      chart: metallb
+      targetRevision: 0.14.9
       helm:
         valueFiles:
-          - $values/infrastructure/kyverno/values.yaml
+          - $values/infrastructure/metallb/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
-      path: infrastructure/kyverno
+      path: infrastructure/metallb
       ref: values
       directory:
-        include: 'policy-*.yaml'
+        include: 'config.yaml'
   destination:
     server: https://kubernetes.default.svc
-    namespace: kyverno
+    namespace: metallb-system
   syncPolicy:
     automated:
       prune: true

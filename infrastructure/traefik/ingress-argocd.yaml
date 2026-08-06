@@ -6,16 +6,15 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "10"
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
   ingressClassName: traefik
   rules:
     - http:
         paths:
-          - path: /
+          - path: /argocd
             pathType: Prefix
             backend:
               service:
                 name: argocd-server
                 port:
-                  name: https
+                  name: http

@@ -6,11 +6,6 @@ tolerations:
     operator: "Exists"
     effect: "NoSchedule"
 
-service:
-  enabled: true
-  type: LoadBalancer
-  port: 12345
-
 alloy:
   clustering:
     enabled: false

@@ -29,6 +29,12 @@ spec:
         app: docker-registry
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: registry
           image: registry:2.8.3
@@ -40,11 +46,11 @@ spec:
             - name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
               value: "/var/lib/registry"
             - name: REGISTRY_STORAGE_DELETE_ENABLED
-              value: "true"
+              value: "false"
             - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin
-              value: "['*']"
+              value: "['http://docker-registry-ui.docker-registry.svc.cluster.local:5001']"
             - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods
-              value: "['HEAD', 'GET', 'OPTIONS', 'DELETE']"
+              value: "['HEAD', 'GET', 'OPTIONS']"
             - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers
               value: "['Authorization', 'Accept', 'Cache-Control']"
           resources:
@@ -59,8 +65,11 @@ spec:
           volumeMounts:
             - name: registry-storage
               mountPath: "/var/lib/registry"
+            - name: tmp-volume
+              mountPath: "/tmp"
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
@@ -68,6 +77,8 @@ spec:
         - name: registry-storage
           persistentVolumeClaim:
             claimName: docker-registry-pvc
+        - name: tmp-volume
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -77,7 +88,7 @@ metadata:
   labels:
     app: docker-registry
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: docker-registry
   ports:

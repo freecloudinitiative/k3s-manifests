@@ -48,11 +48,5 @@ read:
 write:
   replicas: 0
 
-gateway:
-  enabled: true
-  service:
-    type: LoadBalancer
-    port: 3100
-
 minio:
   enabled: false

@@ -1,8 +1,5 @@
 ui:
   enabled: true
-  service:
-    type: LoadBalancer
-    port: 8082
   resources:
     requests:
       cpu: 50m

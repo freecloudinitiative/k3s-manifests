@@ -25,10 +25,6 @@ tempo:
       wal:
         path: /var/tempo/wal
 
-service:
-  type: LoadBalancer
-  port: 3200
-
 persistence:
   enabled: true
   storageClassName: local-path

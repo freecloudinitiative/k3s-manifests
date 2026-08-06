@@ -7,10 +7,11 @@ metadata:
   labels:
     app.kubernetes.io/name: loki
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: loki
+    app.kubernetes.io/component: gateway
   ports:
     - port: 3100
-      targetPort: 3100
+      targetPort: 8080
       name: http-metrics

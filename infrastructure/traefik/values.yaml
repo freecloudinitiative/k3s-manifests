@@ -12,7 +12,7 @@ tolerations:
 ports:
   traefik:
     expose:
-      default: true
+      default: false
     port: 9000
   web:
     port: 80
@@ -20,8 +20,7 @@ ports:
     port: 443
 
 service:
-  enabled: true
-  type: LoadBalancer
+  enabled: false
 
 ingressClass:
   enabled: true
@@ -29,7 +28,7 @@ ingressClass:
 
 ingressRoute:
   dashboard:
-    enabled: true
+    enabled: false
 
 resources:
   requests:

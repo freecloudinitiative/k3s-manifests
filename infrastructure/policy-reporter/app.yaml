@@ -16,7 +16,10 @@ spec:
           - $values/infrastructure/policy-reporter/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
+      path: infrastructure/policy-reporter
       ref: values
+      directory:
+        include: service.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno

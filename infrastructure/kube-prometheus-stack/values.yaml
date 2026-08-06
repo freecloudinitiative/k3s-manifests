@@ -1,7 +1,4 @@
 prometheus:
-  service:
-    type: LoadBalancer
-    port: 9090
   prometheusSpec:
     serviceMonitorSelectorNilUsesHelmValues: false
     retention: 14d
@@ -23,9 +20,6 @@ prometheus:
 
 grafana:
   enabled: true
-  service:
-    type: LoadBalancer
-    port: 3001
   adminPassword: "ChangeMe123!GrafanaAdmin"
   persistence:
     enabled: true
@@ -41,19 +35,12 @@ grafana:
         maxLines: 1000
   grafana.ini:
     server:
-      root_url: "%(protocol)s://%(domain)s:%(http_port)s/"
+      root_url: "%(protocol)s://%(domain)s:3001/"
       serve_from_sub_path: false
-    live:
-      allowed_origins: "*"
 
 prometheus-node-exporter:
   enabled: true
 
 kube-state-metrics:
   enabled: true
-
-metrics-server:
-  enabled: true
-  args:
-    - --kubelet-insecure-tls
 

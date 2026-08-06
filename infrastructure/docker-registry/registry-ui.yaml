@@ -16,6 +16,12 @@ spec:
         app: docker-registry-ui
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: registry-ui
           image: joxit/docker-registry-ui:2.5.7
@@ -36,16 +42,35 @@ spec:
             - name: REGISTRY_TITLE
               value: "FreeCloud Docker Registry"
             - name: REGISTRY_URL
-              value: "https://docker-registry.docker-registry.svc.cluster.local:5000"
+              value: "http://docker-registry.docker-registry.svc.cluster.local:5000"
             - name: SINGLE_REGISTRY
               value: "true"
             - name: DELETE_IMAGES
-              value: "true"
+              value: "false"
+          volumeMounts:
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-run
+              mountPath: /var/run
+            - name: tmp-volume
+              mountPath: /tmp
+            - name: html-volume
+              mountPath: /usr/share/nginx/html
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
+      volumes:
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-run
+          emptyDir: {}
+        - name: tmp-volume
+          emptyDir: {}
+        - name: html-volume
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

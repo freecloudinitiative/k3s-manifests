@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: harbor
+  name: traefik
   labels:
-    name: harbor
+    name: traefik

@@ -1,6 +1,15 @@
+tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+
 alloy:
   clustering:
     enabled: false
+
   configMap:
     content: |
       logging {
@@ -19,13 +28,18 @@ alloy:
         output {
           metrics = [otelcol.exporter.prometheus.default.input]
           traces  = [otelcol.exporter.otlp.tempo.input]
-          logs    = [loki.write.default.receiver]
+          logs    = [otelcol.exporter.loki.default.input]
         }
       }
 
       // Convert OTLP metrics to Prometheus remote write format
       otelcol.exporter.prometheus "default" {
         forward_to = [prometheus.remote_write.default.receiver]
+      }
+
+      // Convert OTLP logs to Loki format
+      otelcol.exporter.loki "default" {
+        forward_to = [loki.write.default.receiver]
       }
 
       // Send traces to Tempo
@@ -59,3 +73,4 @@ alloy:
           url = "http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
         }
       }
+

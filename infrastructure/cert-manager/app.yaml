@@ -16,7 +16,10 @@ spec:
           - $values/infrastructure/cert-manager/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
+      path: infrastructure/cert-manager
       ref: values
+      directory:
+        include: service.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
@@ -26,3 +29,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true

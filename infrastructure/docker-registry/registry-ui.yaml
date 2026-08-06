@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-registry-ui
+  namespace: docker-registry
+  labels:
+    app: docker-registry-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docker-registry-ui
+  template:
+    metadata:
+      labels:
+        app: docker-registry-ui
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: registry-ui
+          image: joxit/docker-registry-ui:2.5.7
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+              ephemeral-storage: 100Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+              ephemeral-storage: 500Mi
+          env:
+            - name: REGISTRY_TITLE
+              value: "FreeCloud Docker Registry"
+            - name: REGISTRY_URL
+              value: "http://docker-registry.docker-registry.svc.cluster.local:5000"
+            - name: SINGLE_REGISTRY
+              value: "true"
+            - name: DELETE_IMAGES
+              value: "false"
+          volumeMounts:
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-run
+              mountPath: /var/run
+            - name: tmp-volume
+              mountPath: /tmp
+            - name: html-volume
+              mountPath: /usr/share/nginx/html
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-run
+          emptyDir: {}
+        - name: tmp-volume
+          emptyDir: {}
+        - name: html-volume
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-registry-ui
+  namespace: docker-registry
+  labels:
+    app: docker-registry-ui
+spec:
+  type: LoadBalancer
+  selector:
+    app: docker-registry-ui
+  ports:
+    - port: 5001
+      targetPort: 80
+      name: http

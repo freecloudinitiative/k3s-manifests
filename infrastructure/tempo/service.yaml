@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tempo-external
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: tempo
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: tempo
+  ports:
+    - port: 3200
+      targetPort: 3200
+      name: http

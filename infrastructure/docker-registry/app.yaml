@@ -1,25 +1,25 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: root-app
+  name: docker-registry
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/freecloudinitiative/k3s-manifests.git'
+    repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
     targetRevision: HEAD
-    path: infrastructure
+    path: infrastructure/docker-registry
     directory:
-      recurse: true
-      include: '{*/app.yaml,namespaces/*.yaml}'
+      exclude: 'app.yaml'
   destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: argocd
+    server: https://kubernetes.default.svc
+    namespace: docker-registry
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true

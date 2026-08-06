@@ -1,24 +1,23 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: metallb
+  name: cert-manager-configs
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-wave: "2"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://metallb.github.io/metallb
-    chart: metallb
-    targetRevision: 0.14.9
-    helm:
-      valueFiles:
-        - $values/infrastructure/metallb/values.yaml
+    repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
+    targetRevision: HEAD
+    path: infrastructure/cert-manager
+    directory:
+      include: '{cluster-issuer-*.yaml,certificate-*.yaml}'
   destination:
     server: https://kubernetes.default.svc
-    namespace: metallb-system
+    namespace: cert-manager
   syncPolicy:
     automated:
       prune: true
@@ -26,4 +25,3 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-      - SkipDryRunOnMissingResource=true

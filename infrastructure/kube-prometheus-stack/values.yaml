@@ -35,8 +35,8 @@ grafana:
         maxLines: 1000
   grafana.ini:
     server:
-      root_url: "%(protocol)s://%(domain)s:3001/"
-      serve_from_sub_path: false
+      root_url: "%(protocol)s://%(domain)s/grafana/"
+      serve_from_sub_path: true
 
 prometheus-node-exporter:
   enabled: true

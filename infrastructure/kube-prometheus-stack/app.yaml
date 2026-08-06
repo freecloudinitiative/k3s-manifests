@@ -21,7 +21,7 @@ spec:
       path: infrastructure/kube-prometheus-stack
       ref: values
       directory:
-        include: 'service-*.yaml'
+        include: '{service-*.yaml,ingress-*.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

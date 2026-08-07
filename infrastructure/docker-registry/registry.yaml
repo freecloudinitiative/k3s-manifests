@@ -47,12 +47,6 @@ spec:
               value: "/var/lib/registry"
             - name: REGISTRY_STORAGE_DELETE_ENABLED
               value: "false"
-            - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin
-              value: "['http://docker-registry-ui.docker-registry.svc.cluster.local:5001']"
-            - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods
-              value: "['HEAD', 'GET', 'OPTIONS']"
-            - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers
-              value: "['Authorization', 'Accept', 'Cache-Control']"
           resources:
             requests:
               cpu: 100m

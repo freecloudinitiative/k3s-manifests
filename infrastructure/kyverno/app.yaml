@@ -21,6 +21,8 @@ spec:
       targetRevision: HEAD
       path: infrastructure/kyverno
       ref: values
+      directory:
+        include: 'values.yaml'
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno

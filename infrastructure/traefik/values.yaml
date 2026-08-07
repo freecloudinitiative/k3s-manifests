@@ -1,8 +1,16 @@
 image:
   tag: v3.3.2
 
-deployment:
-  kind: DaemonSet
+nodeSelector:
+  node-role.kubernetes.io/control-plane: "true"
+
+tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
 
 ports:
   traefik:

@@ -1,6 +1,9 @@
 image:
   tag: v3.3.2
 
+deployment:
+  kind: DaemonSet
+
 ports:
   traefik:
     port: 9000

@@ -10,13 +10,17 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  source:
-    repoURL: https://kyverno.github.io/kyverno/
-    chart: kyverno
-    targetRevision: 3.2.6
-    helm:
-      valueFiles:
-        - $values/infrastructure/kyverno/values.yaml
+  sources:
+    - repoURL: https://kyverno.github.io/kyverno/
+      chart: kyverno
+      targetRevision: 3.2.6
+      helm:
+        valueFiles:
+          - $values/values.yaml
+    - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
+      targetRevision: HEAD
+      path: infrastructure/kyverno
+      ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno

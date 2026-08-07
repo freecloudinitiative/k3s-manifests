@@ -3,7 +3,7 @@ kind: ClusterIssuer
 metadata:
   name: ca-cluster-issuer
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   ca:
     secretName: selfsigned-ca-secret

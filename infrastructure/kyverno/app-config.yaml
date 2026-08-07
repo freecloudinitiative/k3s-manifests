@@ -5,6 +5,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-wave-health: all
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -25,3 +26,4 @@ spec:
     syncOptions:
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
+      - CreateNamespace=true

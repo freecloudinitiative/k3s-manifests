@@ -4,7 +4,8 @@ metadata:
   name: cert-manager-configs
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave-health: all
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -25,3 +26,4 @@ spec:
     syncOptions:
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
+      - CreateNamespace=true

@@ -5,6 +5,8 @@ metadata:
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave-health: all
 spec:
   project: default
   source:
@@ -23,3 +25,4 @@ spec:
       selfHeal: true
     syncOptions:
       - SkipDryRunOnMissingResource=true
+      - CreateNamespace=true

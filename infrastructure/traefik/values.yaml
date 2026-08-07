@@ -1,9 +1,21 @@
 image:
   tag: v3.3.2
 
+ports:
+  traefik:
+    port: 9000
+    expose:
+      default: false
+  web:
+    port: 8000
+    hostPort: 80
+  websecure:
+    port: 8443
+    hostPort: 443
+
 service:
   enabled: true
-  type: LoadBalancer
+  type: ClusterIP
 
 ingressClass:
   enabled: true

@@ -16,7 +16,8 @@ ports:
   traefik:
     port: 9000
     expose:
-      default: false
+      default: true
+      exposedPort: 9000
   web:
     port: 8000
     hostPort: 80
@@ -34,7 +35,7 @@ ingressClass:
 
 ingressRoute:
   dashboard:
-    enabled: false
+    enabled: true
 
 resources:
   requests:

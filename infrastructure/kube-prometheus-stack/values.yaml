@@ -20,7 +20,10 @@ prometheus:
 
 grafana:
   enabled: true
-  adminPassword: "ChangeMe123!GrafanaAdmin"
+  admin:
+    existingSecret: grafana-secrets
+    userKey: admin-user
+    passwordKey: admin-password
   persistence:
     enabled: true
     storageClassName: local-path

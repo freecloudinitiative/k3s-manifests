@@ -44,3 +44,9 @@ features:
 
 grafana:
   enabled: false
+
+kubectl:
+  image:
+    repository: rancher/kubectl
+    tag: v1.30.2
+

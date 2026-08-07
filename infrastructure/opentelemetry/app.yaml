@@ -16,7 +16,7 @@ spec:
       targetRevision: 0.97.1
       helm:
         valueFiles:
-          - $values/values.yaml
+          - $values/infrastructure/opentelemetry/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
       path: infrastructure/opentelemetry

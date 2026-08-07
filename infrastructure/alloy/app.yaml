@@ -15,7 +15,7 @@ spec:
       targetRevision: 0.2.0
       helm:
         valueFiles:
-          - $values/values.yaml
+          - $values/infrastructure/alloy/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
       path: infrastructure/alloy

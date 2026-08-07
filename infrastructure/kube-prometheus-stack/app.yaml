@@ -16,7 +16,7 @@ spec:
       targetRevision: 61.3.0
       helm:
         valueFiles:
-          - $values/values.yaml
+          - $values/infrastructure/kube-prometheus-stack/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
       path: infrastructure/kube-prometheus-stack

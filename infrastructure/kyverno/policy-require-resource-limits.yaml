@@ -12,6 +12,7 @@ metadata:
 spec:
   validationFailureAction: Audit
   background: true
+  skipBackgroundRequests: true
   rules:
     - name: check-container-resources
       match:

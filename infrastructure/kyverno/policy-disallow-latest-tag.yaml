@@ -12,6 +12,7 @@ metadata:
 spec:
   validationFailureAction: Audit
   background: true
+  skipBackgroundRequests: true
   rules:
     - name: require-image-tag
       match:

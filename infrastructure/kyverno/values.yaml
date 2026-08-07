@@ -47,7 +47,14 @@ grafana:
 
 cleanupJobs:
   admissionReports:
-    enabled: false
+    enabled: true
+    image:
+      repository: bitnamilegacy/kubectl
+      tag: "1.28.5"
   clusterAdmissionReports:
-    enabled: false
+    enabled: true
+    image:
+      repository: bitnamilegacy/kubectl
+      tag: "1.28.5"
+
 

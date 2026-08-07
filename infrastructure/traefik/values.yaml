@@ -1,28 +1,9 @@
 image:
   tag: v3.3.2
 
-hostNetwork: true
-
-tolerations:
-  - key: "node-role.kubernetes.io/master"
-    operator: "Exists"
-    effect: "NoSchedule"
-  - key: "node-role.kubernetes.io/control-plane"
-    operator: "Exists"
-    effect: "NoSchedule"
-
-ports:
-  traefik:
-    expose:
-      default: false
-    port: 9000
-  web:
-    port: 80
-  websecure:
-    port: 443
-
 service:
-  enabled: false
+  enabled: true
+  type: LoadBalancer
 
 ingressClass:
   enabled: true

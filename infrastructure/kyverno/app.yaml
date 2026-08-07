@@ -35,4 +35,7 @@ spec:
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
       - CreateNamespace=true
-      - Replace=true
+  ignoreDifferences:
+    - group: batch
+      kind: Job
+

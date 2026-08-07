@@ -45,22 +45,9 @@ features:
 grafana:
   enabled: false
 
-policyReportsCleanup:
-  image:
-    repository: rancher/kubectl
-    tag: v1.30.2
-
 cleanupJobs:
   admissionReports:
-    image:
-      repository: rancher/kubectl
-      tag: v1.30.2
+    enabled: false
   clusterAdmissionReports:
-    image:
-      repository: rancher/kubectl
-      tag: v1.30.2
+    enabled: false
 
-webhooksCleanup:
-  image:
-    repository: rancher/kubectl
-    tag: v1.30.2

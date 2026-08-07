@@ -21,7 +21,7 @@ spec:
       path: infrastructure/alloy
       ref: values
       directory:
-        include: service.yaml
+        include: '{service.yaml,service-*.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

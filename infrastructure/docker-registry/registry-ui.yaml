@@ -56,9 +56,14 @@ spec:
               mountPath: /tmp
             - name: html-volume
               mountPath: /usr/share/nginx/html
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+            - name: nginx-main-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: false
             capabilities:
               drop:
                 - ALL
@@ -70,6 +75,10 @@ spec:
         - name: tmp-volume
           emptyDir: {}
         - name: html-volume
+          emptyDir: {}
+        - name: nginx-conf
+          emptyDir: {}
+        - name: nginx-main-conf
           emptyDir: {}
 ---
 apiVersion: v1

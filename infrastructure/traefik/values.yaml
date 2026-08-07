@@ -1,6 +1,8 @@
 image:
   tag: v3.3.2
 
+hostNetwork: true
+
 tolerations:
   - key: "node-role.kubernetes.io/master"
     operator: "Exists"

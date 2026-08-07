@@ -44,3 +44,9 @@ prometheus-node-exporter:
 kube-state-metrics:
   enabled: true
 
+prometheusOperator:
+  admissionWebhooks:
+    certManager:
+      enabled: true
+    patch:
+      enabled: false

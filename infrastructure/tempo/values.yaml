@@ -25,18 +25,6 @@ tempo:
       wal:
         path: /var/tempo/wal
 
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-
-podLabels:
-  app: tempo
-  env: production
-
 persistence:
   enabled: true
   storageClassName: local-path

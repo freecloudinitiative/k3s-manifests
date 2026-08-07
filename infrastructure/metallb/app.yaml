@@ -10,17 +10,13 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  sources:
-    - repoURL: https://metallb.github.io/metallb
-      chart: metallb
-      targetRevision: 0.14.9
-      helm:
-        valueFiles:
-          - $values/values.yaml
-    - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
-      targetRevision: HEAD
-      path: infrastructure/metallb
-      ref: values
+  source:
+    repoURL: https://metallb.github.io/metallb
+    chart: metallb
+    targetRevision: 0.14.9
+    helm:
+      valueFiles:
+        - $values/infrastructure/metallb/values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: metallb-system

@@ -13,7 +13,9 @@ spec:
   ports:
     - port: 80
       targetPort: 8000
+      nodePort: 30080
       name: web
     - port: 443
       targetPort: 8443
+      nodePort: 30443
       name: websecure

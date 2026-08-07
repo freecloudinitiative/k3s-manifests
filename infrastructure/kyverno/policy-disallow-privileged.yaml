@@ -26,20 +26,20 @@ spec:
             deny:
               conditions:
                 any:
-                  - key: "{{element.securityContext.privileged}}"
+                  - key: "{{element.securityContext.privileged || 'false'}}"
                     operator: Equals
                     value: true
           - list: "request.object.spec.initContainers"
             deny:
               conditions:
                 any:
-                  - key: "{{element.securityContext.privileged}}"
+                  - key: "{{element.securityContext.privileged || 'false'}}"
                     operator: Equals
                     value: true
           - list: "request.object.spec.ephemeralContainers"
             deny:
               conditions:
                 any:
-                  - key: "{{element.securityContext.privileged}}"
+                  - key: "{{element.securityContext.privileged || 'false'}}"
                     operator: Equals
                     value: true

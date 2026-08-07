@@ -29,3 +29,16 @@ persistence:
   enabled: true
   storageClassName: local-path
   size: 10Gi
+
+podLabels:
+  app: tempo
+  env: production
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 1Gi
+

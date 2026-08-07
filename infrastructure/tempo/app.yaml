@@ -35,3 +35,8 @@ spec:
       - SkipDryRunOnMissingResource=true
       - Force=true
       - Replace=true
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/volumeClaimTemplates

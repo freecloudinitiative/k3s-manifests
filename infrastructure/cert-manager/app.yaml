@@ -16,7 +16,7 @@ spec:
       targetRevision: v1.15.1
       helm:
         valueFiles:
-          - $values/infrastructure/cert-manager/values.yaml
+          - $values/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
       path: infrastructure/cert-manager

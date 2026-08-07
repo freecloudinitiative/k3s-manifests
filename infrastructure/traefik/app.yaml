@@ -16,7 +16,7 @@ spec:
       targetRevision: 34.0.0
       helm:
         valueFiles:
-          - $values/infrastructure/traefik/values.yaml
+          - $values/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
       path: infrastructure/traefik

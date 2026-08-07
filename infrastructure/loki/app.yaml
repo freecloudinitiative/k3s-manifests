@@ -16,7 +16,7 @@ spec:
       targetRevision: 6.6.2
       helm:
         valueFiles:
-          - $values/infrastructure/loki/values.yaml
+          - $values/values.yaml
     - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
       targetRevision: HEAD
       path: infrastructure/loki

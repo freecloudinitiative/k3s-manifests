@@ -22,7 +22,8 @@ spec:
       path: infrastructure/traefik
       ref: values
       directory:
-        include: '{service*.yaml,ingress-*.yaml,middleware-*.yaml,external-secret*.yaml}'
+        include: '*.yaml'
+        exclude: '{app.yaml,values.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: traefik

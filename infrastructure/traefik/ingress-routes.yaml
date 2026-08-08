@@ -177,6 +177,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: openbao
+                name: openbao-ui
                 port:
                   number: 8200

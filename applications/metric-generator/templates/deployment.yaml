@@ -18,7 +18,7 @@ spec:
       containers:
 
         - name: avalanche
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - "--port={{ .Values.avalanche.port }}"

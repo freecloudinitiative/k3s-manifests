@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "9"
+    argocd.argoproj.io/sync-wave-health: all
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 61.3.0
+      helm:
+        valueFiles:
+          - $values/infrastructure/kube-prometheus-stack/values.yaml
+    - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
+      targetRevision: HEAD
+      path: infrastructure/kube-prometheus-stack
+      ref: values
+      directory:
+        include: '*.yaml'
+        exclude: '{app.yaml,values.yaml}'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: true
+    syncOptions:
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+      - CreateNamespace=true
+      - Replace=true
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    - group: ""
+      kind: PersistentVolumeClaim
+      jsonPointers:
+        - /spec/volumeName
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
+    - group: monitoring.coreos.com
+      kind: PrometheusRule
+      jqPathExpressions:
+        - .spec.groups[].rules[].for

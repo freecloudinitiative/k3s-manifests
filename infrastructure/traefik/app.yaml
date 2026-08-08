@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "9"
+    argocd.argoproj.io/sync-wave-health: all
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://traefik.github.io/charts
+      chart: traefik
+      targetRevision: 34.0.0
+      helm:
+        valueFiles:
+          - $values/infrastructure/traefik/values.yaml
+    - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
+      targetRevision: HEAD
+      path: infrastructure/traefik
+      ref: values
+      directory:
+        include: '*.yaml'
+        exclude: '{app.yaml,values.yaml}'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: true
+    syncOptions:
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+      - CreateNamespace=true

@@ -1,0 +1,48 @@
+image:
+  tag: v3.3.2
+
+nodeSelector:
+  node-role.kubernetes.io/control-plane: "true"
+
+tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+ports:
+  traefik:
+    port: 9000
+    expose:
+      default: true
+      exposedPort: 9000
+  web:
+    port: 8000
+    hostPort: 80
+  websecure:
+    port: 8443
+    hostPort: 443
+
+service:
+  enabled: true
+  type: ClusterIP
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+
+ingressRoute:
+  dashboard:
+    enabled: true
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+    ephemeral-storage: 100Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+    ephemeral-storage: 500Mi

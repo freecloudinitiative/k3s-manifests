@@ -1,0 +1,19 @@
+# OS files
+.DS_Store
+Thumbs.db
+db.lock
+*.tmp
+
+# Editors and IDEs
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.history/
+
+# Local/secrets configurations (optional, if using local overrides)
+*.local.yaml
+*.local.yml
+kubeconfig

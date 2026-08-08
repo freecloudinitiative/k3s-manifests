@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sample-app-2
+description: A standard Helm chart for the K3s sample workload
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

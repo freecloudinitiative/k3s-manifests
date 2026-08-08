@@ -1,0 +1,39 @@
+replicaCount: 1
+
+image:
+  repository: nginxdemos/hello
+  tag: plain-text
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 80
+  nodePort: 30081
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: sample-app-2.freecloudinitiative.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: sample-app-2-tls
+      hosts:
+        - sample-app-2.freecloudinitiative.com
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+    ephemeral-storage: 50Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+    ephemeral-storage: 100Mi
+
+automountServiceAccountToken: false

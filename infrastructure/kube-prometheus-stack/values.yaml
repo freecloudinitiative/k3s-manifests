@@ -1,6 +1,6 @@
 prometheus:
   prometheusSpec:
-    externalUrl: "%(protocol)s://%(domain)s/prometheus/"
+    externalUrl: "/prometheus/"
     routePrefix: /prometheus
     serviceMonitorSelectorNilUsesHelmValues: false
     retention: 14d

@@ -57,7 +57,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: alloy
+                name: alloy-external
                 port:
                   number: 12345
 

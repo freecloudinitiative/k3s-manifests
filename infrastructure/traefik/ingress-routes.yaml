@@ -8,6 +8,18 @@ spec:
     prefixes:
       - /alloy
       - /traefik-dashboard
+      - /argocd
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: argocd-strip-prefix
+  namespace: argocd
+spec:
+  stripPrefix:
+    prefixes:
+      - /argocd
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -45,7 +57,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: alloy
+                name: alloy-external
                 port:
                   number: 12345
 
@@ -54,7 +66,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: traefik-dashboard-ingress
-  namespace: kube-system
+  namespace: traefik
   annotations:
     traefik.ingress.kubernetes.io/router.middlewares: monitoring-strip-prefix@kubernetescrd
 spec:
@@ -69,3 +81,44 @@ spec:
                 name: api@internal
                 port:
                   name: api@internal
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-ingress
+  namespace: argocd
+  annotations:
+    traefik.ingress.kubernetes.io/router.backend.protocol: HTTP
+    traefik.ingress.kubernetes.io/router.middlewares: argocd-argocd-strip-prefix@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - http:
+        paths:
+          - path: /argocd
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend-ingress
+  namespace: frontend
+spec:
+  ingressClassName: traefik
+  rules:
+    - http:
+        paths:
+          - path: /frontend
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

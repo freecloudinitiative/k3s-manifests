@@ -150,30 +150,24 @@ spec:
                   number: 9090
 
 ---
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: openbao-strip-prefix
-  namespace: openbao
-spec:
-  stripPrefix:
-    prefixes:
-      - /openbao
-
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: openbao-ingress
   namespace: openbao
-  annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: openbao-openbao-strip-prefix@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
     - http:
         paths:
-          - path: /openbao
+          - path: /ui
+            pathType: Prefix
+            backend:
+              service:
+                name: openbao-ui
+                port:
+                  number: 8200
+          - path: /v1
             pathType: Prefix
             backend:
               service:

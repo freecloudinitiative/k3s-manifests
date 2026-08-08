@@ -31,15 +31,42 @@ grafana:
   additionalDataSources:
     - name: Loki
       type: loki
-      url: http://loki-gateway.monitoring.svc.cluster.local:3100
+      uid: loki
+      url: http://loki-external.monitoring.svc.cluster.local:3100
       access: proxy
       isDefault: false
       jsonData:
         maxLines: 1000
+        derivedFields:
+          - name: TraceID
+            matcherRegex: "(?:trace_id|traceId|traceID)=(\\w+)"
+            url: "$${__value.raw}"
+            datasourceUid: tempo
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      url: http://tempo-external.monitoring.svc.cluster.local:3200
+      access: proxy
+      isDefault: false
+      jsonData:
+        httpMethod: GET
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: "-1h"
+          spanEndTimeShift: "1h"
+          tags: ['job', 'instance', 'pod', 'namespace', 'app']
+          filterByTraceID: true
+          filterBySpanID: false
+          customQuery: true
+          query: '{app="${__tags.app}"} |= "${__trace.id}"'
+        serviceMap:
+          datasourceUid: prometheus
+        nodeGraph:
+          enabled: true
   grafana.ini:
     server:
-      root_url: "%(protocol)s://%(domain)s/"
-      serve_from_sub_path: false
+      root_url: "%(protocol)s://%(domain)s/grafana/"
+      serve_from_sub_path: true
 
 prometheus-node-exporter:
   enabled: true

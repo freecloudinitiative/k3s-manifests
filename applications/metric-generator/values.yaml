@@ -1,0 +1,29 @@
+replicaCount: 1
+
+image:
+  repository: quay.io/fabxc/avalanche
+  tag: v0.1.0
+  pullPolicy: IfNotPresent
+
+avalanche:
+  port: 9001
+  metricCount: 50
+  seriesCount: 10
+  labelCount: 5
+
+serviceMonitor:
+  enabled: true
+  interval: 15s
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 32Mi
+    ephemeral-storage: 50Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+    ephemeral-storage: 100Mi
+
+automountServiceAccountToken: false
+

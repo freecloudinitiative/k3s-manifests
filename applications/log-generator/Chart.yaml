@@ -1,0 +1,6 @@
+apiVersion: v2
+name: log-generator
+description: Helm chart for log-generator (flog)
+type: application
+version: 0.1.0
+appVersion: "0.4.3"

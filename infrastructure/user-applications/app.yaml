@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: 'https://github.com/freecloudinitiative/k3s-manifests.git'
     targetRevision: HEAD
-    path: applications
+    path: applications/sample-app
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: default

@@ -10,15 +10,14 @@ alloy:
   clustering:
     enabled: false
 
+  extraArgs:
+    - --server.http.ui-path-prefix=/alloy
+
   configMap:
     content: |
       logging {
         level  = "info"
         format = "json"
-      }
-
-      ui {
-        path_prefix = "/alloy"
       }
 
       // Receive OTLP from apps

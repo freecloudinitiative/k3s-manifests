@@ -10,6 +10,9 @@ alloy:
   clustering:
     enabled: false
 
+  extraArgs:
+    - --server.http.ui-path-prefix=/alloy
+
   configMap:
     content: |
       logging {

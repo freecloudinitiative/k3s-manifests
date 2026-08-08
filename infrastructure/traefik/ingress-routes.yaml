@@ -109,7 +109,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: frontend-ingress
-  namespace: default
+  namespace: frontend
 spec:
   ingressClassName: traefik
   rules:

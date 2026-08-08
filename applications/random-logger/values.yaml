@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: chentex/random-logger
-  tag: latest
+  tag: v1.0.1
   pullPolicy: IfNotPresent
 
 resources:

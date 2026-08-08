@@ -1,0 +1,6 @@
+apiVersion: v2
+name: random-logger
+description: Helm chart for random-logger (chentex/random-logger)
+type: application
+version: 0.1.0
+appVersion: "latest"

@@ -10,6 +10,7 @@ This directory contains user-facing application workloads and synthetic workload
 | **`frontend`** | Helm Chart / Manifests | User web interface connected to the backend service. |
 | **`log-generator`** | Workload Generator | Synthetic application continuously emitting structured logs for Loki & Grafana testing. |
 | **`metric-generator`** | Workload Generator | Synthetic workload exposing Prometheus metrics to validate observability pipelines. |
+| **`random-logger`** | Workload Generator | Synthetic log generator producing randomized stdout/stderr logs (`chentex/random-logger`). |
 
 ## Deployment & Argo CD Sync
 

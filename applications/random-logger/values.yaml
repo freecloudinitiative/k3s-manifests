@@ -1,0 +1,18 @@
+replicaCount: 1
+
+image:
+  repository: chentex/random-logger
+  tag: latest
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 32Mi
+    ephemeral-storage: 50Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+    ephemeral-storage: 100Mi
+
+automountServiceAccountToken: false

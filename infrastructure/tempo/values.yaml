@@ -1,4 +1,5 @@
 tempo:
+  replicas: 1
   receivers:
     otlp:
       protocols:

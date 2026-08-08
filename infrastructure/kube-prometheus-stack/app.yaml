@@ -21,9 +21,10 @@ spec:
       targetRevision: HEAD
       path: infrastructure/kube-prometheus-stack
       ref: values
+      plugin:
+        name: argocd-vault-plugin-helm
       directory:
-        include: '*.yaml'
-        exclude: '{app.yaml,values.yaml}'
+        include: '{service-*.yaml,ingress-*.yaml,external-secret-*.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

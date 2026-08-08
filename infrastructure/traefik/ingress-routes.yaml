@@ -62,25 +62,23 @@ spec:
                   number: 12345
 
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
 metadata:
-  name: traefik-dashboard-ingress
+  name: traefik-dashboard-custom
   namespace: traefik
-  annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: monitoring-strip-prefix@kubernetescrd
 spec:
-  ingressClassName: traefik
-  rules:
-    - http:
-        paths:
-          - path: /traefik-dashboard
-            pathType: Prefix
-            backend:
-              service:
-                name: api@internal
-                port:
-                  name: api@internal
+  entryPoints:
+    - web
+  routes:
+    - match: PathPrefix(`/traefik-dashboard`)
+      kind: Rule
+      services:
+        - name: api@internal
+          kind: TraefikService
+      middlewares:
+        - name: strip-prefix
+          namespace: monitoring
 
 ---
 apiVersion: networking.k8s.io/v1

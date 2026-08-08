@@ -36,11 +36,13 @@ spec:
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true
   ignoreDifferences:
     - group: ""
       kind: PersistentVolumeClaim
       jsonPointers:
         - /spec/volumeName
+        - /spec/storageClassName
     - group: admissionregistration.k8s.io
       kind: MutatingWebhookConfiguration
       jsonPointers:

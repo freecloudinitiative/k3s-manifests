@@ -1,28 +1,33 @@
-# K3s GitOps Manifests
+# K3s GitOps Cluster Manifests
 
-This repository manages cluster-wide infrastructure and workloads for a K3s cluster using Argo CD.
+This repository manages the entire declarative infrastructure and application lifecycle for a high-availability **K3s Kubernetes cluster** using **Argo CD** and the **GitOps App-of-Apps pattern**.
 
-## How to Deploy
+---
 
-1. Update the `repoURL` in the bootstrap manifests to point to your Git repository URL:
-   - `bootstrap/root-app.yaml`
-   - `infrastructure/user-applications/app.yaml`
-2. Push your changes to Git.
-3. Bootstrap the cluster by applying the root application:
-   ```bash
-   kubectl apply -f bootstrap/root-app.yaml
-   ```
+## 🚀 Quick Start / Deployment
 
-## Infrastructure Services External Access (NodePorts)
+### 1. Configure Repository URL
+Update the `repoURL` in the bootstrap manifests to point to your Git repository:
+- [`infrastructure/argocd/root-app.yaml`](file:///Users/entelektuelmaganda/Repositories/freecloudinitiative/k3s-manifests/infrastructure/argocd/root-app.yaml)
 
-All core infrastructure services are exposed via NodePort services. You can access them directly using your Master Node's Public IP (`http://<MASTER_PUBLIC_IP>:<NODE_PORT>`):
+### 2. Commit & Push Changes
+```bash
+git add .
+git commit -m "Update repoURL for bootstrap"
+git push origin main
+```
 
-| Service                 | Namespace         | NodePort | Protocol | Description & Access URL                     |
-| :---------------------- | :---------------- | :------- | :------- | :------------------------------------------- |
-| **Argo CD UI**          | `argocd`          | `30443`  | HTTPS    | `https://<MASTER_PUBLIC_IP>:30443`           |
-| **Grafana**             | `monitoring`      | `30001`  | HTTP     | `http://<MASTER_PUBLIC_IP>:30001`            |
-| **Prometheus**          | `monitoring`      | `30090`  | HTTP     | `http://<MASTER_PUBLIC_IP>:30090`            |
-| **OpenBao UI/API**      | `openbao`         | `30200`  | HTTP     | `http://<MASTER_PUBLIC_IP>:30200`            |
-| **Docker Registry API** | `docker-registry` | `30500`  | HTTP     | `http://<MASTER_PUBLIC_IP>:30500`            |
-| **Traefik Dashboard**   | `traefik`         | `30900`  | HTTP     | `http://<MASTER_PUBLIC_IP>:30900/dashboard/` |
-| **Grafana Alloy UI**    | `monitoring`      | `31234`  | HTTP     | `http://<MASTER_PUBLIC_IP>:31234`            |
+### 3. Bootstrap Cluster
+Apply the root Argo CD application to initiate GitOps reconciliation for all infrastructure and applications:
+```bash
+kubectl apply -f infrastructure/argocd/root-app.yaml
+```
+
+---
+
+## 📄 Subdirectory Documentation
+
+Detailed documentation for cluster infrastructure components and user applications can be found in their respective directories:
+
+- [Infrastructure Documentation & NodePorts Access](file:///Users/entelektuelmaganda/Repositories/freecloudinitiative/k3s-manifests/infrastructure/README.md)
+- [Applications Documentation](file:///Users/entelektuelmaganda/Repositories/freecloudinitiative/k3s-manifests/applications/README.md)

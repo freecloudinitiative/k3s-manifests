@@ -21,8 +21,9 @@ spec:
       targetRevision: HEAD
       path: infrastructure/kube-prometheus-stack
       ref: values
-      plugin:
-        name: argocd-vault-plugin
+      directory:
+        include: '*.yaml'
+        exclude: '{app.yaml,values.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

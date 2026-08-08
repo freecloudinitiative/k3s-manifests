@@ -7,7 +7,7 @@ image:
 
 avalanche:
   port: 9001
-  metricCount: 50
+  gaugeMetricCount: 50
   seriesCount: 10
   labelCount: 5
 
@@ -26,4 +26,3 @@ resources:
     ephemeral-storage: 100Mi
 
 automountServiceAccountToken: false
-

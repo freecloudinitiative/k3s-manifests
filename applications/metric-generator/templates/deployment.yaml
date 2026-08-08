@@ -22,7 +22,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - "--port={{ .Values.avalanche.port }}"
-            - "--metric-count={{ .Values.avalanche.metricCount }}"
+            - "--gauge-metric-count={{ .Values.avalanche.gaugeMetricCount }}"
             - "--series-count={{ .Values.avalanche.seriesCount }}"
             - "--label-count={{ .Values.avalanche.labelCount }}"
           ports:

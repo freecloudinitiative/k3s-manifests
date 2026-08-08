@@ -8,23 +8,23 @@ image:
 service:
   type: NodePort
   port: 80
-  nodePort: 30081
+  nodePort: 30080
 
 ingress:
-  enabled: true
+  enabled: false
   className: traefik
   annotations:
     kubernetes.io/ingress.class: traefik
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: sample-app-2.freecloudinitiative.com
+    - host: frontend.freecloudinitiative.com
       paths:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: sample-app-2-tls
+    - secretName: frontend-tls
       hosts:
-        - sample-app-2.freecloudinitiative.com
+        - frontend.freecloudinitiative.com
 
 resources:
   requests:

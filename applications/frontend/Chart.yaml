@@ -1,5 +1,5 @@
 apiVersion: v2
-name: sample-app-2
+name: frontend
 description: A standard Helm chart for the K3s sample workload
 type: application
 version: 0.1.0

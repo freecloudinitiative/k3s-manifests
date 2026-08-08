@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: mingrammer/flog
+  repository: docker-registry.docker-registry.svc:5000/flog
   tag: 0.4.3
   pullPolicy: IfNotPresent
 
@@ -21,3 +21,8 @@ resources:
 
 automountServiceAccountToken: false
 
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

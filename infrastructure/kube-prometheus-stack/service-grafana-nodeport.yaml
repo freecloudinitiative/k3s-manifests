@@ -3,8 +3,6 @@ kind: Service
 metadata:
   name: grafana-nodeport
   namespace: monitoring
-  annotations:
-    argocd.argoproj.io/sync-wave: "4"
   labels:
     app.kubernetes.io/name: grafana
 spec:

@@ -26,7 +26,7 @@ spec:
             - "-d"
             - "{{ .Values.delay }}"
             {{- if .Values.loop }}
-            - "-loop"
+            - "--loop"
             {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

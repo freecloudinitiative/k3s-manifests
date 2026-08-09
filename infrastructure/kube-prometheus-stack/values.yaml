@@ -91,7 +91,9 @@ grafana:
         revision: 45
         datasource:
           - name: DS_PROMETHEUS
-            value: prometheus
+            value: Prometheus
+          - name: prometheus
+            value: Prometheus
 
 prometheus-node-exporter:
   enabled: true

@@ -65,6 +65,15 @@ grafana:
           datasourceUid: prometheus
         nodeGraph:
           enabled: true
+    - name: Alloy
+      type: prometheus
+      uid: alloy
+      url: http://alloy-external.monitoring.svc.cluster.local:12345
+      access: proxy
+      isDefault: false
+      jsonData:
+        httpMethod: GET
+        timeInterval: "15s"
   grafana.ini:
     database:
       wal: true

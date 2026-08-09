@@ -1,0 +1,260 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-log-filtering
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  log-dashboard-filtering.json: |
+    {
+      "__inputs": [
+        {
+          "name": "DS_LOKI",
+          "label": "Loki",
+          "description": "Select your Loki data source",
+          "type": "datasource",
+          "pluginId": "loki"
+        }
+      ],
+      "__requires": [
+        {
+          "type": "grafana",
+          "id": "grafana",
+          "name": "Grafana",
+          "version": "10.0.0"
+        },
+        {
+          "type": "panel",
+          "id": "stat",
+          "name": "Stat",
+          "version": ""
+        },
+        {
+          "type": "panel",
+          "id": "logs",
+          "name": "Logs",
+          "version": ""
+        },
+        {
+          "type": "panel",
+          "id": "timeseries",
+          "name": "Time series",
+          "version": ""
+        }
+      ],
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "liveNow": true,
+      "panels": [
+        {
+          "title": "Avg Throughput",
+          "type": "stat",
+          "id": 1,
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "pps",
+              "color": { "mode": "background" }
+            }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "sum(rate({job=\"varlogs\", filename=~\"$filename\"}[$__range])) or vector(0)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Total Logs",
+          "type": "stat",
+          "id": 2,
+          "gridPos": { "h": 4, "w": 5, "x": 4, "y": 0 },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "sum(count_over_time({job=\"varlogs\", filename=~\"$filename\"}[$__range])) or vector(0)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Info Count",
+          "type": "stat",
+          "id": 3,
+          "gridPos": { "h": 4, "w": 5, "x": 9, "y": 0 },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "fixedColor": "blue", "mode": "fixed" }
+            }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "sum(count_over_time({job=\"varlogs\", filename=~\"$filename\"} |= \"info\" [$__range])) or vector(0)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Warning Count",
+          "type": "stat",
+          "id": 4,
+          "gridPos": { "h": 4, "w": 5, "x": 14, "y": 0 },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "fixedColor": "orange", "mode": "fixed" }
+            }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "sum(count_over_time({job=\"varlogs\", filename=~\"$filename\"} |~ \"(?i)warn\" [$__range])) or vector(0)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Error Count",
+          "type": "stat",
+          "id": 5,
+          "gridPos": { "h": 4, "w": 5, "x": 19, "y": 0 },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "fixedColor": "red", "mode": "fixed" }
+            }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "sum(count_over_time({job=\"varlogs\", filename=~\"$filename\"} |~ \"(?i)error|crit|fail\" [$__range])) or vector(0)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Last 5 Info Logs",
+          "type": "logs",
+          "id": 6,
+          "gridPos": { "h": 6, "w": 24, "x": 0, "y": 4 },
+          "options": { "showTime": true, "sortOrder": "Descending" },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "{job=\"varlogs\", filename=~\"$filename\"} |= \"info\"",
+              "maxLines": 5,
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Last 5 Warnings",
+          "type": "logs",
+          "id": 7,
+          "gridPos": { "h": 6, "w": 24, "x": 0, "y": 10 },
+          "options": { "showTime": true, "sortOrder": "Descending" },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "{job=\"varlogs\", filename=~\"$filename\"} |~ \"(?i)warn\"",
+              "maxLines": 5,
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Last 5 Errors",
+          "type": "logs",
+          "id": 8,
+          "gridPos": { "h": 6, "w": 24, "x": 0, "y": 16 },
+          "options": { "showTime": true, "sortOrder": "Descending" },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "{job=\"varlogs\", filename=~\"$filename\"} |~ \"(?i)error|crit|fail\"",
+              "maxLines": 5,
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Activity Timeline (Click a bar to filter dashboard)",
+          "type": "timeseries",
+          "id": 9,
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 22 },
+          "fieldConfig": {
+            "defaults": {
+              "custom": { "drawStyle": "bars", "fillOpacity": 25 },
+              "links": [
+                {
+                  "title": "Filter Dashboard to ${__series.name}",
+                  "url": "${__dashboard.url}?${__url_time_range}&var-filename=${__series.name}",
+                  "targetBlank": false
+                }
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "sum by (filename) (count_over_time({job=\"varlogs\", filename=~\"$filename\"}[$__interval]))",
+              "legendFormat": "{{filename}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "RAW LIVE STREAM (FILTERED)",
+          "type": "logs",
+          "id": 10,
+          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 30 },
+          "options": {
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogLines": true,
+            "enableLogDetails": true
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "{job=\"varlogs\", filename=~\"$filename\"}",
+              "refId": "A"
+            }
+          ]
+        }
+      ],
+      "refresh": "5s",
+      "schemaVersion": 39,
+      "tags": ["monitoring", "loki", "promtail"],
+      "templating": {
+        "list": [
+          {
+            "name": "DS_LOKI",
+            "type": "datasource",
+            "query": "loki",
+            "label": "Loki Source"
+          },
+          {
+            "name": "filename",
+            "type": "query",
+            "datasource": { "type": "loki", "uid": "loki" },
+            "definition": "label_values({job=\"varlogs\"}, filename)",
+            "query": "label_values({job=\"varlogs\"}, filename)",
+            "multi": true,
+            "includeAll": true,
+            "label": "Log File",
+            "refresh": 1
+          }
+        ]
+      },
+      "time": { "from": "now-6h", "to": "now" },
+      "timezone": "browser",
+      "title": "Log Dashboard With Filtering",
+      "uid": "log-dashboard-v2-filtered",
+      "gnetId": 24978,
+      "description": "Optimized for Grafana Loki log filtering. Fully compatible with both legacy Promtail pipelines and modern Grafana Alloy log collectors."
+    }

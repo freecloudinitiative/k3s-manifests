@@ -68,7 +68,7 @@ grafana:
     - name: Alloy
       type: prometheus
       uid: alloy
-      url: http://alloy-external.monitoring.svc.cluster.local:12345
+      url: http://alloy.monitoring.svc.cluster.local:12345/alloy
       access: proxy
       isDefault: false
       jsonData:

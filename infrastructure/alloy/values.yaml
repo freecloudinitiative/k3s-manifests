@@ -10,8 +10,7 @@ alloy:
   clustering:
     enabled: false
 
-  extraArgs:
-    - --server.http.ui-path-prefix=/alloy
+  uiPathPrefix: /alloy
 
   configMap:
     content: |

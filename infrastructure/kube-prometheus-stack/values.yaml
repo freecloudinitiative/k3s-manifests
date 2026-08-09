@@ -89,7 +89,9 @@ grafana:
       node-exporter-full:
         gnetId: 1860
         revision: 45
-        datasource: Prometheus
+        datasource:
+          - name: DS_PROMETHEUS
+            value: prometheus
 
 prometheus-node-exporter:
   enabled: true

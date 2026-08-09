@@ -10,6 +10,9 @@ alloy:
   clustering:
     enabled: false
 
+  extraArgs:
+    - --server.http.ui-path-prefix=/alloy
+
   configMap:
     content: |
       logging {
@@ -55,7 +58,7 @@ alloy:
       // Send logs to Loki
       loki.write "default" {
         endpoint {
-          url = "http://loki-gateway.monitoring.svc.cluster.local:80/loki/api/v1/push"
+          url = "http://loki-external.monitoring.svc.cluster.local:3100/loki/api/v1/push"
         }
       }
 

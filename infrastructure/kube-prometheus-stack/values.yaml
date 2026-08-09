@@ -1,5 +1,7 @@
 prometheus:
   prometheusSpec:
+    externalUrl: "/prometheus/"
+    routePrefix: /prometheus
     serviceMonitorSelectorNilUsesHelmValues: false
     retention: 14d
     storageSpec:
@@ -64,9 +66,30 @@ grafana:
         nodeGraph:
           enabled: true
   grafana.ini:
+    database:
+      wal: true
+      cache_mode: shared
     server:
       root_url: "%(protocol)s://%(domain)s/grafana/"
       serve_from_sub_path: true
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+  dashboards:
+    default:
+      node-exporter-full:
+        gnetId: 1860
+        revision: 45
+        datasource: Prometheus
 
 prometheus-node-exporter:
   enabled: true

@@ -22,7 +22,7 @@ spec:
       path: infrastructure/cert-manager
       ref: values
       directory:
-        include: service.yaml
+        include: '{service.yaml,cluster-issuer-selfsigned.yaml,certificate-selfsigned-ca.yaml,cluster-issuer-ca.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager

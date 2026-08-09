@@ -27,6 +27,8 @@ kind: Ingress
 metadata:
   name: grafana-ingress
   namespace: monitoring
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik
   rules:
@@ -47,6 +49,7 @@ metadata:
   name: alloy-ingress
   namespace: monitoring
   annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.middlewares: monitoring-strip-prefix@kubernetescrd
 spec:
   ingressClassName: traefik
@@ -80,7 +83,7 @@ metadata:
   namespace: traefik
 spec:
   entryPoints:
-    - web
+    - websecure
   routes:
     - match: PathPrefix(`/traefik-dashboard`)
       kind: Rule
@@ -97,6 +100,7 @@ metadata:
   name: argocd-ingress
   namespace: argocd
   annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.middlewares: argocd-argocd-strip-prefix@kubernetescrd
 spec:
   ingressClassName: traefik
@@ -117,6 +121,8 @@ kind: Ingress
 metadata:
   name: frontend-ingress
   namespace: frontend
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik
   rules:
@@ -136,6 +142,8 @@ kind: Ingress
 metadata:
   name: prometheus-ingress
   namespace: monitoring
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik
   rules:
@@ -155,6 +163,8 @@ kind: Ingress
 metadata:
   name: openbao-ingress
   namespace: openbao
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik
   rules:

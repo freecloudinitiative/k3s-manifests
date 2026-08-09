@@ -23,6 +23,10 @@ ports:
       exposedPort: 9000
   web:
     port: 8000
+    hostPort: 80
+    redirectTo:
+      port: websecure
+      priority: 10
   websecure:
     port: 8443
     hostPort: 443

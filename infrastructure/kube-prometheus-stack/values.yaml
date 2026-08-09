@@ -72,28 +72,6 @@ grafana:
     server:
       root_url: "%(protocol)s://%(domain)s/grafana/"
       serve_from_sub_path: true
-  dashboardProviders:
-    dashboardproviders.yaml:
-      apiVersion: 1
-      providers:
-        - name: 'default'
-          orgId: 1
-          folder: ''
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards/default
-  dashboards:
-    default:
-      node-exporter-full:
-        gnetId: 1860
-        revision: 45
-        datasource:
-          - name: DS_PROMETHEUS
-            value: Prometheus
-          - name: prometheus
-            value: Prometheus
 
 prometheus-node-exporter:
   enabled: true

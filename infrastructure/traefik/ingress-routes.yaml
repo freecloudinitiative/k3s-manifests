@@ -117,13 +117,15 @@ kind: Ingress
 metadata:
   name: frontend-ingress
   namespace: frontend
+  annotations:
+    traefik.ingress.kubernetes.io/router.priority: "1"
 spec:
   ingressClassName: traefik
   rules:
     - http:
         paths:
           - path: /
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: frontend

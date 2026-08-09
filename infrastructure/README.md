@@ -4,18 +4,18 @@ This directory contains the core Kubernetes infrastructure services managed by A
 
 ---
 
-## 🌐 Infrastructure NodePorts & External Access
+## 🌐 Infrastructure Ingress Routing & External Access
 
-Core platform services are exposed via NodePort services for direct access via your K3s Master Node's Public IP (`http://<MASTER_PUBLIC_IP>:<NODE_PORT>`):
+Core platform services are exposed over standard HTTP (port `80`) and HTTPS (port `443`) via **Traefik Ingress Controller** using path-based URL suffixes (`http://<MASTER_PUBLIC_IP>/<SUFFIX>`):
 
-| Service               | Namespace    | NodePort | Protocol | Access URL                                   |
-| :-------------------- | :----------- | :------- | :------- | :------------------------------------------- |
-| **Argo CD UI**        | `argocd`     | `30443`  | HTTPS    | `https://<MASTER_PUBLIC_IP>:30443`           |
-| **Grafana**           | `monitoring` | `30001`  | HTTP     | `http://<MASTER_PUBLIC_IP>:30001`            |
-| **Prometheus**        | `monitoring` | `30090`  | HTTP     | `http://<MASTER_PUBLIC_IP>:30090`            |
-| **OpenBao UI / API**  | `openbao`    | `30200`  | HTTP     | `http://<MASTER_PUBLIC_IP>:30200`            |
-| **Traefik Dashboard** | `traefik`    | `30900`  | HTTP     | `http://<MASTER_PUBLIC_IP>:30900/dashboard/` |
-| **Grafana Alloy UI**  | `monitoring` | `31234`  | HTTP     | `http://<MASTER_PUBLIC_IP>:31234`            |
+| Service               | Namespace    | Ingress Path Suffix | Protocol | Access URL                                    |
+| :-------------------- | :----------- | :------------------ | :------- | :-------------------------------------------- |
+| **Argo CD UI**        | `argocd`     | `/argocd`           | HTTP     | `http://<MASTER_PUBLIC_IP>/argocd`            |
+| **Grafana**           | `monitoring` | `/grafana`          | HTTP     | `http://<MASTER_PUBLIC_IP>/grafana`           |
+| **Prometheus**        | `monitoring` | `/prometheus`       | HTTP     | `http://<MASTER_PUBLIC_IP>/prometheus`        |
+| **Grafana Alloy UI**  | `monitoring` | `/alloy`            | HTTP     | `http://<MASTER_PUBLIC_IP>/alloy`            |
+| **Traefik Dashboard** | `traefik`    | `/traefik-dashboard`| HTTP     | `http://<MASTER_PUBLIC_IP>/traefik-dashboard` |
+| **OpenBao UI**        | `openbao`    | `/ui`               | HTTP     | `http://<MASTER_PUBLIC_IP>/ui`                |
 
 ---
 

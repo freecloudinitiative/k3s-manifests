@@ -47,7 +47,7 @@ grafana:
     - name: Tempo
       type: tempo
       uid: tempo
-      url: http://tempo-external.monitoring.svc.cluster.local:3200
+      url: http://tempo-external.monitoring.svc.cluster.local:3100
       access: proxy
       isDefault: false
       jsonData:
@@ -65,6 +65,15 @@ grafana:
           datasourceUid: prometheus
         nodeGraph:
           enabled: true
+    - name: Alloy
+      type: prometheus
+      uid: alloy
+      url: http://alloy-external.monitoring.svc.cluster.local:12345
+      access: proxy
+      isDefault: false
+      jsonData:
+        httpMethod: GET
+        timeInterval: "15s"
   grafana.ini:
     database:
       wal: true
@@ -72,24 +81,6 @@ grafana:
     server:
       root_url: "%(protocol)s://%(domain)s/grafana/"
       serve_from_sub_path: true
-  dashboardProviders:
-    dashboardproviders.yaml:
-      apiVersion: 1
-      providers:
-        - name: 'default'
-          orgId: 1
-          folder: ''
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards/default
-  dashboards:
-    default:
-      node-exporter-full:
-        gnetId: 1860
-        revision: 45
-        datasource: Prometheus
 
 prometheus-node-exporter:
   enabled: true

@@ -10,6 +10,6 @@ spec:
   selector:
     app.kubernetes.io/name: tempo
   ports:
-    - port: 3200
-      targetPort: 3200
+    - port: 3100
+      targetPort: 3100
       name: http

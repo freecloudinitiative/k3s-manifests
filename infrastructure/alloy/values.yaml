@@ -62,6 +62,21 @@ alloy:
         }
       }
 
+      // Collect Kubernetes Pod logs
+      discovery.kubernetes "pod_logs" {
+        role = "pod"
+      }
+
+      loki.source.kubernetes "pod_logs" {
+        targets    = discovery.kubernetes.pod_logs.targets
+        forward_to = [loki.process.pod_logs.receiver]
+      }
+
+      loki.process "pod_logs" {
+        stage.cri {}
+        forward_to = [loki.write.default.receiver]
+      }
+
       // Scrape Prometheus metrics
       prometheus.scrape "default" {
         targets = [

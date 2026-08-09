@@ -66,6 +66,9 @@ grafana:
         nodeGraph:
           enabled: true
   grafana.ini:
+    database:
+      wal: true
+      cache_mode: shared
     server:
       root_url: "%(protocol)s://%(domain)s/grafana/"
       serve_from_sub_path: true

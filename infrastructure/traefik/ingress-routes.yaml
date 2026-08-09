@@ -81,6 +81,7 @@ metadata:
 spec:
   entryPoints:
     - web
+    - websecure
   routes:
     - match: PathPrefix(`/traefik-dashboard`)
       kind: Rule

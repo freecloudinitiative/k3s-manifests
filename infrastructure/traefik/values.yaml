@@ -24,9 +24,13 @@ ports:
   web:
     port: 8000
     hostPort: 80
+    redirectTo:
+      port: websecure
   websecure:
     port: 8443
     hostPort: 443
+    tls:
+      enabled: true
 
 service:
   enabled: true

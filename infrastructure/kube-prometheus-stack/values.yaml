@@ -1,5 +1,8 @@
 prometheus:
   prometheusSpec:
+    image:
+      repository: prometheus/prometheus
+      tag: v3.13.2
     externalUrl: "/prometheus/"
     routePrefix: /prometheus
     serviceMonitorSelectorNilUsesHelmValues: false
@@ -22,6 +25,9 @@ prometheus:
 
 grafana:
   enabled: true
+  image:
+    repository: grafana/grafana
+    tag: 13.1.3
   admin:
     existingSecret: grafana-secrets
     userKey: admin-user

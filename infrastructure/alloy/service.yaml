@@ -13,3 +13,9 @@ spec:
     - port: 12345
       targetPort: 12345
       name: http-metrics
+    - port: 4317
+      targetPort: 4317
+      name: otlp-grpc
+    - port: 4318
+      targetPort: 4318
+      name: otlp-http

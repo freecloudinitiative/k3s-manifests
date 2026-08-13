@@ -13,7 +13,7 @@ spec:
   sources:
     - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
       chart: opentelemetry-collector
-      targetRevision: 0.97.1
+      targetRevision: 0.169.0
       helm:
         valueFiles:
           - $values/infrastructure/opentelemetry/values.yaml

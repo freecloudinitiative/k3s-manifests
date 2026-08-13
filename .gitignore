@@ -12,6 +12,7 @@ db.lock
 *.sln
 *.swp
 .history/
+.monokle
 
 # Local/secrets configurations (optional, if using local overrides)
 *.local.yaml

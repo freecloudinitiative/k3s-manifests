@@ -12,4 +12,10 @@ spec:
   ports:
     - port: 3100
       targetPort: 3100
-      name: http
+      name: http-query
+    - port: 4317
+      targetPort: 4317
+      name: otlp-grpc
+    - port: 4318
+      targetPort: 4318
+      name: otlp-http

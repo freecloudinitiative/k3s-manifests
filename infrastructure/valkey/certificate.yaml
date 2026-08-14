@@ -1,0 +1,26 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: valkey-server
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  secretName: valkey-server-tls
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  usages:
+    - server auth
+  dnsNames:
+    - valkey
+    - valkey.valkey
+    - valkey.valkey.svc
+    - valkey.valkey.svc.cluster.local
+  ipAddresses:
+    - 127.0.0.1
+  issuerRef:
+    name: ca-cluster-issuer
+    kind: ClusterIssuer

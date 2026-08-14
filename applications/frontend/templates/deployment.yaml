@@ -70,15 +70,11 @@ spec:
               mountPath: /usr/share/nginx/html/config.js
               subPath: config.js
               readOnly: true
-            - name: nginx-conf
-              mountPath: /etc/nginx/conf.d
             - name: nginx-tmp
               mountPath: /tmp
       volumes:
         - name: runtime-config
           configMap:
             name: {{ .Release.Name }}-runtime-config
-        - name: nginx-conf
-          emptyDir: {}
         - name: nginx-tmp
           emptyDir: {}

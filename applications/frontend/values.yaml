@@ -1,21 +1,38 @@
-replicaCount: 1
+replicaCount: 2
 
 image:
+  # Replaced by CI with the frontend image. Pin digest for releases.
   repository: nginxdemos/hello
   tag: plain-text
+  digest: ""
   pullPolicy: IfNotPresent
 
 service:
-  type: NodePort
+  type: ClusterIP
   port: 80
-  nodePort: 30080
+  containerPort: 8080
+
+env:
+  apiBackendUrl: "http://backend.backend.svc.cluster.local:80"
+
+extraEnv: []
+
+runtimeConfig:
+  appEnv: prod
+  apiBaseUrl: ""
+  oidcAuthority: "https://auth.freecloudinitiative.com/application/o/freecloudinitiative/"
+  oidcClientId: "freecloudinitiative-frontend"
+  oidcRedirectUri: "https://frontend.freecloudinitiative.com/callback"
+  enableRealTerminal: false
+  wsBaseUrl: ""
 
 ingress:
-  enabled: false
+  enabled: true
   className: traefik
   annotations:
-    kubernetes.io/ingress.class: traefik
-    cert-manager.io/cluster-issuer: letsencrypt-prod
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-public-chain@kubernetescrd
   hosts:
     - host: frontend.freecloudinitiative.com
       paths:
@@ -37,3 +54,26 @@ resources:
     ephemeral-storage: 100Mi
 
 automountServiceAccountToken: false
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  fsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true

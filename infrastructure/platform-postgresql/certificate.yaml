@@ -1,0 +1,32 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: platform-postgresql-server
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  secretName: platform-postgresql-server-tls
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  usages:
+    - server auth
+  dnsNames:
+    - platform-postgresql-rw
+    - platform-postgresql-rw.platform-database
+    - platform-postgresql-rw.platform-database.svc
+    - platform-postgresql-rw.platform-database.svc.cluster.local
+    - platform-postgresql-ro
+    - platform-postgresql-ro.platform-database
+    - platform-postgresql-ro.platform-database.svc
+    - platform-postgresql-ro.platform-database.svc.cluster.local
+    - platform-postgresql-r
+    - platform-postgresql-r.platform-database
+    - platform-postgresql-r.platform-database.svc
+    - platform-postgresql-r.platform-database.svc.cluster.local
+  issuerRef:
+    name: ca-cluster-issuer
+    kind: ClusterIssuer

@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-postgresql
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-wave-health: all
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
+    targetRevision: HEAD
+    path: infrastructure/platform-postgresql
+    directory:
+      include: '{certificate.yaml,cluster.yaml,database-role.yaml,database.yaml,networkpolicy.yaml}'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: platform-database
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true

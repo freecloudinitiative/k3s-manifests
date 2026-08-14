@@ -1,5 +1,9 @@
 deployment:
-  replicas: 1
+  replicas: 2
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
 
 image:
   tag: v3.7.10
@@ -39,6 +43,16 @@ ingressClass:
 ingressRoute:
   dashboard:
     enabled: true
+
+api:
+  dashboard: true
+
+logs:
+  general:
+    level: INFO
+
+accessLog:
+  enabled: true
 
 resources:
   requests:

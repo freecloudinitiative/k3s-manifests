@@ -1,0 +1,10 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: public-chain
+  namespace: traefik
+spec:
+  chain:
+    middlewares:
+      - name: security-headers
+      - name: api-ratelimit

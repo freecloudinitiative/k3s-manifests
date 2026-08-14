@@ -1,0 +1,41 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: platform-role
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  cluster:
+    name: platform-postgresql
+  name: platform
+  comment: Free Cloud Initiative platform API owner
+  login: true
+  superuser: false
+  createdb: false
+  createrole: false
+  bypassrls: false
+  connectionLimit: 80
+  databaseRoleReclaimPolicy: retain
+  passwordSecret:
+    name: platform-postgresql-credentials
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: authentik-role
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  cluster:
+    name: platform-postgresql
+  name: authentik
+  comment: Authentik application owner
+  login: true
+  superuser: false
+  createdb: false
+  createrole: false
+  bypassrls: false
+  connectionLimit: 60
+  databaseRoleReclaimPolicy: retain
+  passwordSecret:
+    name: authentik-postgresql-credentials

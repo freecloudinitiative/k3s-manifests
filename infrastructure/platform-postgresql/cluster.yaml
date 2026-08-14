@@ -1,0 +1,61 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: platform-postgresql
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  instances: 3
+  enableSuperuserAccess: false
+  primaryUpdateMethod: switchover
+  primaryUpdateStrategy: unsupervised
+  failoverDelay: 30
+  switchoverDelay: 3600
+  stopDelay: 1800
+  smartShutdownTimeout: 300
+
+  bootstrap:
+    initdb:
+      database: platform
+      owner: platform
+      secret:
+        name: platform-postgresql-credentials
+      dataChecksums: true
+      encoding: UTF8
+
+  certificates:
+    serverCASecret: platform-postgresql-server-tls
+    serverTLSSecret: platform-postgresql-server-tls
+
+  postgresql:
+    parameters:
+      password_encryption: scram-sha-256
+      ssl_min_protocol_version: TLSv1.2
+      shared_buffers: 256MB
+      max_connections: "200"
+
+  storage:
+    storageClass: local-path
+    size: 20Gi
+    resizeInUseVolumes: true
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: kubernetes.io/hostname
+
+  monitoring:
+    enablePodMonitor: true
+
+  inheritedMetadata:
+    labels:
+      app.kubernetes.io/part-of: freecloud-platform
+      app.kubernetes.io/component: database

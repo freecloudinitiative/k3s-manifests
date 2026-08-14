@@ -1,0 +1,149 @@
+global:
+  affinity:
+    podAntiAffinity: hard
+    nodeAffinity:
+      type: hard
+      matchExpressions: []
+  deploymentStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  env:
+    - name: AUTHENTIK_LOG_LEVEL
+      value: info
+    - name: AUTHENTIK_ERROR_REPORTING__ENABLED
+      value: "false"
+    - name: AUTHENTIK_OUTPOSTS__DISCOVER
+      value: "false"
+    - name: AUTHENTIK_POSTGRESQL__HOST
+      value: platform-postgresql-rw.platform-database.svc.cluster.local
+    - name: AUTHENTIK_POSTGRESQL__NAME
+      value: authentik
+    - name: AUTHENTIK_POSTGRESQL__USER
+      value: authentik
+    - name: AUTHENTIK_POSTGRESQL__PORT
+      value: "5432"
+    - name: AUTHENTIK_POSTGRESQL__SSLMODE
+      value: verify-full
+    - name: AUTHENTIK_POSTGRESQL__SSLROOTCERT
+      value: /certs/platform-postgresql/ca.crt
+  volumeMounts:
+    - name: platform-postgresql-ca
+      mountPath: /certs/platform-postgresql
+      readOnly: true
+  volumes:
+    - name: platform-postgresql-ca
+      secret:
+        secretName: platform-postgresql-ca-bundle
+        items:
+          - key: ca.crt
+            path: ca.crt
+
+authentik:
+  enabled: true
+  existingSecret:
+    secretName: authentik-config
+
+blueprints:
+  # Enable the frontend OIDC blueprint when stable public URLs are available.
+  configMaps: []
+
+server:
+  replicas: 2
+  serviceAccountName: authentik-runtime
+  automountServiceAccountToken: false
+  pdb:
+    enabled: true
+    minAvailable: 1
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+  ingress:
+    enabled: false
+    ingressClassName: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-production
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.middlewares: traefik-public-chain@kubernetescrd
+    hosts:
+      - auth.freecloudinitiative.com
+    tls:
+      - secretName: authentik-public-tls
+        hosts:
+          - auth.freecloudinitiative.com
+  service:
+    type: NodePort
+    nodePortHttp: 30900
+    nodePortHttps: 30943
+
+worker:
+  replicas: 2
+  serviceAccountName: authentik-runtime
+  automountServiceAccountToken: false
+  envFrom:
+    - secretRef:
+        name: authentik-bootstrap
+  pdb:
+    enabled: true
+    minAvailable: 1
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+
+postgresql:
+  enabled: false
+
+geoip:
+  enabled: false
+
+serviceAccount:
+  create: false

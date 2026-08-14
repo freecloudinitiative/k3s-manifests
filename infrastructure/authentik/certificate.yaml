@@ -1,0 +1,20 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: platform-postgresql-ca-bundle
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  secretName: platform-postgresql-ca-bundle
+  duration: 2160h
+  renewBefore: 360h
+  commonName: authentik-postgresql-client
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  usages:
+    - client auth
+  issuerRef:
+    name: ca-cluster-issuer
+    kind: ClusterIssuer

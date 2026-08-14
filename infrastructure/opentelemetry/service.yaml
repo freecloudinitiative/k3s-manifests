@@ -7,7 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/name: opentelemetry-collector
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: opentelemetry-collector
   ports:

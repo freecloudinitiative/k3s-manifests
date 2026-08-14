@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: tempo
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: tempo
   ports:

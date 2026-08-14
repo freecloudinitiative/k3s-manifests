@@ -13,7 +13,7 @@ spec:
   sources:
     - repoURL: https://charts.external-secrets.io
       chart: external-secrets
-      targetRevision: 0.9.20
+      targetRevision: 2.8.0
       helm:
         valueFiles:
           - $values/infrastructure/external-secrets/values.yaml
@@ -22,7 +22,7 @@ spec:
       path: infrastructure/external-secrets
       ref: values
       directory:
-        include: '{cluster-store.yaml,external-secret-*.yaml}'
+        include: '{cluster-store.yaml,service-account.yaml,rbac.yaml,external-secret-*.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: external-secrets

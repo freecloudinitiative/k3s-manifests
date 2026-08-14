@@ -1,17 +1,33 @@
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ClusterSecretStore
 metadata:
   name: openbao-store
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
+  conditions:
+    - namespaces:
+        - authentik
+        - backend
+        - monitoring
+        - platform-database
+        - valkey
   provider:
     vault:
-      server: "http://openbao.openbao.svc.cluster.local:8200"
+      server: "https://openbao-active.openbao.svc.cluster.local:8200"
       path: "secret"
       version: "v2"
+      caProvider:
+        type: Secret
+        name: openbao-server-tls
+        key: ca.crt
+        namespace: openbao
       auth:
-        tokenSecretRef:
-          name: openbao-root-token
-          namespace: external-secrets
-          key: token
+        kubernetes:
+          mountPath: kubernetes
+          role: external-secrets
+          serviceAccountRef:
+            name: external-secrets-openbao
+            namespace: external-secrets
+            audiences:
+              - vault

@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/postgresql.cnpg.io/cluster_v1.json
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -33,6 +34,8 @@ spec:
       ssl_min_protocol_version: TLSv1.2
       shared_buffers: 256MB
       max_connections: "200"
+    pg_hba:
+      - hostnossl all all all reject
 
   storage:
     storageClass: local-path

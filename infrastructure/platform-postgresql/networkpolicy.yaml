@@ -20,9 +20,15 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: authentik
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: authentik
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: backend
+          podSelector:
+            matchLabels:
+              app: backend
       ports:
         - protocol: TCP
           port: 5432

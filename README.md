@@ -8,6 +8,9 @@ This repository contains Kubernetes (K3s) manifests and Helm chart configuration
 - **Ingress & Routing**: Traefik Ingress Controller with custom middlewares (Authentication, Rate Limiting).
 - **Security & TLS**: `cert-manager` for self-signed and Let's Encrypt SSL/TLS certificates.
 - **Secrets Management**: External Secrets Operator syncing secrets securely from OpenBao (Vault).
+- **Identity**: Authentik with a declarative public OIDC client for the frontend.
+- **Platform Data**: CloudNativePG-managed, TLS-enabled PostgreSQL with separate application roles and databases.
+- **Ephemeral Data**: Valkey (Redis protocol) for cache, distributed rate limits, and backend Pub/Sub.
 - **Observability**: Complete monitoring & logging pipeline using `kube-prometheus-stack` (Prometheus & Grafana).
 
 ## 🚀 Getting Started
@@ -24,6 +27,10 @@ ArgoCD automatically reconciles and syncs changes committed to this repository.
 
 1. Ensure infrastructure dependencies are deployed via `infrastructure/`.
 2. Apply application manifests or ArgoCD Application definitions located under `applications/`.
+
+See [`infrastructure/README.md`](infrastructure/README.md) for the required
+OpenBao bootstrap variables, component order, OIDC settings, and the mandatory
+off-cluster PostgreSQL backup step.
 
 ## 📜 License
 

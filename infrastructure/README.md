@@ -1,44 +1,83 @@
 # Infrastructure Manifests
 
-This directory contains the core Kubernetes infrastructure services managed by Argo CD via the App-of-Apps GitOps pattern.
+Core Kubernetes services are managed by Argo CD using the App-of-Apps pattern.
 
----
+## Access model
 
-## 🌐 Infrastructure Ingress Routing & External Access
+During the current bootstrap phase, administrative services are available from
+the master-node IP through the original path routes and selected NodePorts:
 
-Core platform services are exposed over standard HTTP (port `80`) and HTTPS (port `443`) via **Traefik Ingress Controller** using path-based URL suffixes (`http://<MASTER_PUBLIC_IP>/<SUFFIX>`):
+```text
+Argo CD:    http://MASTER_IP/argocd/ or https://MASTER_IP:30443/
+Grafana:    http://MASTER_IP/grafana/ or http://MASTER_IP:30001/
+Prometheus: http://MASTER_IP/prometheus/ or http://MASTER_IP:30090/
+OpenBao:    http://MASTER_IP/ui/
+Authentik:  http://MASTER_IP:30900/
+```
 
-| Service               | Namespace    | Ingress Path Suffix | Protocol | Access URL                                    |
-| :-------------------- | :----------- | :------------------ | :------- | :-------------------------------------------- |
-| **Argo CD UI**        | `argocd`     | `/argocd`           | HTTP     | `http://<MASTER_PUBLIC_IP>/argocd`            |
-| **Grafana**           | `monitoring` | `/grafana`          | HTTP     | `http://<MASTER_PUBLIC_IP>/grafana`           |
-| **Prometheus**        | `monitoring` | `/prometheus`       | HTTP     | `http://<MASTER_PUBLIC_IP>/prometheus`        |
-| **Grafana Alloy UI**  | `monitoring` | `/alloy`            | HTTP     | `http://<MASTER_PUBLIC_IP>/alloy`            |
-| **Traefik Dashboard** | `traefik`    | `/traefik-dashboard`| HTTP     | `http://<MASTER_PUBLIC_IP>/traefik-dashboard` |
-| **OpenBao UI**        | `openbao`    | `/ui`               | HTTP     | `http://<MASTER_PUBLIC_IP>/ui`                |
+This is transitional access and should be restricted by the host firewall or a
+trusted source-IP allowlist. Domain-based TLS ingress will be configured later.
+OpenBao traffic inside the cluster remains TLS-encrypted, and External Secrets
+authenticates with a short-lived Kubernetes ServiceAccount token rather than an
+administrative OpenBao token.
 
----
+## Components
 
-## 📁 Directory Structure & Services
+- `argocd`: GitOps reconciliation and configuration.
+- `cert-manager`: public and internal certificate issuance.
+- `external-secrets`: least-privilege synchronization from OpenBao.
+- `cloudnative-pg`: PostgreSQL lifecycle, failover, TLS, role, and database management.
+- `platform-postgresql`: three-instance PostgreSQL cluster for platform control-plane data and Authentik.
+- `authentik`: identity provider, currently exposed through a temporary NodePort.
+- `valkey`: private, Redis-protocol cache/Pub/Sub service for backend replicas.
+- `kube-prometheus-stack`, `alloy`, `loki`, `tempo`, `opentelemetry`: private observability stack.
+- `metallb`: bare-metal address allocation where an explicit public LoadBalancer is required.
+- `traefik`: public HTTPS ingress controller.
 
-| Component                   | Description                                                                                                       |
-| :-------------------------- | :---------------------------------------------------------------------------------------------------------------- |
-| **`alloy`**                 | [Grafana Alloy](https://grafana.com/docs/alloy/latest/) telemetry agent for collecting logs, metrics, and traces. |
-| **`argocd`**                | Argo CD core configuration, RBAC, ingress routing, and root application declarations.                             |
-| **`cert-manager`**          | Certificate management for automated TLS issuance via Let's Encrypt / custom CAs.                                 |
-| **`external-secrets`**      | External Secrets Operator integration for syncing secrets (e.g., from OpenBao / Vault).                           |
-| **`kube-prometheus-stack`** | Monitoring stack including Prometheus Operator, Prometheus server, and Grafana.                                   |
-| **`loki`**                  | High-performance log aggregation engine.                                                                          |
-| **`metallb`**               | Bare-metal load balancer for provisioning `LoadBalancer` service types in K3s.                                    |
-| **`namespaces`**            | Core Kubernetes namespace definitions (`monitoring`, `openbao`, `argocd`, `traefik`, etc.).                       |
-| **`opentelemetry`**         | OpenTelemetry Collector and Operator setup for trace and metric processing.                                       |
-| **`tempo`**                 | High-scale distributed tracing backend.                                                                           |
-| **`traefik`**               | Ingress controller and API Gateway handling HTTP/HTTPS routing and NodePort access.                               |
+Secrets are never stored in plaintext in this repository. OpenBao recovery
+material and bootstrap credentials must remain outside both Git and Kubernetes.
+The OpenBao `ClusterSecretStore` is explicitly restricted to trusted platform
+namespaces; customer namespaces must never be allowed to reference it.
 
----
+## Identity and data bootstrap
 
-## ⚙️ GitOps Deployment Strategy
+The App-of-Apps sync waves install dependencies in this order: namespaces and
+cert-manager/External Secrets, CloudNativePG, PostgreSQL and Valkey, then
+Authentik. Before the secret bootstrap role can seed OpenBao, export strong,
+unique values for:
 
-- Each subdirectory contains standard Kubernetes manifests or Helm custom resource definitions.
-- Argo CD synchronizes these components automatically based on the application manifests defined under `argocd/` and root bootstrap manifests.
-- Secret values are injected dynamically using **External Secrets Operator** / **argocd-vault-plugin** to ensure zero plain-text secrets in Git.
+```sh
+export AUTHENTIK_SECRET_KEY='at-least-50-random-characters'
+export AUTHENTIK_POSTGRESQL_PASSWORD='at-least-24-random-characters'
+export PLATFORM_POSTGRESQL_PASSWORD='at-least-24-random-characters'
+export AUTHENTIK_BOOTSTRAP_PASSWORD='at-least-16-random-characters'
+export AUTHENTIK_BOOTSTRAP_EMAIL='admin@freecloudinitiative.com'
+export VALKEY_PASSWORD='at-least-24-random-characters'
+export OPENBAO_BOOTSTRAP_TOKEN='short-lived-administrative-token'
+ansible-playbook playbook.yml
+```
+
+Generate these values with a cryptographically secure password manager; the
+examples are length hints, not usable credentials. Revoke the OpenBao bootstrap
+token immediately afterward. On first Authentik login, change the bootstrap
+administrator password and enable MFA.
+
+The frontend OIDC blueprint is included but disabled until stable public URLs
+and domain-based TLS ingress are ready. Do not enable it with an IP address that
+may change; OIDC redirect URIs must be exact and stable.
+
+PostgreSQL is authoritative. Valkey is intentionally ephemeral and must only
+hold reconstructable cache, rate-limit, and live-event data. Backend clients
+connect using TLS to `valkey.valkey.svc.cluster.local:6379`; they must obtain the
+password and internal CA through External Secrets/cert-manager rather than
+embedding either in an image.
+
+## Required production backup configuration
+
+Three PostgreSQL replicas protect availability but are not a backup. Before
+storing real user data, configure the CloudNativePG Barman Cloud plugin with an
+off-cluster S3-compatible object store, WAL archiving, a daily `ScheduledBackup`,
+and a retention policy. Object-store endpoint, bucket, and credentials are
+environment-specific and are intentionally not committed here. A release is
+not disaster-recovery-ready until a restore into a clean namespace has been
+tested.

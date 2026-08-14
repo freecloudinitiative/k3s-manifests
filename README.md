@@ -11,6 +11,7 @@ This repository contains Kubernetes (K3s) manifests and Helm chart configuration
 - **Identity**: Authentik with a declarative public OIDC client for the frontend.
 - **Platform Data**: CloudNativePG-managed, TLS-enabled PostgreSQL with separate application roles and databases.
 - **Ephemeral Data**: Valkey (Redis protocol) for cache, distributed rate limits, and backend Pub/Sub.
+- **Persistent Volumes**: Longhorn CSI storage with separate replicated and node-local storage classes.
 - **Observability**: Complete monitoring & logging pipeline using `kube-prometheus-stack` (Prometheus & Grafana).
 
 ## 🚀 Getting Started

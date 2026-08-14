@@ -30,6 +30,7 @@ administrative OpenBao token.
 - `platform-postgresql`: three-instance PostgreSQL cluster for platform control-plane data and Authentik.
 - `authentik`: identity provider, currently exposed through a temporary NodePort.
 - `valkey`: private, Redis-protocol cache/Pub/Sub service for backend replicas.
+- `longhorn`: CSI block storage with explicit replicated and node-local storage classes.
 - `kube-prometheus-stack`, `alloy`, `loki`, `tempo`, `opentelemetry`: private observability stack.
 - `metallb`: bare-metal address allocation where an explicit public LoadBalancer is required.
 - `traefik`: public HTTPS ingress controller.
@@ -81,3 +82,5 @@ and a retention policy. Object-store endpoint, bucket, and credentials are
 environment-specific and are intentionally not committed here. A release is
 not disaster-recovery-ready until a restore into a clean namespace has been
 tested.
+
+Replicate critical Longhorn backups to a different physical failure domain.

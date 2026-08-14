@@ -1,0 +1,37 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  dataEngine: v1
+  dataLocality: best-effort
+  fsType: ext4
+  numberOfReplicas: "2"
+  replicaAutoBalance: least-effort
+  staleReplicaTimeout: "30"
+---
+# Distributed applications such as Garage already replicate their own data.
+# This class keeps one local copy and avoids replication-on-replication.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-local
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  dataEngine: v1
+  dataLocality: strict-local
+  fsType: ext4
+  numberOfReplicas: "1"
+  replicaAutoBalance: disabled
+  staleReplicaTimeout: "30"

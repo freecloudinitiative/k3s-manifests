@@ -1,0 +1,33 @@
+persistence:
+  createStorageClass: false
+
+preUpgradeChecker:
+  # Longhorn explicitly recommends disabling this job for Argo CD installs.
+  jobEnabled: false
+  upgradeVersionCheck: false
+
+defaultSettings:
+  # Only nodes deliberately prepared and labelled for storage get a disk.
+  createDefaultDiskLabeledNodes: true
+  defaultDataPath: /var/lib/longhorn
+  defaultDataLocality: best-effort
+  defaultReplicaCount: '{"v1":"2","v2":"2"}'
+  replicaAutoBalance: least-effort
+  replicaSoftAntiAffinity: false
+  storageOverProvisioningPercentage: 100
+  storageMinimalAvailablePercentage: 10
+  upgradeChecker: false
+  allowVolumeCreationWithDegradedAvailability: false
+  # worker-3 is currently tainted memory=limited:NoSchedule.
+  taintToleration: memory=limited:NoSchedule
+
+longhornUI:
+  replicas: 1
+
+metrics:
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      release: kube-prometheus-stack
+    interval: 30s
+    scrapeTimeout: 10s

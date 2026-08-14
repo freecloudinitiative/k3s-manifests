@@ -1,11 +1,14 @@
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: api-transform
+  name: security-headers
   namespace: traefik
 spec:
   headers:
-    customRequestHeaders:
-      X-Custom-Header: "CustomValue"
-    customResponseHeaders:
-      X-Response-Header: "ResponseValue"
+    browserXssFilter: true
+    contentTypeNosniff: true
+    customFrameOptionsValue: DENY
+    referrerPolicy: strict-origin-when-cross-origin
+    stsSeconds: 31536000
+    stsIncludeSubdomains: true
+    stsPreload: true

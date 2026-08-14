@@ -31,6 +31,7 @@ administrative OpenBao token.
 - `authentik`: identity provider, currently exposed through a temporary NodePort.
 - `valkey`: private, Redis-protocol cache/Pub/Sub service for backend replicas.
 - `longhorn`: CSI block storage with explicit replicated and node-local storage classes.
+- `garage`: private, three-node S3-compatible object storage for the storage service and backup targets.
 - `kube-prometheus-stack`, `alloy`, `loki`, `tempo`, `opentelemetry`: private observability stack.
 - `metallb`: bare-metal address allocation where an explicit public LoadBalancer is required.
 - `traefik`: public HTTPS ingress controller.
@@ -83,4 +84,6 @@ environment-specific and are intentionally not committed here. A release is
 not disaster-recovery-ready until a restore into a clean namespace has been
 tested.
 
-Replicate critical Longhorn backups to a different physical failure domain.
+Garage may be used as an in-cluster backup target, but it is not an off-cluster
+backup. Replicate critical Garage buckets and Longhorn backups to a different
+physical failure domain.

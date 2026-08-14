@@ -1,4 +1,9 @@
 installCRDs: true
+replicaCount: 2
+leaderElect: true
+
+rbac:
+  serviceAccountTokenCreate: false
 
 resources:
   requests:
@@ -7,3 +12,37 @@ resources:
   limits:
     cpu: 200m
     memory: 256Mi
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+serviceMonitor:
+  enabled: true
+  renderMode: alwaysRender
+
+webhook:
+  replicaCount: 2
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+certController:
+  replicaCount: 2
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi

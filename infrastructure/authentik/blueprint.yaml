@@ -24,6 +24,13 @@ data:
           grant_types:
             - authorization_code
             - refresh_token
+          # Stable subject identifier: the frontend's OIDC `sub` is the join key
+          # for the platform account row, so it must not change when a user
+          # edits their email or username.
+          sub_mode: hashed_user_id
+          access_code_validity: minutes=1
+          access_token_validity: minutes=10
+          refresh_token_validity: days=14
           redirect_uris:
             - matching_mode: strict
               url: https://frontend.freecloudinitiative.com/callback
@@ -32,6 +39,11 @@ data:
             - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
             - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
             - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            # Required for the refresh_token grant. Without it the SPA gets no
+            # refresh token and react-oidc-context falls back to a hidden iframe
+            # that the frontend CSP blocks — sessions then die at access-token
+            # expiry. See frontend/src/lib/oidc.ts.
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
           signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
       - model: authentik_core.application
         identifiers:

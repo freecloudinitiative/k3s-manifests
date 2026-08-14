@@ -1,0 +1,129 @@
+fullnameOverride: valkey
+
+serviceAccount:
+  create: true
+  automount: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+readinessProbe:
+  enabled: true
+  customProbe:
+    exec:
+      command:
+        - /bin/sh
+        - -ec
+        - 'VALKEYCLI_AUTH="$(cat /valkey-users-secret/default)" exec valkey-cli --tls --cacert /tls/ca.crt ping'
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+livenessProbe:
+  enabled: true
+  customProbe:
+    exec:
+      command:
+        - /bin/sh
+        - -ec
+        - 'VALKEYCLI_AUTH="$(cat /valkey-users-secret/default)" exec valkey-cli --tls --cacert /tls/ca.crt ping'
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+startupProbe:
+  enabled: true
+  customProbe:
+    exec:
+      command:
+        - /bin/sh
+        - -ec
+        - 'VALKEYCLI_AUTH="$(cat /valkey-users-secret/default)" exec valkey-cli --tls --cacert /tls/ca.crt ping'
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+
+auth:
+  enabled: true
+  usersExistingSecret: valkey-auth
+  aclUsers:
+    default:
+      passwordKey: default
+      permissions: "~* &* +@read +@write +@connection +@pubsub +@scripting -flushall -flushdb -config -debug -shutdown -module"
+
+tls:
+  enabled: true
+  existingSecret: valkey-server-tls
+  serverPublicKey: tls.crt
+  serverKey: tls.key
+  caPublicKey: ca.crt
+  requireClientCertificate: false
+
+valkeyConfig: |
+  maxmemory 192mb
+  maxmemory-policy allkeys-lfu
+  timeout 300
+  tcp-keepalive 60
+  appendonly no
+  save ""
+
+dataStorage:
+  enabled: false
+
+replica:
+  enabled: false
+
+metrics:
+  enabled: true
+  exporter:
+    extraEnvs:
+      REDIS_ADDR: rediss://127.0.0.1:6379
+      REDIS_EXPORTER_TLS_CA_CERT_FILE: /tls/ca.crt
+    extraVolumeMounts:
+      - name: valkey-server-tls-exporter
+        mountPath: /tls
+        readOnly: true
+    extraExporterSecrets:
+      - name: valkey-server-tls
+    resources:
+      requests:
+        cpu: 20m
+        memory: 32Mi
+      limits:
+        cpu: 200m
+        memory: 96Mi
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+
+networkPolicy:
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backend
+      ports:
+        - protocol: TCP
+          port: 6379
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9121

@@ -72,9 +72,16 @@ spec:
               readOnly: true
             - name: nginx-tmp
               mountPath: /tmp
+            # The entrypoint renders /etc/nginx/templates/default.conf.template
+            # into this directory at startup; with readOnlyRootFilesystem the
+            # write fails and the container exits before nginx ever starts.
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
       volumes:
         - name: runtime-config
           configMap:
             name: {{ .Release.Name }}-runtime-config
         - name: nginx-tmp
+          emptyDir: {}
+        - name: nginx-conf
           emptyDir: {}

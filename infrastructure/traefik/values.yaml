@@ -1,5 +1,9 @@
 deployment:
-  replicas: 2
+  # DaemonSet, not Deployment: the web/websecure entrypoints bind hostPort 80/443,
+  # so at most one pod can ever run per node. A DaemonSet scoped by the
+  # control-plane nodeSelector below is exactly one pod today and scales itself
+  # when master-2/master-3 are added to inventory.ini.
+  kind: DaemonSet
 
 podDisruptionBudget:
   enabled: true
@@ -47,9 +51,8 @@ ingressRoute:
 api:
   dashboard: true
 
-logs:
-  general:
-    level: INFO
+log:
+  level: INFO
 
 accessLog:
   enabled: true

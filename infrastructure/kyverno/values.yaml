@@ -1,0 +1,38 @@
+admissionController:
+  replicas: 1
+  # Single replica on a Pi node can restart/OOM; without this, the default
+  # failurePolicy (Fail) would block ALL resource creation cluster-wide
+  # while the pod is down. Revisit once replicas > 1.
+  container:
+    extraArgs:
+      forceFailurePolicyIgnore: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 384Mi
+
+backgroundController:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+reportsController:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+cleanupController:
+  enabled: false

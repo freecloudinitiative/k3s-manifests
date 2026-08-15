@@ -54,6 +54,15 @@ spec:
     enablePodAntiAffinity: true
     podAntiAffinityType: required
     topologyKey: kubernetes.io/hostname
+    # Required anti-affinity needs one schedulable node per instance. The
+    # k3s-node-labeling role taints the low-memory worker with
+    # memory=limited:NoSchedule, which would otherwise leave only two eligible
+    # nodes for three instances and hang the third replica in Pending forever.
+    tolerations:
+      - key: memory
+        operator: Equal
+        value: limited
+        effect: NoSchedule
 
   monitoring:
     enablePodMonitor: true

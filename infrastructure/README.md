@@ -35,6 +35,12 @@ administrative OpenBao token.
 - `kube-prometheus-stack`, `alloy`, `loki`, `tempo`, `opentelemetry`: private observability stack.
 - `metallb`: bare-metal address allocation where an explicit public LoadBalancer is required.
 - `traefik`: public HTTPS ingress controller.
+- `kyverno`, `kyverno-policies`: policy-as-code admission controller and its
+  cluster policies (resource requests/limits, no `:latest` tags, non-root,
+  image registry allowlist). All policies currently run in `Audit` mode —
+  they report violations via `PolicyReport`/`ClusterPolicyReport` but do not
+  block anything. Promote individual policies to `Enforce` once existing
+  workloads are compliant.
 
 Secrets are never stored in plaintext in this repository. OpenBao recovery
 material and bootstrap credentials must remain outside both Git and Kubernetes.

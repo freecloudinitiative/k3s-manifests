@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: garage
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave-health: all
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    # The upstream chart is not published in a Helm repository. Pin the exact
+    # source commit so a branch update cannot mutate a production deployment.
+    - repoURL: https://git.deuxfleurs.fr/Deuxfleurs/garage.git
+      targetRevision: c3c8af9a66714c5697f6fd123d2e9b5b32027772
+      path: script/helm/garage
+      helm:
+        valueFiles:
+          - $values/infrastructure/garage/values.yaml
+    - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
+      targetRevision: HEAD
+      path: infrastructure/garage
+      ref: values
+      directory:
+        include: '{rpc-secret.yaml,networkpolicy.yaml}'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: garage
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true

@@ -1,0 +1,110 @@
+garage:
+  replicationFactor: "3"
+  consistencyMode: consistent
+  metadataAutoSnapshotInterval: 6h
+  existingRpcSecret: garage-rpc-secret
+  s3:
+    api:
+      region: fci-local
+      # DNS-style bucket routing can be enabled after stable DNS exists.
+      rootDomain: ""
+    web:
+      rootDomain: ""
+
+deployment:
+  kind: StatefulSet
+  replicaCount: 3
+  podManagementPolicy: Parallel
+
+# The upstream chart still defaults to its legacy amd64-only repository. The
+# documented image below is multi-architecture and supports mixed k3s nodes.
+image:
+  repository: dxflrs/garage
+  tag: v2.3.0@sha256:866bd13ed2038ba7e7190e840482bc27234c4afaf77be8cfa439ae088c1e4690
+  pullPolicy: IfNotPresent
+
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+persistence:
+  enabled: true
+  meta:
+    storageClass: longhorn-local
+    size: 2Gi
+  data:
+    storageClass: longhorn-local
+    size: 100Gi
+
+service:
+  type: ClusterIP
+
+ingress:
+  s3:
+    api:
+      enabled: false
+    web:
+      enabled: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3903
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 3903
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: garage
+        topologyKey: kubernetes.io/hostname
+
+tolerations:
+  - key: memory
+    operator: Equal
+    value: limited
+    effect: NoSchedule
+
+monitoring:
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring
+      labels:
+        release: kube-prometheus-stack
+      interval: 30s
+      scrapeTimeout: 10s

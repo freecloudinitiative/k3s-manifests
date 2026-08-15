@@ -9,6 +9,7 @@ spec:
     - namespaces:
         - authentik
         - backend
+        - zot-registry
         - monitoring
         - platform-database
         - valkey

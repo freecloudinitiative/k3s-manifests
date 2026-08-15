@@ -30,6 +30,7 @@ administrative OpenBao token.
 - `platform-postgresql`: three-instance PostgreSQL cluster for platform control-plane data and Authentik.
 - `authentik`: identity provider, currently exposed through a temporary NodePort.
 - `valkey`: private, Redis-protocol cache/Pub/Sub service for backend replicas.
+- `zot-registry`: private Zot OCI registry backed by Garage object storage.
 - `longhorn`: CSI block storage with explicit replicated and node-local storage classes.
 - `garage`: private, three-node S3-compatible object storage for the storage service and backup targets.
 - `kube-prometheus-stack`, `alloy`, `loki`, `tempo`, `opentelemetry`: private observability stack.

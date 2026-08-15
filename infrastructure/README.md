@@ -21,6 +21,14 @@ OpenBao traffic inside the cluster remains TLS-encrypted, and External Secrets
 authenticates with a short-lived Kubernetes ServiceAccount token rather than an
 administrative OpenBao token.
 
+**Target state (production):** these NodePorts (30443, 30001, 30090, 30900,
+...) are a bootstrap-only convenience and must not remain open. All access
+should go through Traefik on 80/443 only - either directly on the LAN or via
+the `cloudflared` tunnel for public hostnames - using hostname-based
+`Ingress`/`IngressRoute` resources per service (see `cloudflared` and
+`traefik` below). Remove each NodePort Service once its hostname route is
+verified working end-to-end.
+
 ## Components
 
 - `argocd`: GitOps reconciliation and configuration.
@@ -42,6 +50,16 @@ administrative OpenBao token.
   they report violations via `PolicyReport`/`ClusterPolicyReport` but do not
   block anything. Promote individual policies to `Enforce` once existing
   workloads are compliant.
+- `cloudflared`: Cloudflare Tunnel connector. Forwards every public hostname
+  to Traefik's ClusterIP Service; Traefik does the actual per-hostname
+  routing via the `Ingress`/`IngressRoute` resources in `infrastructure/traefik`.
+  The tunnel itself (and its DNS records) is created by the separate
+  [terraform-cloudflare-infra](https://github.com/freecloudinitiative/terraform-cloudflare-infra)
+  repo; this chart only runs the connector. Its `TUNNEL_TOKEN` comes from
+  OpenBao via `external-secret-cloudflared.yaml` — seed it manually with
+  the `tunnel_token` output from that Terraform run
+  (`vault kv put secret/cloudflared tunnel-token=...` against OpenBao, or
+  the equivalent OpenBao UI action).
 
 Secrets are never stored in plaintext in this repository. OpenBao recovery
 material and bootstrap credentials must remain outside both Git and Kubernetes.

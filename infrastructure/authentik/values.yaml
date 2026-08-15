@@ -84,12 +84,12 @@ server:
       enabled: true
       interval: 30s
   ingress:
-    enabled: false
+    enabled: true
     ingressClassName: traefik
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-production
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
-      traefik.ingress.kubernetes.io/router.middlewares: traefik-public-chain@kubernetescrd
+      traefik.ingress.kubernetes.io/router.middlewares: traefik-security-headers@kubernetescrd
     hosts:
       - auth.freecloudinitiative.com
     tls:
@@ -97,9 +97,7 @@ server:
         hosts:
           - auth.freecloudinitiative.com
   service:
-    type: NodePort
-    nodePortHttp: 30900
-    nodePortHttps: 30943
+    type: ClusterIP
 
 worker:
   replicas: 2

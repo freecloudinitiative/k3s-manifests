@@ -4,22 +4,34 @@ Core Kubernetes services are managed by Argo CD using the App-of-Apps pattern.
 
 ## Access model
 
-During the current bootstrap phase, administrative services are available from
-the master-node IP through the original path routes and selected NodePorts:
+Everything goes through Traefik on 80/443 - no NodePorts. Locally on the LAN,
+or publicly via the `cloudflared` tunnel once `terraform-cloudflare-infra` is
+applied, using the master-node IP or `freecloudinitiative.com` interchangeably
+today:
 
 ```text
-Argo CD:    http://MASTER_IP/argocd/ or https://MASTER_IP:30443/
-Grafana:    http://MASTER_IP/grafana/ or http://MASTER_IP:30001/
-Prometheus: http://MASTER_IP/prometheus/ or http://MASTER_IP:30090/
+Argo CD:    http://MASTER_IP/argocd/      -> also freecloudinitiative.com/argocd
+Grafana:    http://MASTER_IP/grafana/     -> also freecloudinitiative.com/grafana
+Prometheus: http://MASTER_IP/prometheus/  -> also freecloudinitiative.com/prometheus
 OpenBao:    http://MASTER_IP/ui/
-Authentik:  http://MASTER_IP:30900/
+Authentik:  https://auth.freecloudinitiative.com/
 ```
 
-This is transitional access and should be restricted by the host firewall or a
-trusted source-IP allowlist. Domain-based TLS ingress will be configured later.
-OpenBao traffic inside the cluster remains TLS-encrypted, and External Secrets
-authenticates with a short-lived Kubernetes ServiceAccount token rather than an
-administrative OpenBao token.
+Most services are reached by **path** on the root domain (`/argocd`,
+`/grafana`, ...) via plain `Ingress` resources in `infrastructure/traefik`.
+Authentik is the one exception: it gets its own **subdomain**
+(`auth.freecloudinitiative.com`) with a cert-manager/Let's Encrypt
+certificate on Traefik's `websecure` entrypoint, because running an identity
+provider behind a path prefix breaks its cookies and OIDC redirect URIs.
+Follow that same pattern (dedicated subdomain, not a path) for anything else
+that can't tolerate being under a shared root domain - the `target` override
+in `terraform-cloudflare-infra`'s `services` variable exists for exactly this
+case.
+
+OpenBao traffic inside the cluster remains TLS-encrypted, and External
+Secrets authenticates with a short-lived Kubernetes ServiceAccount token
+rather than an administrative OpenBao token. OpenBao's `/ui/` path itself is
+LAN-only for now, not tunneled.
 
 ## Components
 
@@ -28,7 +40,10 @@ administrative OpenBao token.
 - `external-secrets`: least-privilege synchronization from OpenBao.
 - `cloudnative-pg`: PostgreSQL lifecycle, failover, TLS, role, and database management.
 - `platform-postgresql`: three-instance PostgreSQL cluster for platform control-plane data and Authentik.
-- `authentik`: identity provider, currently exposed through a temporary NodePort.
+- `authentik`: identity provider, reachable at `auth.freecloudinitiative.com`
+  via a dedicated Traefik `Ingress` (TLS-only `websecure` entrypoint,
+  cert-manager-issued certificate) - not a NodePort, and not a path prefix
+  (Authentik doesn't tolerate running under one).
 - `valkey`: private, Redis-protocol cache/Pub/Sub service for backend replicas.
 - `zot-registry`: private Zot OCI registry backed by Garage object storage.
 - `longhorn`: CSI block storage with explicit replicated and node-local storage classes.
@@ -42,6 +57,17 @@ administrative OpenBao token.
   they report violations via `PolicyReport`/`ClusterPolicyReport` but do not
   block anything. Promote individual policies to `Enforce` once existing
   workloads are compliant.
+- `cloudflared`: Cloudflare Tunnel connector. Forwards the root domain (and
+  Authentik's subdomain) to Traefik's ClusterIP Service; Traefik does the
+  actual routing - by path for most services, by hostname for Authentik -
+  via the `Ingress` resources in `infrastructure/traefik` and `authentik`.
+  The tunnel itself (and its DNS records) is created by the separate
+  [terraform-cloudflare-infra](https://github.com/freecloudinitiative/terraform-cloudflare-infra)
+  repo; this chart only runs the connector. Its `TUNNEL_TOKEN` comes from
+  OpenBao via `external-secret-cloudflared.yaml` — seed it manually with
+  the `tunnel_token` output from that Terraform run
+  (`vault kv put secret/cloudflared tunnel-token=...` against OpenBao, or
+  the equivalent OpenBao UI action).
 
 Secrets are never stored in plaintext in this repository. OpenBao recovery
 material and bootstrap credentials must remain outside both Git and Kubernetes.

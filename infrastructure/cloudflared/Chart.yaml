@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cloudflared
+description: Cloudflare Tunnel connector for a remotely-managed tunnel (created by terraform-cloudflare-infra)
+type: application
+version: 0.1.0
+appVersion: "2026.8.2"

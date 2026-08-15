@@ -1,0 +1,22 @@
+replicaCount: 2
+
+image:
+  repository: cloudflare/cloudflared
+  tag: "2026.8.2"
+  pullPolicy: IfNotPresent
+
+# Tunnel token is never stored here. It comes from the Terraform-created
+# tunnel's sensitive `tunnel_token` output, seeded into OpenBao by hand, and
+# synced into this namespace by an ExternalSecret
+# (infrastructure/external-secrets/external-secret-cloudflared.yaml).
+tunnelTokenSecret:
+  name: cloudflared-tunnel-token
+  key: tunnel-token
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 128Mi

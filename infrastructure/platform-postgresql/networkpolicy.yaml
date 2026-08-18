@@ -23,12 +23,20 @@ spec:
           podSelector:
             matchLabels:
               app.kubernetes.io/name: authentik
+        # The `backend` namespace hosts multiple services (api-gateway,
+        # iam-service, compute-service, storage-service, ...), each with
+        # its own `app` label. The old `app: backend` selector matched
+        # none of them — a silent connection timeout at startup, not an
+        # error. Every backend-namespace chart that talks to Postgres
+        # carries the shared `fci.io/tier: backend` label instead (see
+        # storage-service's deploy/templates/_helpers.tpl), introduced by
+        # storage-service PR-11 and reused by compute-service PR-17.
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: backend
           podSelector:
             matchLabels:
-              app: backend
+              fci.io/tier: backend
       ports:
         - protocol: TCP
           port: 5432

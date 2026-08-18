@@ -39,3 +39,24 @@ spec:
   databaseRoleReclaimPolicy: retain
   passwordSecret:
     name: authentik-postgresql-credentials
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: storage-role
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  cluster:
+    name: platform-postgresql
+  name: storage
+  comment: storage-service schema owner
+  login: true
+  superuser: false
+  createdb: false
+  createrole: false
+  bypassrls: false
+  connectionLimit: 30
+  databaseRoleReclaimPolicy: retain
+  passwordSecret:
+    name: storage-service-postgresql-credentials

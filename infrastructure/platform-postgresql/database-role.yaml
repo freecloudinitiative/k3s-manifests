@@ -59,4 +59,4 @@ spec:
   connectionLimit: 30
   databaseRoleReclaimPolicy: retain
   passwordSecret:
-    name: storage-service-postgresql-credentials
+    name: storage-postgresql-credentials

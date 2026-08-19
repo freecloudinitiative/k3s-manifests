@@ -7,7 +7,6 @@ README.md                                     What this repo does and how to use
 APPS.md                                       What each app does and its key config.
 ARCHITECTURE.md                               How apps connect. Traffic, secrets, storage, sync order.
 FILES.md                                      This file.
-caveman.md                                    Documentation style guide.
 .gitignore                                    Git ignore rules.
 .vscode/settings.json                         YAML schema associations for editor autocomplete.
 ```

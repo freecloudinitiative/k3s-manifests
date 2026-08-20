@@ -1,0 +1,63 @@
+# image -- OCI image settings.
+# Exactly one of tag or digest must be set; the chart fails if both are empty.
+image:
+  repository: registry.freecloudinitiative.com/frontend
+  # tag is used when digest is empty.
+  tag: ""
+  # digest takes precedence over tag when set (e.g. "sha256:abc123…").
+  digest: ""
+
+# replicaCount -- number of pods.
+replicaCount: 2
+
+# service -- Kubernetes Service settings.
+service:
+  port: 8080
+
+# config -- runtime configuration written into /usr/share/nginx/html/config.js.
+# Field names must match the RuntimeConfig interface in src/lib/runtimeConfig.ts exactly.
+config:
+  appEnv: prod
+  # apiBaseUrl: empty string means same-origin through nginx — the intended production mode.
+  # The frontend never needs to know the backend's internal address.
+  apiBaseUrl: ""
+  oidcAuthority: "https://auth.freecloudinitiative.com/application/o/freecloudinitiative/"
+  oidcClientId: "freecloudinitiative-frontend"
+  oidcRedirectUri: "https://frontend.freecloudinitiative.com/callback"
+  enableRealTerminal: true
+  # wsBaseUrl: empty string means same-origin; deriveSameOriginWsBase() handles it.
+  wsBaseUrl: ""
+
+# apiBackendUrl -- internal cluster address of api-gateway, injected into nginx as
+# ${API_BACKEND_URL} for the /api/ and /ws/ proxy_pass directives.
+# The api-gateway Kubernetes Service exposes port 80 (mapping to pod containerPort 8080).
+apiBackendUrl: "http://api-gateway.backend.svc.cluster.local:80"
+
+# ingress -- Traefik Ingress settings.
+ingress:
+  enabled: true
+  host: frontend.freecloudinitiative.com
+  tlsSecretName: frontend-public-tls
+
+# securityContext -- container-level security settings.
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+# resources -- container resource requests/limits.
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+    ephemeral-storage: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+    ephemeral-storage: 256Mi
+

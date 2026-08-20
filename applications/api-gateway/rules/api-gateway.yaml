@@ -1,0 +1,64 @@
+groups:
+  - name: api-gateway
+    rules:
+      # GatewayHighErrorRate: 5xx ratio > 5% over 5 minutes.
+      - alert: GatewayHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{service="api-gateway", status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{service="api-gateway"}[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "api-gateway high 5xx error rate"
+          description: "api-gateway is returning 5xx responses for more than 5% of requests over the last 5 minutes."
+
+      # GatewayUpstreamDown: circuit breaker open or probing for 2 minutes.
+      # Uses > 0 (open=2, half-open=1) rather than == 2 so brief half-open probe
+      # attempts after each cooldown do not reset Prometheus's 2m 'for' window.
+      - alert: GatewayUpstreamDown
+        expr: gateway_breaker_state > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "api-gateway upstream {{ $labels.upstream }} circuit breaker open"
+          description: "The circuit breaker for upstream {{ $labels.upstream }} has been open/probing for more than 2 minutes."
+
+      # GatewayHighLatency: p95 upstream latency > 1s over 10 minutes.
+      - alert: GatewayHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(gateway_upstream_duration_seconds_bucket[5m])) by (upstream, le)
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "api-gateway high upstream latency (p95 > 1s)"
+          description: "Upstream {{ $labels.upstream }} p95 latency has exceeded 1s for the past 10 minutes."
+
+      # GatewayAuthFailureSpike: sustained auth failure rate > 10/s for 5 minutes.
+      # This is the alert most worth waking someone for: a sustained rise means
+      # either a broken deploy or someone probing with forged tokens.
+      - alert: GatewayAuthFailureSpike
+        expr: sum(rate(gateway_auth_failures_total[1m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "api-gateway authentication failure spike"
+          description: "api-gateway is seeing more than 10 auth failures per second — this may indicate a broken deployment or a token-probing attack."
+
+      # GatewayJWKSRefreshFailing: any JWKS refresh failure in 15 minutes.
+      - alert: GatewayJWKSRefreshFailing
+        expr: sum(rate(gateway_jwks_refreshes_total{outcome="failure"}[15m])) > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "api-gateway JWKS refresh failing"
+          description: "api-gateway has been unable to refresh its JWKS for the last 15 minutes. Token validation may start failing if the signing key rotates."

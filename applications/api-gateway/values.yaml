@@ -1,0 +1,165 @@
+# Number of pod replicas. Two gives rolling-update availability and topology
+# spread across worker-1 and worker-2 without requiring a third schedulable node.
+replicaCount: 2
+
+image:
+  repository: registry.freecloudinitiative.com/api-gateway
+  pullPolicy: IfNotPresent
+  # tag is injected by the ArgoCD Application via helm.parameters (image.tag=sha-<12>).
+  # Leave empty here so that a missing parameter causes an explicit helm template failure
+  # rather than a silent fallback. See deploy/templates/_helpers.tpl: api-gateway.image.
+  tag: ""
+  # digest pins a release immutably; when set it overrides tag.
+  # Example: sha256:abc123...
+  digest: ""
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  containerPort: 8080
+  metricsPort: 9090
+
+# terminationGracePeriodSeconds must be > platform-common's ShutdownGrace (25s)
+# + the load-balancer drain window (5s) so in-flight requests complete before SIGKILL.
+terminationGracePeriodSeconds: 40
+
+resources:
+  # PR-16: limits kept at 100m/500m CPU and 128Mi/256Mi memory — unchanged
+  # pending the baseline measurement run on the Pi k3s cluster. Do not raise
+  # limits to make load-test thresholds pass: if the gateway needs more than
+  # 500m CPU at 50 VUs against a stub, that is a finding to investigate, not
+  # a number to adjust. Update this comment with measurement results when
+  # the baseline table in README.md and loadtest/README.md is populated.
+  requests:
+    cpu: 100m
+    memory: 128Mi
+    ephemeral-storage: 50Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+    ephemeral-storage: 100Mi
+
+# podSecurityContext applies to the Pod as a whole (fsGroup, runAsNonRoot, seccompProfile).
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+# securityContext applies to the api-gateway container.
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# The gateway never calls the Kubernetes API — mounting a service account token
+# would only create an extra credential that a compromise could pivot with.
+automountServiceAccountToken: false
+
+# Pod Disruption Budget — keeps at least one pod available during voluntary disruptions.
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# NetworkPolicy — restrict ingress/egress to declared peers only.
+networkPolicy:
+  enabled: true
+
+# Topology spread constrains pod placement so both pods don't land on the same node.
+# whenUnsatisfiable: ScheduleAnyway because only worker-1 and worker-2 are schedulable
+# by default (master and worker-3 carry a NoSchedule taint); DoNotSchedule would
+# leave the second replica Pending.
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: api-gateway
+
+# Environment configuration — non-secret values. Secrets (signing key, Valkey
+# password) are mounted from ExternalSecret-managed Kubernetes Secrets.
+config:
+  serviceNamespace: backend
+  logLevel: info
+  environment: production
+  iamServiceURL: "http://iam-service.backend.svc.cluster.local"
+  computeServiceURL: "http://compute-service.backend.svc.cluster.local"
+  databaseServiceURL: "http://database-service.backend.svc.cluster.local"
+  storageServiceURL: "http://storage-service.backend.svc.cluster.local"
+  terminalGatewayURL: "http://terminal-gateway.backend.svc.cluster.local"
+  valkeyURL: "valkey.valkey.svc.cluster.local:6379"
+  # Path to the Valkey TLS CA certificate inside the container.
+  # Must equal the valkey-ca-cert volumeMount's mountPath joined with the Secret
+  # item's path (deploy/templates/deployment.yaml: mountPath=/etc/fci/tls, path=ca.crt).
+  valkeyCACertPath: "/etc/fci/tls/ca.crt"
+  # Authentik OIDC — JWKS and issuer URL.
+  # Source: authentik/values.yaml:94 (host = auth.freecloudinitiative.com) +
+  # authentik/blueprint.yaml (app slug = freecloudinitiative).
+  # Issuer format follows Authentik's documented convention:
+  #   https://<host>/application/o/<slug>/   (trailing slash is load-bearing: the
+  # iss claim in the JWT must match byte-for-byte).
+  # Verified against: authentik/blueprint.yaml (source of truth; cluster endpoint
+  # https://auth.freecloudinitiative.com/application/o/freecloudinitiative/.well-known/openid-configuration
+  # was not reachable from the dev machine at the time this was written — confirm
+  # against the live discovery doc when the cluster is accessible).
+  authentikIssuer: "https://auth.freecloudinitiative.com/application/o/freecloudinitiative/"
+  # OIDC_CLIENT_ID is the Authentik application client_id (blueprint.yaml `client_id` field).
+  # ⚠ This is NOT the internal JWT issuer. The internal JWT `iss` claim is "fci-gateway"
+  # (iam-service/cmd/server/main.go:123) and is configured separately. Conflating the two
+  # identities caused the defect this comment exists to prevent.
+  authentikClientID: "freecloudinitiative-frontend"
+  # Allowed CORS origins — must match the SPA's public origin (blueprint.yaml `redirect_uris`).
+  allowedOrigins: "https://frontend.freecloudinitiative.com"
+
+# Secret references — names of Kubernetes Secrets created by ExternalSecret.
+secrets:
+  # Secret holding the Ed25519 internal signing key at key "internal-signing.key"
+  signingKey:
+    secretName: api-gateway-signing-key
+    keyName: internal-signing.key
+  # Secret holding the Valkey password at key "password"
+  valkey:
+    secretName: valkey-password
+    keyName: password
+  # Secret holding the Valkey CA cert at key "ca.crt"
+  valkeyCACert:
+    secretName: valkey-ca-cert
+    keyName: ca.crt
+
+# Probe tuning — matches frontend cadence.
+probes:
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+  liveness:
+    initialDelaySeconds: 10
+    periodSeconds: 20
+    failureThreshold: 3
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  namespace: monitoring
+
+prometheusRule:
+  enabled: true
+  namespace: monitoring
+
+grafanaDashboard:
+  enabled: true
+  namespace: monitoring
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

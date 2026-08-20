@@ -1,0 +1,148 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "api-gateway.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "api-gateway.labels" . | nindent 4 }}
+  annotations:
+    # Rolling restart whenever the ConfigMap changes. The sha256 is computed
+    # from the rendered configmap data so a value change produces a new hash.
+    checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "api-gateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "api-gateway.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "api-gateway.fullname" . }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      containers:
+        - name: api-gateway
+          image: "{{ include "api-gateway.image" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.containerPort }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.service.metricsPort }}
+              protocol: TCP
+
+          # Load non-secret config from ConfigMap.
+          envFrom:
+            - configMapRef:
+                name: {{ include "api-gateway.fullname" . }}
+
+          # Downward API — required by platform-common's OTel resource attributes.
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            # Valkey password from Secret — never in a ConfigMap.
+            - name: VALKEY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.valkey.secretName }}
+                  key: {{ .Values.secrets.valkey.keyName }}
+
+          volumeMounts:
+            # The internal signing key is mounted as a file so it never appears
+            # in `kubectl describe pod` or process environment dumps.
+            - name: signing-key
+              mountPath: /etc/fci/keys
+              readOnly: true
+            # Valkey TLS CA cert.
+            - name: valkey-ca-cert
+              mountPath: /etc/fci/tls
+              readOnly: true
+            # readOnlyRootFilesystem: true requires an emptyDir for any runtime
+            # writes. The gateway itself doesn't write to /tmp, but standard Go
+            # tooling (e.g. x/net internals) may; mount one defensively.
+            - name: tmp
+              mountPath: /tmp
+
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+      volumes:
+        - name: signing-key
+          secret:
+            secretName: {{ .Values.secrets.signingKey.secretName }}
+            items:
+              - key: {{ .Values.secrets.signingKey.keyName }}
+                path: internal-signing.key
+            defaultMode: 0400
+        - name: valkey-ca-cert
+          secret:
+            secretName: {{ .Values.secrets.valkeyCACert.secretName }}
+            items:
+              - key: {{ .Values.secrets.valkeyCACert.keyName }}
+                path: ca.crt
+            defaultMode: 0444
+        - name: tmp
+          emptyDir: {}
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

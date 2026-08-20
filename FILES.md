@@ -12,8 +12,6 @@ Makefile                                      Local validation: yamllint, helm l
 .gitignore                                    Git ignore rules.
 .vscode/settings.json                         YAML schema associations for editor autocomplete.
 
-charts/
-  .gitkeep                                    Placeholder until application charts move here.
 ```
 
 ---
@@ -178,7 +176,11 @@ FCI product services. Each is an ArgoCD Application pointing to the service's ow
 applications/README.md                        Notes on application apps.
 
 applications/api-gateway/
-  app.yaml                                    ArgoCD Application: api-gateway repo → deploy/ Helm chart → backend namespace.
+  app.yaml                                    ArgoCD Application for api-gateway Helm chart.
+  Chart.yaml                                  Chart descriptor.
+  values.yaml                                 Default values.
+  rules/api-gateway.yaml                      Prometheus alert rules (loaded via .Files.Get).
+  templates/                                  10 Kubernetes templates.
 
 applications/compute-service/
   app.yaml                                    ArgoCD Application: compute-service repo → deploy/ → backend namespace.

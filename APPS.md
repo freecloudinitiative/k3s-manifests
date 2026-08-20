@@ -299,7 +299,7 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 ### api-gateway
 
-**What**: HTTP reverse proxy and auth gateway for all FCI backend services. Deployed from `api-gateway` repo's `deploy/` Helm chart.
+**What**: HTTP reverse proxy and auth gateway for all FCI backend services. Deployed from `applications/api-gateway` Helm chart.
 
 **Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 

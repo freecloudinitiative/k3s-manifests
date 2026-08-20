@@ -1,0 +1,9 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "database-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "database-service.labels" . | nindent 4 }}
+spec:
+{{ .Files.Get "rules/database-service.yaml" | indent 2 }}

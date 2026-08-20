@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "database-service.fullname" . }}-observer
+  labels:
+    {{- include "database-service.labels" . | nindent 4 }}
+rules:
+  # PR-03: resolve the namespace shared with compute-service.
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list"]
+  # PR-04: list/watch customer Cluster state without maintaining a read binding
+  # in every namespace. This also reveals platform Cluster specs, which contain
+  # no Secret data. CNPG writes are deliberately absent at cluster scope.
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters"]
+    verbs: ["get", "list", "watch"]

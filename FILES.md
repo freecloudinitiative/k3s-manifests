@@ -186,7 +186,11 @@ applications/compute-service/
   app.yaml                                    ArgoCD Application: compute-service repo → deploy/ → backend namespace.
 
 applications/database-service/
-  app.yaml                                    ArgoCD Application: database-service repo → deploy/ → backend namespace.
+  app.yaml                                    ArgoCD Application for database-service Helm chart.
+  Chart.yaml                                  Chart descriptor.
+  values.yaml                                 Default values.
+  rules/database-service.yaml                 Prometheus alert rules (loaded via .Files.Get).
+  templates/                                  11 Kubernetes templates.
 
 applications/iam-service/
   app.yaml                                    ArgoCD Application: iam-service repo → deploy/ → backend namespace.

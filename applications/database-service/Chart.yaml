@@ -1,0 +1,12 @@
+apiVersion: v2
+name: database-service
+description: FCI customer database control plane with namespace-scoped CNPG access.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/freecloudinitiative/database-service
+sources:
+  - https://github.com/freecloudinitiative/database-service
+maintainers:
+  - name: FCI Platform Team
+    email: platform@freecloudinitiative.dev

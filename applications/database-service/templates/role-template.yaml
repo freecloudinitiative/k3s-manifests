@@ -1,0 +1,52 @@
+{{- range $namespace := .Values.customerNamespaces }}
+{{- if not (regexMatch "^fci-cust-[a-z0-9]([-a-z0-9]*[a-z0-9])?$" $namespace) }}
+{{- fail (printf "customerNamespaces entry %q must be an fci-cust-* namespace" $namespace) }}
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: database-service-reconciler
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: database-service
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+rules:
+  # PR-03/PR-04: create, converge, observe, stop, and delete customer clusters.
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+  # PR-09: manage scheduled and on-demand customer backups.
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["scheduledbackups", "backups"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+  # PR-05: read CNPG-generated credentials and maintain customer-scoped copies.
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update"]
+  # PR-03: observe storage and delete retained PVCs during database deletion.
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "delete"]
+  # PR-04: observe CNPG pod readiness; exec is never required.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: database-service-reconciler
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: database-service
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: database-service-reconciler
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "database-service.fullname" $ }}
+    namespace: {{ $.Release.Namespace }}
+{{- end }}

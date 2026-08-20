@@ -73,9 +73,12 @@ jobs:
       - name: Install kubeconform
         run: |
           KUBECONFORM_VERSION=v0.8.0
+          KUBECONFORM_SHA256="9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883"
           mkdir -p "$HOME/bin"
-          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
-            | tar xz -C "$HOME/bin" kubeconform
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" -o /tmp/kubeconform.tar.gz
+          echo "${KUBECONFORM_SHA256}  /tmp/kubeconform.tar.gz" | sha256sum -c -
+          tar xz -C "$HOME/bin" -f /tmp/kubeconform.tar.gz kubeconform
+          rm /tmp/kubeconform.tar.gz
           echo "$HOME/bin" >> "$GITHUB_PATH"
 
       - name: Schema-validate rendered charts
@@ -90,12 +93,14 @@ jobs:
 
       - name: Install helm-unittest
         run: |
-          # Helm 4 requires --verify=false for git plugin installs (no GPG webhook).
-          if helm version --short | grep -q '^v4'; then
-            helm plugin install https://github.com/helm-unittest/helm-unittest.git --version v1.1.2 --verify=false
-          else
-            helm plugin install https://github.com/helm-unittest/helm-unittest.git --version v1.1.2
-          fi
+          HELM_UNITTEST_VERSION=v1.1.2
+          HELM_UNITTEST_SHA256="de03d6b7ba7683282064702d0b36fbbe812ab2a22691fa3a8b2ce57c2682609c"
+          PLUGIN_DIR="$(helm env HELM_PLUGINS)/unittest"
+          mkdir -p "$PLUGIN_DIR"
+          curl -sSL "https://github.com/helm-unittest/helm-unittest/releases/download/${HELM_UNITTEST_VERSION}/helm-unittest-linux-amd64-1.1.2.tgz" -o /tmp/helm-unittest.tgz
+          echo "${HELM_UNITTEST_SHA256}  /tmp/helm-unittest.tgz" | sha256sum -c -
+          tar xz -C "$PLUGIN_DIR" -f /tmp/helm-unittest.tgz
+          rm /tmp/helm-unittest.tgz
 
       - name: Unit test Helm Charts
         run: |

@@ -62,11 +62,15 @@ jobs:
           MAX_CONNS=$(yq '.spec.postgresql.parameters.max_connections' infrastructure/platform-postgresql/cluster.yaml)
           echo "PostgreSQL max_connections: $MAX_CONNS"
 
+          RESERVED_CONNS=15
+          SERVICE_LIMIT=$((MAX_CONNS - RESERVED_CONNS))
+          echo "Service connection budget: $SERVICE_LIMIT (reserving $RESERVED_CONNS for CNPG system operations)"
+
           TOTAL_LIMIT=$(grep "connectionLimit:" infrastructure/platform-postgresql/database-role.yaml | awk '{sum += $2} END {print sum}')
           echo "Total DatabaseRole connectionLimit sum: $TOTAL_LIMIT"
 
-          if [ "$TOTAL_LIMIT" -gt "$MAX_CONNS" ]; then
-            echo "ERROR: Total connectionLimit ($TOTAL_LIMIT) exceeds max_connections ($MAX_CONNS)!"
+          if [ "$TOTAL_LIMIT" -gt "$SERVICE_LIMIT" ]; then
+            echo "ERROR: Total connectionLimit ($TOTAL_LIMIT) exceeds the service budget ($SERVICE_LIMIT), which reserves $RESERVED_CONNS connections for CNPG operations!"
             exit 1
           fi
-          echo "OK: Connection limit total ($TOTAL_LIMIT) is within max_connections ($MAX_CONNS)."
+          echo "OK: Connection limit total ($TOTAL_LIMIT) is within service budget ($SERVICE_LIMIT)."

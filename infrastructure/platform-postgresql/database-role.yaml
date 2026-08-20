@@ -79,11 +79,11 @@ spec:
   bypassrls: false
   # DB_MAX_CONNS default: 5 (iam-service internal/config/config.go)
   # Replicas: 1 (Raspberry Pi cluster, single replica per service)
-  # Formula: DB_MAX_CONNS × replicas + headroom = 5 × 1 + 5 = 10
+  # Formula: DB_MAX_CONNS × replicas = 5 × 1 = 5
   # Connection-limit budget check (max_connections=200):
-  #   platform=80, authentik=60, storage=30, iam=10, compute=10, database=10 → total 200
-  #   Practical limit: 185 (leaves ≥15 for CNPG superuser, replication, pg_monitor)
-  connectionLimit: 10
+  #   platform=80, authentik=60, storage=30, iam=5, compute=5, database=5 → total 185
+  #   Leaves 15 connections reserved for CNPG superuser, replication, and pg_monitor
+  connectionLimit: 5
   databaseRoleReclaimPolicy: retain
   passwordSecret:
     name: iam-postgresql-credentials
@@ -106,8 +106,8 @@ spec:
   bypassrls: false
   # DB_MAX_CONNS default: 5 (compute-service internal/config/config.go)
   # Replicas: 1 (Raspberry Pi cluster, single replica per service)
-  # Formula: DB_MAX_CONNS × replicas + headroom = 5 × 1 + 5 = 10
-  connectionLimit: 10
+  # Formula: DB_MAX_CONNS × replicas = 5 × 1 = 5
+  connectionLimit: 5
   databaseRoleReclaimPolicy: retain
   passwordSecret:
     name: compute-postgresql-credentials
@@ -130,8 +130,8 @@ spec:
   bypassrls: false
   # DB_MAX_CONNS default: 5 (database-service internal/config/config.go)
   # Replicas: 1 (Raspberry Pi cluster, single replica per service)
-  # Formula: DB_MAX_CONNS × replicas + headroom = 5 × 1 + 5 = 10
-  connectionLimit: 10
+  # Formula: DB_MAX_CONNS × replicas = 5 × 1 = 5
+  connectionLimit: 5
   databaseRoleReclaimPolicy: retain
   passwordSecret:
     name: database-postgresql-credentials

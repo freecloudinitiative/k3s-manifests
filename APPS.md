@@ -148,18 +148,18 @@ All policies in `Audit` mode — log violations but do not block. Can be switche
 
 Databases sharing this cluster: `platform` (default), `authentik`. The four FCI backend services (iam, compute, database, storage) all share the `platform` database separated by schema, not by separate databases.
 
-**DatabaseRoles** (connection-limit total: 185 of 200; ≥15 reserved for CNPG superuser/replication/pg_monitor):
+**DatabaseRoles** (connection-limit total: 185 of 200; 15 reserved for CNPG superuser/replication/pg_monitor):
 
 | Role | Schema | `connectionLimit` | Credentials Secret (platform-database) |
 |---|---|---|---|
 | `platform` | — | 80 | `platform-postgresql-credentials` |
 | `authentik` | — | 60 | `authentik-postgresql-credentials` |
 | `storage` | `storage` | 30 | `storage-postgresql-credentials` |
-| `iam` | `iam` | 10 | `iam-postgresql-credentials` |
-| `compute` | `compute` | 10 | `compute-postgresql-credentials` |
-| `database` | `database` | 10 | `database-postgresql-credentials` |
+| `iam` | `iam` | 5 | `iam-postgresql-credentials` |
+| `compute` | `compute` | 5 | `compute-postgresql-credentials` |
+| `database` | `database` | 5 | `database-postgresql-credentials` |
 
-Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica + 5 headroom = **10**.
+Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 ---
 

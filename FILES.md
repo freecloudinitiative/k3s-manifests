@@ -6,9 +6,14 @@
 README.md                                     What this repo does and how to use it.
 APPS.md                                       What each app does and its key config.
 ARCHITECTURE.md                               How apps connect. Traffic, secrets, storage, sync order.
+CHARTS.md                                     Chart-authoring contract: charts/<service>/, tests/, YAML-only rule.
 FILES.md                                      This file.
+Makefile                                      Local validation: yamllint, helm lint/template, kubeconform, helm unittest.
 .gitignore                                    Git ignore rules.
 .vscode/settings.json                         YAML schema associations for editor autocomplete.
+
+charts/
+  .gitkeep                                    Placeholder until application charts move here.
 ```
 
 ---

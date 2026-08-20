@@ -2,14 +2,11 @@
 
 ## Where Charts Live
 
-Application Helm charts live at `charts/<service>/`. Never beside an ArgoCD Application.
+Application Helm charts live at `applications/<service>/` alongside their ArgoCD Application descriptor (`app.yaml`).
 
-- **`applications/`** — what ArgoCD is told: `app.yaml` points at a source path and destination namespace.
-- **`charts/`** — what ArgoCD renders: `Chart.yaml`, `values.yaml`, `templates/`, and `tests/`.
+- **`applications/<service>/`** — contains `app.yaml`, `Chart.yaml`, `values.yaml`, `templates/`, and `rules/` (if any).
 
-Putting a `Chart.yaml` next to an `app.yaml` under `applications/<service>/` makes it unclear which file ArgoCD reads. Keep them apart.
-
-Inline infrastructure charts (`infrastructure/cloudflared/`, `applications/random-logger/`) stay where they are. They are not application-service charts.
+Inline infrastructure charts (`infrastructure/cloudflared/`) stay where they are.
 
 ## YAML Only
 
@@ -70,10 +67,10 @@ make validate
 
 That runs, in order:
 
-1. `yamllint .` and `helm lint` every `Chart.yaml` under `infrastructure/`, `applications/`, and `charts/`
+1. `yamllint .` and `helm lint` every `Chart.yaml` under `infrastructure/` and `applications/`
 2. `helm template` every chart to `/dev/null`
 3. `helm template` piped through `kubeconform -strict -summary -ignore-missing-schemas`
-4. `helm unittest` for every chart under `charts/`
+4. `helm unittest` for any test suites under `applications/`
 
 `kubeconform` stays in strict mode. `-ignore-missing-schemas` skips CRDs that have no built-in schema (`ServiceMonitor`, `PrometheusRule`). It does not disable strict checking of core Kubernetes types.
 

@@ -1,6 +1,6 @@
 .PHONY: lint template schema unittest validate
 
-FIND_CHARTS = find infrastructure applications charts -type f -name Chart.yaml -exec dirname {} \;
+FIND_CHARTS = find infrastructure applications -type f -name Chart.yaml -exec dirname {} \;
 HELM_SET = --set image.tag=ci
 
 lint:
@@ -25,11 +25,14 @@ schema:
 	done
 
 unittest:
-	@charts=$$(find charts -type f -name Chart.yaml -exec dirname {} \;); \
-	if [ -z "$$charts" ]; then \
-		echo "No charts under charts/; skipping helm unittest"; \
+	@test_dirs=$$(find infrastructure applications -type d -name tests 2>/dev/null); \
+	if [ -z "$$test_dirs" ]; then \
+		echo "No tests found; skipping helm unittest"; \
 	else \
-		helm unittest $$charts; \
+		for dir in $$test_dirs; do \
+			chart=$$(dirname $$dir); \
+			helm unittest $$chart || exit 1; \
+		done; \
 	fi
 
 validate: lint template schema unittest

@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/freecloudinitiative/api-gateway.git'
+    repoURL: 'https://github.com/freecloudinitiative/k3s-manifests.git'
     targetRevision: HEAD
-    path: deploy
+    path: applications/api-gateway
     helm:
       valueFiles:
         - values.yaml

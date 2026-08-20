@@ -1,0 +1,78 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "api-gateway.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "api-gateway.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "api-gateway.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    # The frontend nginx proxies /api/ to the gateway pod on port 8080.
+    # NetworkPolicy ports always match the destination pod port, never the Service
+    # port — this applies to both ingress rules (here) and egress rules in the peer
+    # chart. frontend/deploy/templates/networkpolicy.yaml must therefore permit
+    # egress to namespace backend on port 8080 (pod port), not port 80 (Service port).
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: frontend
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Prometheus scrapes the metrics endpoint. Pod port 9090 = Service port 9090.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090
+
+  egress:
+    # kube-dns — required for all service-name resolution (restricted to kube-system).
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Authentik JWKS / token endpoint — pod port 9000 (Authentik's internal HTTP API).
+    # k3s-manifests/infrastructure/authentik/networkpolicy.yaml must permit
+    # ingress from namespace backend on pod port 9000.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: authentik
+      ports:
+        - protocol: TCP
+          port: 9000
+    # Valkey cache — account cache and idempotency store. Pod port 6379 = Service port 6379.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: valkey
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Backend services proxied by the gateway — pod ports 8080 (HTTP) and 8443 (HTTPS).
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backend
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8443
+{{- end }}

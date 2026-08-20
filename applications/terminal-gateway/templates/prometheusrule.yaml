@@ -18,7 +18,7 @@ spec:
             summary: Terminal exec streams are not closing with sessions
             description: More than five Kubernetes exec streams have remained open without matching active terminal sessions.
         - alert: TerminalGoroutineGrowth
-          expr: deriv(terminal_goroutines[15m]) > 0 and on() terminal_sessions_active == 0
+          expr: deriv(terminal_goroutines[15m]) > 0 and on(instance) terminal_sessions_active == 0
           for: 15m
           labels:
             severity: warning

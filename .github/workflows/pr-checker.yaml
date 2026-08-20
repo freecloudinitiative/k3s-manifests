@@ -1,10 +1,24 @@
 name: PR Checker
 
 on:
-  pull_request:
-    branches: [main]
   push:
     branches: [main]
+    paths:
+      - 'infrastructure/**'
+      - 'applications/**'
+      - '*.md'
+      - '.yamllint.yaml'
+      - '.github/workflows/pr-checker.yaml'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - 'infrastructure/**'
+      - 'applications/**'
+      - '*.md'
+      - '.yamllint.yaml'
+      - '.github/workflows/pr-checker.yaml'
+  workflow_dispatch:
 
 jobs:
   lint:

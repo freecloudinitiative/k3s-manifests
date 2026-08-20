@@ -30,8 +30,8 @@ config:
 
 # apiBackendUrl -- internal cluster address of api-gateway, injected into nginx as
 # ${API_BACKEND_URL} for the /api/ and /ws/ proxy_pass directives.
-# api-gateway listens on 8080 (nginx-unprivileged convention), not 80.
-apiBackendUrl: "http://api-gateway.backend.svc.cluster.local:8080"
+# The api-gateway Kubernetes Service exposes port 80 (mapping to pod containerPort 8080).
+apiBackendUrl: "http://api-gateway.backend.svc.cluster.local:80"
 
 # ingress -- Traefik Ingress settings.
 ingress:

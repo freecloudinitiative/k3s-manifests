@@ -24,14 +24,15 @@ spec:
           port: 8080
 
   egress:
-    # Forward /api/ and /ws/ to api-gateway.
-    # api-gateway binds on pod port 8080 (nginx-unprivileged convention).
-    # NOTE: port 80 would be wrong — api-gateway's chart has no port-80 listener.
+    # Forward /api/ and /ws/ to api-gateway in namespace backend.
+    # Service port is 80 (mapping to pod port 8080); allow both for pre/post-NAT CNI policies.
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: backend
       ports:
+        - protocol: TCP
+          port: 80
         - protocol: TCP
           port: 8080
 

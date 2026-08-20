@@ -36,7 +36,7 @@ spec:
           env:
             # API_BACKEND_URL is consumed by nginx envsubst when it expands
             # /etc/nginx/templates/default.conf.template into /etc/nginx/conf.d/default.conf.
-            # It must point at api-gateway's pod port (8080), not 80.
+            # It points at api-gateway's Kubernetes Service (port 80).
             - name: API_BACKEND_URL
               value: {{ .Values.apiBackendUrl | quote }}
           securityContext:

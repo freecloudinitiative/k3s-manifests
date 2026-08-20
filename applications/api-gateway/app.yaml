@@ -14,6 +14,9 @@ spec:
     helm:
       valueFiles:
         - values.yaml
+      parameters:
+        - name: image.tag
+          value: sha-0ac98efb497a
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: backend

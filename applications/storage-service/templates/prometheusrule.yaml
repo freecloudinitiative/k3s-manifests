@@ -1,0 +1,71 @@
+{{- if .Values.prometheusRule.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "storage-service.fullname" . }}
+  namespace: {{ .Values.prometheusRule.namespace }}
+  labels:
+    {{- include "storage-service.labels" . | nindent 4 }}
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: storage-service
+      rules:
+        - alert: StorageUsageCollectorFailing
+          expr: |
+            rate(storagesvc_usage_snapshots_total{outcome="error"}[5m]) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "storage-service usage collector is failing snapshots"
+            description: >-
+              The bucket usage collector (PR-07) has recorded failed
+              snapshot attempts for 10m. bucket_usage rows are going
+              stale for affected buckets.
+
+        - alert: StorageObjectStoreErrors
+          expr: |
+            rate(storagesvc_objectstore_errors_total[5m]) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "storage-service is seeing object store errors"
+            description: >-
+              Sustained errors talking to the object store backend over
+              the last 10m, broken out by the `operation` label.
+
+        # This is the one to alert on: a rejection here means PR-10's
+        # Validate refused a generated NetworkPolicy that could have
+        # reached a platform namespace. That is the last line of defense
+        # before RBAC, and it firing at all is worth paging on, not
+        # discovering later in logs.
+        - alert: StorageNetworkPolicyValidateRejection
+          expr: |
+            increase(storagesvc_networkpolicy_validate_rejections_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "storage-service rejected a generated NetworkPolicy"
+            description: >-
+              internal/projection.Validate rejected at least one generated
+              NetworkPolicy in the last 5m — something produced a policy
+              that could have selected a platform namespace. Investigate
+              immediately; see the `reason` label.
+
+        - alert: StorageUnenforcedRulesGrowing
+          expr: |
+            storagesvc_unenforced_rules > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "storage-service has firewall rules with no enforced NetworkPolicy"
+            description: >-
+              storagesvc_unenforced_rules has been above zero for 15m —
+              customer firewall rules exist that are not yet reflected in
+              an applied NetworkPolicy (network_policy.enabled=false, a
+              missing customer namespace, or a stalled reconcile).
+{{- end }}

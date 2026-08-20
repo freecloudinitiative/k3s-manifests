@@ -1,0 +1,28 @@
+# Cluster-scoped ClusterRole, bound cluster-wide via clusterrolebinding.yaml.
+# Kept deliberately minimal and read-only for NetworkPolicy: RBAC cannot
+# restrict a cluster-scoped write by namespace pattern, so any write verb
+# here would let this ServiceAccount touch NetworkPolicy in every
+# namespace, including platform ones — see role-template.yaml for the
+# namespace-scoped write grant instead.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "storage-service.fullname" . }}-cluster
+  labels:
+    {{- include "storage-service.labels" . | nindent 4 }}
+rules:
+  # PR-10 resolves the customer namespace for a network before projecting
+  # into it, and PR-08/PR-16 need to confirm a namespace already exists
+  # (this service never creates or deletes one — that is compute-service's
+  # namespace lifecycle to own).
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list"]
+  # Read-only, cluster-wide, so the reconcile worker (PR-10) can observe
+  # projection state — what NetworkPolicy objects already exist — across
+  # every customer namespace without a namespace-scoped watch per
+  # namespace. Write access is intentionally NOT granted at this scope;
+  # see role-template.yaml.
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch"]

@@ -1,0 +1,171 @@
+# storage-service — Helm values.
+#
+# See prs/PR-11-helm-chart-rbac.md for the design this chart implements,
+# in particular the RBAC section and the reasons behind networkPolicy.enabled.
+
+replicaCount: 2
+revisionHistoryLimit: 3
+
+image:
+  # CI pushes to registry.freecloudinitiative.com/<name>:sha-<12> (see
+  # platform-common/.github/workflows/build-arm64-image.yml, step "Derive
+  # image tags").  The tag or digest MUST be supplied by the caller (e.g.
+  # ArgoCD Application helm.parameters) — an empty tag is a hard error in
+  # deploy/templates/_helpers.tpl.  Never falls back to Chart.appVersion.
+  repository: registry.freecloudinitiative.com/storage-service
+  tag: ""
+  digest: ""
+  pullPolicy: IfNotPresent
+
+# imagePullSecrets is required: registry.freecloudinitiative.com sits behind
+# Traefik's basicAuth middleware (zot-registry-registry-auth@kubernetescrd,
+# k3s-manifests/infrastructure/zot-registry/middleware.yaml).  The zot
+# config.json carries no auth block of its own, so auth is enforced at the
+# ingress layer only; pods cannot bypass it by hitting the ClusterIP Service
+# because the container runtime resolves the external hostname and goes
+# through HTTPS + basicAuth.  Create a Secret of type kubernetes.io/dockerconfigjson
+# with credentials for registry.freecloudinitiative.com and reference it here.
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+logLevel: info
+
+service:
+  httpPort: 80
+  containerPort: 8080
+  metricsPort: 9090
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 192Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# terminationGracePeriodSeconds is 45s, longer than a bare Go HTTP server
+# needs, because the usage collector (PR-07) may be mid-listing against the
+# object store when SIGTERM arrives; cutting it off there leaves a
+# bucket_usage snapshot half-written for the next cycle to sort out.
+terminationGracePeriodSeconds: 45
+
+# kubernetes.enabled gates constructing a real Kubernetes client
+# (KUBERNETES_ENABLED) — this is what makes the RBAC below load-bearing.
+kubernetes:
+  enabled: true
+  inCluster: true
+  qps: 20
+  burst: 30
+  timeoutSeconds: 30
+
+# networkPolicy.enabled gates deploy/templates/networkpolicy.yaml, which
+# applies a NetworkPolicy to storage-service's OWN pod in .Release.Namespace
+# (the backend namespace). It has nothing to do with customer namespaces.
+# Customer-namespace NetworkPolicy projection is runtime behaviour gated
+# separately by kubernetes.enabled and NETWORK_POLICY_ENABLED; this flag
+# is unrelated to and does not change that path.
+networkPolicy:
+  enabled: true
+
+objectStore:
+  enabled: true
+  # Garage's ArgoCD Application is named "garage" and deploys into
+  # namespace "garage" (k3s-manifests/infrastructure/garage/app.yaml), so
+  # the Service is garage.garage.svc.cluster.local, not object-storage —
+  # confirmed by rendering the upstream chart (script/helm/garage at
+  # c3c8af9a66714c5697f6fd123d2e9b5b32027772) with release name "garage",
+  # and cross-checked against zot-registry's identical endpoint.
+  endpoint: "http://garage.garage.svc.cluster.local:3900"
+  bucket: platform
+  # fci-local matches garage.s3.api.region in
+  # k3s-manifests/infrastructure/garage/values.yaml. AWS SDK v2 signs
+  # SigV4 with this value, so it must match the backend exactly.
+  region: fci-local
+  timeout: 10s
+  # caCertPath is empty because Garage sets ingress.s3.api.enabled: false,
+  # declares no TLS block and has no cert-manager Certificate — it serves
+  # plain HTTP on 3900, so there is nothing to verify. Set this to a path
+  # under the objectstore-credentials mount (see deployment.yaml) if the
+  # backend is ever placed behind TLS.
+  caCertPath: ""
+
+usageCollector:
+  enabled: true
+  snapshotInterval: 15m
+  batchSize: 20
+  bucketTimeout: 30s
+  retention: 168h
+
+reconcile:
+  interval: 2s
+  batchSize: 10
+  staleAfter: 5m
+  maxAttempts: 10
+  resyncInterval: 5m
+
+clusterCIDRs:
+  pod: 10.42.0.0/16
+  service: 10.43.0.0/16
+
+quota:
+  cacheTTL: 60s
+  iamTimeout: 5s
+  iamServiceURL: http://iam-service.backend.svc.cluster.local
+
+# automountServiceAccountToken is true here — unlike some sibling charts
+# (e.g. iam-service, which sets it false) — because this service is a real
+# Kubernetes API client: it lists/watches NetworkPolicy and Namespace
+# objects (PR-10) and applies/prunes NetworkPolicy objects into customer
+# namespaces. Set to false and every projection call fails closed.
+automountServiceAccountToken: true
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# proxyUpload.tmpDir mounts an emptyDir at /tmp. PR-05 chose the
+# proxy-upload path (option B) for v1 — the browser cannot reach the object
+# store directly yet — so this service is itself in the streaming path for
+# every upload/download. The handlers stream with io.Copy without
+# buffering into application memory, but readOnlyRootFilesystem: true means
+# there is no writable root filesystem at all, and anything in the request
+# path that expects a writable /tmp (the Go runtime's own TMPDIR default,
+# an HTTP library's transient scratch space) crash-loops instead of
+# degrading — the same class of issue that crash-looped the frontend
+# deployment. Mount it defensively for the same reason: cheap to keep,
+# expensive to diagnose blind if the assumption is wrong.
+proxyUpload:
+  tmpDir: true
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  namespace: monitoring
+
+prometheusRule:
+  enabled: true
+  namespace: monitoring

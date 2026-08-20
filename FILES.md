@@ -196,7 +196,10 @@ applications/iam-service/
   app.yaml                                    ArgoCD Application: iam-service repo → deploy/ → backend namespace.
 
 applications/storage-service/
-  app.yaml                                    ArgoCD Application: storage-service repo → deploy/ → backend namespace.
+  app.yaml                                    ArgoCD Application for storage-service Helm chart.
+  Chart.yaml                                  Chart descriptor.
+  values.yaml                                 Default values.
+  templates/                                  11 Kubernetes templates.
 
 applications/terminal-gateway/
   app.yaml                                    ArgoCD Application: terminal-gateway repo → deploy/ → backend namespace.

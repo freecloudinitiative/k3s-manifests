@@ -100,6 +100,12 @@ Public endpoints (Authentik, Zot Registry) route via Cloudflare + Let's Encrypt 
 | `storage-credentials` | `backend` | Garage S3 credentials for storage service |
 | `terminal-secrets` | `backend` | Terminal gateway signing keys |
 | `valkey-auth` | `valkey` | Valkey ACL password |
+| `storage-postgresql-credentials` | `platform-database` | CNPG `storage` role password (feeds `storage-role` DatabaseRole) |
+| `iam-postgresql-credentials` | `platform-database` | CNPG `iam` role password (feeds `iam-role` DatabaseRole) |
+| `compute-postgresql-credentials` | `platform-database` | CNPG `compute` role password (feeds `compute-role` DatabaseRole) |
+| `database-postgresql-credentials` | `platform-database` | CNPG `database` role password (feeds `database-role` DatabaseRole) |
+
+**Namespace rule**: CNPG resolves `DatabaseRole.spec.passwordSecret` in the namespace where the `DatabaseRole` reconciles (`platform-database`). Secrets that feed a `DatabaseRole` must live in `platform-database`, not `backend`. Backend-namespace copies for pod consumption are separate `ExternalSecret` objects (PR-03, PR-04).
 
 ---
 
@@ -140,7 +146,20 @@ All policies in `Audit` mode — log violations but do not block. Can be switche
 - `primaryUpdateMethod: switchover` — zero-downtime updates.
 - Pod monitor enabled (Prometheus scrapes CNPG exporter).
 
-Databases sharing this cluster: `platform` (default), `authentik`, and one per FCI backend service.
+Databases sharing this cluster: `platform` (default), `authentik`. The four FCI backend services (iam, compute, database, storage) all share the `platform` database separated by schema, not by separate databases.
+
+**DatabaseRoles** (connection-limit total: 185 of 200; ≥15 reserved for CNPG superuser/replication/pg_monitor):
+
+| Role | Schema | `connectionLimit` | Credentials Secret (platform-database) |
+|---|---|---|---|
+| `platform` | — | 80 | `platform-postgresql-credentials` |
+| `authentik` | — | 60 | `authentik-postgresql-credentials` |
+| `storage` | `storage` | 30 | `storage-postgresql-credentials` |
+| `iam` | `iam` | 10 | `iam-postgresql-credentials` |
+| `compute` | `compute` | 10 | `compute-postgresql-credentials` |
+| `database` | `database` | 10 | `database-postgresql-credentials` |
+
+Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica + 5 headroom = **10**.
 
 ---
 

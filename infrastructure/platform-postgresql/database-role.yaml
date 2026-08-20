@@ -60,3 +60,78 @@ spec:
   databaseRoleReclaimPolicy: retain
   passwordSecret:
     name: storage-postgresql-credentials
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: iam-role
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  cluster:
+    name: platform-postgresql
+  name: iam
+  comment: iam-service schema owner (iam schema in platform database)
+  login: true
+  superuser: false
+  createdb: false
+  createrole: false
+  bypassrls: false
+  # DB_MAX_CONNS default: 5 (iam-service internal/config/config.go)
+  # Replicas: 1 (Raspberry Pi cluster, single replica per service)
+  # Formula: DB_MAX_CONNS × replicas + headroom = 5 × 1 + 5 = 10
+  # Connection-limit budget check (max_connections=200):
+  #   platform=80, authentik=60, storage=30, iam=10, compute=10, database=10 → total 200
+  #   Practical limit: 185 (leaves ≥15 for CNPG superuser, replication, pg_monitor)
+  connectionLimit: 10
+  databaseRoleReclaimPolicy: retain
+  passwordSecret:
+    name: iam-postgresql-credentials
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: compute-role
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  cluster:
+    name: platform-postgresql
+  name: compute
+  comment: compute-service schema owner (compute schema in platform database)
+  login: true
+  superuser: false
+  createdb: false
+  createrole: false
+  bypassrls: false
+  # DB_MAX_CONNS default: 5 (compute-service internal/config/config.go)
+  # Replicas: 1 (Raspberry Pi cluster, single replica per service)
+  # Formula: DB_MAX_CONNS × replicas + headroom = 5 × 1 + 5 = 10
+  connectionLimit: 10
+  databaseRoleReclaimPolicy: retain
+  passwordSecret:
+    name: compute-postgresql-credentials
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: database-role
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  cluster:
+    name: platform-postgresql
+  name: database
+  comment: database-service schema owner (database schema in platform database)
+  login: true
+  superuser: false
+  createdb: false
+  createrole: false
+  bypassrls: false
+  # DB_MAX_CONNS default: 5 (database-service internal/config/config.go)
+  # Replicas: 1 (Raspberry Pi cluster, single replica per service)
+  # Formula: DB_MAX_CONNS × replicas + headroom = 5 × 1 + 5 = 10
+  connectionLimit: 10
+  databaseRoleReclaimPolicy: retain
+  passwordSecret:
+    name: database-postgresql-credentials

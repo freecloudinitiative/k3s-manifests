@@ -123,6 +123,23 @@ Pod mounts or references Secret via env/volume
 
 `ClusterSecretStore` authenticates to OpenBao using a Kubernetes ServiceAccount token. OpenBao has a Kubernetes auth role that grants access only to the `external-secrets-openbao` service account.
 
+### Required OpenBao paths (KV v2, mount `secret`)
+
+The following paths must be seeded **out of band** before the corresponding `ExternalSecret` objects can reach `SecretSynced`. An `ExternalSecret` pointing at a missing key stays `SecretSyncedError` forever with no other signal.
+
+| OpenBao path | Property | Consumed by | Target Kubernetes Secret |
+|---|---|---|---|
+| `secret/data/storage` | `postgresql-password` | `storage-role` DatabaseRole | `storage-postgresql-credentials` (platform-database) |
+| `secret/data/iam` | `postgresql-password` | `iam-role` DatabaseRole | `iam-postgresql-credentials` (platform-database) |
+| `secret/data/compute` | `postgresql-password` | `compute-role` DatabaseRole | `compute-postgresql-credentials` (platform-database) |
+| `secret/data/database` | `postgresql-password` | `database-role` DatabaseRole | `database-postgresql-credentials` (platform-database) |
+| `secret/data/platform-postgresql` | `ca-cert` | TLS verification | service CA bundles (backend) |
+
+### CNPG same-namespace resolution rule
+
+`DatabaseRole.spec.passwordSecret` is resolved as a **same-namespace** reference in the namespace where the `DatabaseRole` CR reconciles — the `platform-postgresql` Argo Application's destination, `platform-database`. A credential `ExternalSecret` placed in `backend` is invisible to CNPG and the role's password silently never updates. All `*-postgresql-credentials` Secrets that feed a `DatabaseRole` must therefore live in `platform-database`. Backend-namespace copies that service pods actually mount are separate `ExternalSecret` objects (PR-03, PR-04).
+
+
 ---
 
 ## Storage Flow

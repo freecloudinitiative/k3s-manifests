@@ -6,12 +6,13 @@ GitOps source of truth for the FCI Kubernetes cluster. Everything that runs in t
 
 ArgoCD watches this repo. Any change pushed here is automatically applied to the cluster. Nothing runs in the cluster that isn't in this repo.
 
-Two folders:
+Three folders:
 
 - **`infrastructure/`** — platform-level tools: ingress, TLS, storage, secrets, databases, observability, identity, image registry, policy engine.
-- **`applications/`** — FCI product services: api-gateway, compute-service, database-service, iam-service, storage-service, terminal-gateway.
+- **`applications/`** — what ArgoCD is told: one `app.yaml` per FCI product service.
+- **`charts/`** — what ArgoCD renders: application Helm charts. Empty until charts move here from service repos.
 
-Each folder contains one sub-folder per app. Each app has an `app.yaml` — an ArgoCD `Application` manifest that tells ArgoCD where to find the app's Helm chart or raw manifests.
+`applications/` and `infrastructure/` each contain one sub-folder per app. Each app has an `app.yaml` — an ArgoCD `Application` manifest that tells ArgoCD where to find the app's Helm chart or raw manifests. Application charts themselves live under `charts/<service>/`, not next to `app.yaml`.
 
 ## Why Need It
 
@@ -83,6 +84,18 @@ EOF
 git add . && git commit -m "add my-service" && git push
 ```
 
+**To validate charts and manifests locally:**
+
+Install Helm, yamllint, kubeconform, and the helm-unittest plugin, then:
+
+```bash
+helm plugin install https://github.com/helm-unittest/helm-unittest.git --version v1.1.2
+# Helm 4: add --verify=false (git plugin installs have no GPG webhook).
+make validate
+```
+
+`make validate` lints YAML, lints and renders every Helm chart, schema-checks rendered output with kubeconform, and runs helm-unittest suites under `charts/`. This repo is YAML-only — no Go, no `go.mod`. See [CHARTS.md](CHARTS.md) for the chart-authoring contract.
+
 **To add a new namespace:**
 
 ```bash
@@ -97,11 +110,16 @@ git add . && git commit -m "add my-namespace namespace" && git push
 
 ## Language
 
-YAML. Helm values files. Jinja2 templates (in `random-logger` and `cloudflared` inline charts). No scripting.
+YAML. Helm charts and values files. Jinja2 templates (in `random-logger` and `cloudflared` inline charts). Makefile shells out to yamllint, helm, kubeconform, and helm-unittest. No Go.
 
 ## Folders
 
 ```
+Makefile              Local validation: lint, template, schema, unittest.
+CHARTS.md             Chart-authoring contract: where charts live, tests/, YAML-only rule.
+
+charts/               Application Helm charts. Destination for service charts; empty until they move here.
+
 infrastructure/
   namespaces/         Namespace definitions. Applied first (sync-wave -1).
   metallb/            Bare-metal load balancer (L2 mode, IP pool 192.168.1.100-120).
@@ -136,6 +154,7 @@ applications/
 
 ## Read More
 
+- [CHARTS.md](CHARTS.md) — where application charts live and how to validate them
 - [APPS.md](APPS.md) — what each app does and its key configuration
 - [ARCHITECTURE.md](ARCHITECTURE.md) — how all apps connect, sync order, secret flow, traffic flow
 - [FILES.md](FILES.md) — every file, one line

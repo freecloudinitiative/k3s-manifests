@@ -6,6 +6,8 @@ on:
     paths:
       - 'infrastructure/**'
       - 'applications/**'
+      - 'charts/**'
+      - 'Makefile'
       - '*.md'
       - '.yamllint.yaml'
       - '.github/workflows/pr-checker.yaml'
@@ -15,6 +17,8 @@ on:
     paths:
       - 'infrastructure/**'
       - 'applications/**'
+      - 'charts/**'
+      - 'Makefile'
       - '*.md'
       - '.yamllint.yaml'
       - '.github/workflows/pr-checker.yaml'
@@ -41,7 +45,7 @@ jobs:
 
       - name: Validate YAML files with yq
         run: |
-          for f in $(find infrastructure applications -type f \( -name "*.yaml" -o -name "*.yml" \) -not -path "*/templates/*"); do
+          for f in $(find infrastructure applications charts -type f \( -name "*.yaml" -o -name "*.yml" \) -not -path "*/templates/*"); do
             yq 'true' "$f" > /dev/null || (echo "ERROR: Invalid YAML syntax in $f" && exit 1)
           done
           echo "All non-template YAML manifests passed syntax validation."
@@ -51,11 +55,56 @@ jobs:
 
       - name: Lint Helm Charts
         run: |
-          for chart in $(find infrastructure applications -type f -name "Chart.yaml" -exec dirname {} \;); do
+          for chart in $(find infrastructure applications charts -type f -name "Chart.yaml" -exec dirname {} \;); do
             echo "Linting Helm chart at $chart..."
-            helm lint "$chart" || exit 1
+            helm lint "$chart" --set image.tag=ci || exit 1
           done
           echo "All Helm charts passed linting."
+
+      - name: Render Helm Charts
+        run: |
+          for chart in $(find infrastructure applications charts -type f -name "Chart.yaml" -exec dirname {} \;); do
+            name=$(basename "$chart")
+            echo "Rendering Helm chart $name at $chart..."
+            helm template "$name" "$chart" --set image.tag=ci >/dev/null || exit 1
+          done
+          echo "All Helm charts rendered."
+
+      - name: Install kubeconform
+        run: |
+          KUBECONFORM_VERSION=v0.8.0
+          mkdir -p "$HOME/bin"
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar xz -C "$HOME/bin" kubeconform
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Schema-validate rendered charts
+        run: |
+          for chart in $(find infrastructure applications charts -type f -name "Chart.yaml" -exec dirname {} \;); do
+            name=$(basename "$chart")
+            echo "kubeconform $chart..."
+            helm template "$name" "$chart" --set image.tag=ci \
+              | kubeconform -strict -summary -ignore-missing-schemas || exit 1
+          done
+          echo "All rendered charts passed kubeconform."
+
+      - name: Install helm-unittest
+        run: |
+          # Helm 4 requires --verify=false for git plugin installs (no GPG webhook).
+          if helm version --short | grep -q '^v4'; then
+            helm plugin install https://github.com/helm-unittest/helm-unittest.git --version v1.1.2 --verify=false
+          else
+            helm plugin install https://github.com/helm-unittest/helm-unittest.git --version v1.1.2
+          fi
+
+      - name: Unit test Helm Charts
+        run: |
+          charts=$(find charts -type f -name Chart.yaml -exec dirname {} \;)
+          if [ -z "$charts" ]; then
+            echo "No charts under charts/; skipping helm unittest"
+          else
+            helm unittest $charts
+          fi
 
       - name: Verify PostgreSQL Connection Limits
         run: |

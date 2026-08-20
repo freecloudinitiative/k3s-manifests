@@ -353,7 +353,7 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 ### terminal-gateway
 
-**What**: WebSocket-to-Kubernetes exec terminal proxy. Deployed from `terminal-gateway` repo.
+**What**: WebSocket-to-Kubernetes exec terminal proxy. Deployed from `applications/terminal-gateway` Helm chart.
 
 **Namespace**: `backend`. Same sync policy.
 

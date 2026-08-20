@@ -8,12 +8,15 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/freecloudinitiative/terminal-gateway.git'
+    repoURL: 'https://github.com/freecloudinitiative/k3s-manifests.git'
     targetRevision: HEAD
-    path: deploy
+    path: applications/terminal-gateway
     helm:
       valueFiles:
         - values.yaml
+      parameters:
+        - name: image.tag
+          value: sha-e3c09b7baefc
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: backend

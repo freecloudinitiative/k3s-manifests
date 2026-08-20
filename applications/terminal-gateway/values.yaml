@@ -1,0 +1,128 @@
+replicaCount: 2
+
+image:
+  repository: registry.freecloudinitiative.com/terminal-gateway
+  pullPolicy: IfNotPresent
+  tag: ""
+  digest: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  containerPort: 8080
+  metricsPort: 9090
+
+# Long-lived terminals need substantially more drain time than ordinary HTTP
+# requests. SHUTDOWN_GRACE is kept below this value so the process can finish
+# its own drain and audit flush before kubelet sends SIGKILL.
+terminationGracePeriodSeconds: 120
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+    ephemeral-storage: 50Mi
+  limits:
+    cpu: 300m
+    memory: 256Mi
+    ephemeral-storage: 100Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# Unlike most FCI services, terminal-gateway calls the Kubernetes API to open
+# pods/exec streams. The token mount is intentional and covered by chart tests.
+automountServiceAccountToken: true
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+  # k3s's default kubernetes Service address. Override if the cluster service
+  # CIDR differs; an explicit /32 avoids opening all service-CIDR egress.
+  kubernetesAPIServerCIDR: 10.43.0.1/32
+
+kubernetes:
+  enabled: true
+
+audit:
+  enabled: true
+  queueSize: 1000
+  flushTimeout: 10s
+
+session:
+  maxPerAccount: 3
+  idleTimeout: 15m
+  maxDuration: 4h
+  warningLead: 1m
+  registryTTL: 2m
+
+websocket:
+  pingInterval: 30s
+  pongTimeout: 10s
+  maxMessageSize: 32768
+  allowedOrigins: ""
+
+config:
+  logLevel: info
+  environment: production
+  # In-cluster service communication over Kubernetes cluster DNS uses HTTP within
+  # the private backend namespace, isolated by NetworkPolicy and authenticated
+  # with signed Ed25519 internal JWT bearer tokens.
+  computeServiceURL: http://compute-service.backend.svc.cluster.local
+  iamServiceURL: http://iam-service.backend.svc.cluster.local
+  valkeyURL: valkey.valkey.svc.cluster.local:6379
+  otelEndpoint: opentelemetry-collector.monitoring.svc.cluster.local:4317
+  shutdownGrace: 100s
+
+secrets:
+  # This is terminal-gateway's own Ed25519 signing key. The service mints a
+  # short-lived token for direct compute/iam calls; it does not mount any
+  # other service's private key or a verifier key bundle.
+  signingKey:
+    secretName: terminal-gateway-signing-key
+    keyName: internal-signing.key
+  valkey:
+    secretName: terminal-gateway-valkey-password
+    keyName: password
+  valkeyCACert:
+    secretName: terminal-gateway-valkey-ca-cert
+    keyName: ca.crt
+
+probes:
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+  liveness:
+    initialDelaySeconds: 10
+    periodSeconds: 20
+    failureThreshold: 3
+
+# Roles cannot be safely granted at cluster scope. compute-service owns
+# creation of this exact Role and RoleBinding whenever it provisions an
+# fci-cust-* namespace. This optional list exists for bootstrap/testing only;
+# each entry is validated by the template and can never target a platform
+# namespace.
+customerNamespaces: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -323,7 +323,7 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 | Secret | Key | Consumed as | Source |
 |---|---|---|---|
-| `database-service-config` | `DATABASE_URL` | `secretKeyRef` env | ExternalSecret → OpenBao `database/postgresql-password`; connection string templated with `sslrootcert=/certs/platform-postgresql/ca.crt`; password percent-encoded via `urlquery` |
+| `database-service-config` | `DATABASE_URL` | `secretKeyRef` env | ExternalSecret → OpenBao `database/postgresql-password`; connection string templated with `sslrootcert=/certs/platform-postgresql/ca.crt` |
 | `platform-postgresql-ca-bundle` | `ca.crt` | volume at `/certs/platform-postgresql/ca.crt` | ExternalSecret → OpenBao `platform-postgresql/ca-cert` (same key as `storage-service-postgresql-ca-cert`) |
 | `internal-token-public-key` | `internal-public.pem` | volume at `/etc/fci/internal-token/internal-public.pem` | ExternalSecret → OpenBao `api-gateway/internal-public-key` (public half of api-gateway's Ed25519 signing key) |
 

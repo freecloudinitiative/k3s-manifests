@@ -134,6 +134,13 @@ The following paths must be seeded **out of band** before the corresponding `Ext
 | `secret/data/compute` | `postgresql-password` | `compute-role` DatabaseRole | `compute-postgresql-credentials` (platform-database) |
 | `secret/data/database` | `postgresql-password` | `database-role` DatabaseRole | `database-postgresql-credentials` (platform-database) |
 | `secret/data/platform-postgresql` | `ca-cert` | TLS verification | service CA bundles (backend) |
+| `secret/data/database` | `postgresql-password` | database-service pod DATABASE_URL | `database-service-config` (backend) |
+| `secret/data/api-gateway` | `internal-public-key` | database-service token verification | `internal-token-public-key` (backend) |
+
+Note: `secret/data/database / postgresql-password` is shared between the `database-role` DatabaseRole
+(platform-database, PR-02) and the `database-service-config` ExternalSecret (backend, PR-03). Both
+read the same OpenBao key; the DatabaseRole copy feeds CNPG role creation, the backend copy feeds the
+pod's `DATABASE_URL` environment variable.
 
 ### CNPG same-namespace resolution rule
 

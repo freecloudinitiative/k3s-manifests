@@ -1,0 +1,31 @@
+# role-template.yaml — the namespace-scoped write grant, expressed as a
+# second ClusterRole rather than a namespaced Role.
+#
+# Customer namespaces are created by compute-service, not by this Helm
+# release, so this chart cannot know their names at deploy time and cannot
+# create a namespaced Role in each one. Instead this ClusterRole is a
+# *template*: it defines exactly the verb set a customer namespace's
+# RoleBinding should grant, and compute-service's per-namespace RBAC
+# provisioning (compute-service PR-05/PR-16 — "roles, rolebindings ...
+# create, get, update") creates a namespace-scoped RoleBinding referencing
+# this ClusterRole by name whenever it provisions a customer namespace.
+#
+# This ClusterRole is intentionally NOT referenced by any
+# ClusterRoleBinding in this chart. Doing so would grant NetworkPolicy
+# write access cluster-wide, which is exactly the boundary
+# TestRBAC_NoNetworkPolicyWriteAtClusterScope exists to catch. It only
+# takes effect where a namespace-scoped RoleBinding names it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "storage-service.fullname" . }}-namespace-role
+  labels:
+    {{- include "storage-service.labels" . | nindent 4 }}
+    fci.io/rbac-scope: namespace-template
+rules:
+  # PR-10's projection: create/update/patch/delete the NetworkPolicy
+  # objects this service manages in one customer namespace at a time;
+  # get/list to compare against the desired state before regenerating it.
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["create", "update", "patch", "delete", "get", "list"]

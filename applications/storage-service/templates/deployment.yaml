@@ -1,0 +1,257 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "storage-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "storage-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      {{- include "storage-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "storage-service.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ toYaml .Values | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "storage-service.serviceAccountName" . }}
+      # terminationGracePeriodSeconds is longer than a bare HTTP server
+      # needs: the usage collector (PR-07) may be mid-listing against the
+      # object store when SIGTERM arrives, and cutting it off there leaves
+      # a snapshot half-written for the next cycle to sort out.
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: storage-service
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "storage-service.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.containerPort }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.service.metricsPort }}
+              protocol: TCP
+          env:
+            - name: SERVICE_NAME
+              value: storage-service
+            - name: LOG_LEVEL
+              value: {{ .Values.logLevel | default "info" | quote }}
+            - name: HTTP_PORT
+              value: {{ .Values.service.containerPort | quote }}
+            - name: METRICS_PORT
+              value: {{ .Values.service.metricsPort | quote }}
+            - name: SHUTDOWN_GRACE
+              value: "25s"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "storage-service.fullname" . }}-postgresql-credentials
+                  key: url
+            - name: DATABASE_SCHEMA
+              value: storage
+            - name: DB_MAX_CONNS
+              value: "10"
+            - name: INTERNAL_PUBLIC_KEY_PATH
+              value: /etc/storage-service/internal/internal-public.pem
+            - name: SERVICE_AUDIENCE
+              value: storage-service
+            - name: IAM_SERVICE_URL
+              value: {{ .Values.quota.iamServiceURL | quote }}
+            - name: OBJECT_STORE_ENABLED
+              value: {{ .Values.objectStore.enabled | quote }}
+            {{- if .Values.objectStore.enabled }}
+            - name: OBJECT_STORE_ENDPOINT
+              value: {{ .Values.objectStore.endpoint | quote }}
+            - name: OBJECT_STORE_BUCKET
+              value: {{ .Values.objectStore.bucket | quote }}
+            - name: OBJECT_STORE_REGION
+              value: {{ .Values.objectStore.region | quote }}
+            # Credentials are mounted as files, not injected here. Config
+            # reads them via OBJECT_STORE_ACCESS_KEY_FILE /
+            # OBJECT_STORE_SECRET_KEY_FILE — platform-common's `,secret`
+            # env tag gets `_FILE` indirection for free (see
+            # internal/config/config.go), so the raw key material is never
+            # a process environment variable, only file content under a
+            # 0444 Secret volume mount.
+            - name: OBJECT_STORE_ACCESS_KEY_FILE
+              value: /etc/storage-service/objectstore/access-key
+            - name: OBJECT_STORE_SECRET_KEY_FILE
+              value: /etc/storage-service/objectstore/secret-key
+            {{- if .Values.objectStore.caCertPath }}
+            # Only set (and only mounted, below) when the backend actually
+            # terminates TLS. Garage on fci-local does not — see
+            # values.yaml — so this is unset by default.
+            # Hard-coded to the fixed mount path so this env var and the
+            # volume projection below can never drift apart: the Secret's
+            # ca.crt key is always projected to this exact subpath under
+            # the objectstore-credentials mount.
+            - name: OBJECT_STORE_CA_CERT_PATH
+              value: /etc/storage-service/objectstore/ca.crt
+            {{- end }}
+            - name: OBJECT_STORE_TIMEOUT
+              value: {{ .Values.objectStore.timeout | quote }}
+            {{- end }}
+            - name: QUOTA_CACHE_TTL
+              value: {{ .Values.quota.cacheTTL | quote }}
+            - name: IAM_TIMEOUT
+              value: {{ .Values.quota.iamTimeout | quote }}
+            - name: VALKEY_URL
+              value: valkey.valkey.svc.cluster.local:6379
+            - name: VALKEY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "storage-service.fullname" . }}-valkey-password
+                  key: password
+            - name: VALKEY_CA_CERT_PATH
+              value: /etc/storage-service/valkey/ca.crt
+            - name: USAGE_COLLECTOR_ENABLED
+              value: {{ .Values.usageCollector.enabled | quote }}
+            - name: USAGE_SNAPSHOT_INTERVAL
+              value: {{ .Values.usageCollector.snapshotInterval | quote }}
+            - name: USAGE_BATCH_SIZE
+              value: {{ .Values.usageCollector.batchSize | quote }}
+            - name: USAGE_BUCKET_TIMEOUT
+              value: {{ .Values.usageCollector.bucketTimeout | quote }}
+            - name: USAGE_RETENTION
+              value: {{ .Values.usageCollector.retention | quote }}
+            - name: CLUSTER_POD_CIDR
+              value: {{ .Values.clusterCIDRs.pod | quote }}
+            - name: CLUSTER_SERVICE_CIDR
+              value: {{ .Values.clusterCIDRs.service | quote }}
+            - name: KUBERNETES_ENABLED
+              value: {{ .Values.kubernetes.enabled | quote }}
+            - name: KUBERNETES_IN_CLUSTER
+              value: {{ .Values.kubernetes.inCluster | quote }}
+            - name: KUBERNETES_QPS
+              value: {{ .Values.kubernetes.qps | quote }}
+            - name: KUBERNETES_BURST
+              value: {{ .Values.kubernetes.burst | quote }}
+            - name: KUBERNETES_TIMEOUT
+              value: "{{ .Values.kubernetes.timeoutSeconds }}s"
+            # networkPolicy.enabled gates whether the reconcile worker
+            # applies NetworkPolicy objects at all — see values.yaml.
+            - name: NETWORK_POLICY_ENABLED
+              value: {{ .Values.networkPolicy.enabled | quote }}
+            - name: RECONCILE_INTERVAL
+              value: {{ .Values.reconcile.interval | quote }}
+            - name: RECONCILE_BATCH_SIZE
+              value: {{ .Values.reconcile.batchSize | quote }}
+            - name: RECONCILE_STALE_AFTER
+              value: {{ .Values.reconcile.staleAfter | quote }}
+            - name: RECONCILE_MAX_ATTEMPTS
+              value: {{ .Values.reconcile.maxAttempts | quote }}
+            - name: RESYNC_INTERVAL
+              value: {{ .Values.reconcile.resyncInterval | quote }}
+            # Downward API for OTel resource attributes.
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: postgresql-ca
+              mountPath: /etc/storage-service/postgres
+              readOnly: true
+            {{- if .Values.objectStore.enabled }}
+            - name: objectstore-credentials
+              mountPath: /etc/storage-service/objectstore
+              readOnly: true
+            {{- end }}
+            - name: valkey-ca
+              mountPath: /etc/storage-service/valkey
+              readOnly: true
+            - name: internal-public-key
+              mountPath: /etc/storage-service/internal
+              readOnly: true
+            {{- if .Values.proxyUpload.tmpDir }}
+            # readOnlyRootFilesystem: true leaves no writable root
+            # filesystem. PR-05 chose the proxy-upload path (option B) for
+            # v1, so this service is itself in the streaming path for
+            # every upload/download; this emptyDir is the same fix that
+            # resolved the frontend deployment's crash loop under a
+            # read-only root.
+            - name: tmp
+              mountPath: /tmp
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: postgresql-ca
+          secret:
+            secretName: {{ include "storage-service.fullname" . }}-postgresql-ca-cert
+        {{- if .Values.objectStore.enabled }}
+        - name: objectstore-credentials
+          secret:
+            secretName: {{ include "storage-service.fullname" . }}-objectstore-credentials
+            defaultMode: 0444
+            # The underlying Secret keeps its ca.crt key regardless (an
+            # ExternalSecret change is out of scope here); this `items`
+            # list only controls which keys are actually projected into
+            # the pod, so an unused CA cert for a plain-HTTP backend isn't
+            # mounted for no reason.
+            items:
+              - key: access-key
+                path: access-key
+              - key: secret-key
+                path: secret-key
+              {{- if .Values.objectStore.caCertPath }}
+              - key: ca.crt
+                path: ca.crt
+              {{- end }}
+        {{- end }}
+        - name: valkey-ca
+          secret:
+            secretName: {{ include "storage-service.fullname" . }}-valkey-ca-cert
+        - name: internal-public-key
+          secret:
+            secretName: {{ include "storage-service.fullname" . }}-internal-public-key
+        {{- if .Values.proxyUpload.tmpDir }}
+        - name: tmp
+          emptyDir: {}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

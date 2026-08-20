@@ -345,7 +345,7 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 ### storage-service
 
-**What**: Object storage management service. Deployed from `storage-service` repo, uses Garage as S3 backend.
+**What**: Object storage management service. Deployed from `applications/storage-service` Helm chart, uses Garage as S3 backend.
 
 **Namespace**: `backend`. Same sync policy.
 

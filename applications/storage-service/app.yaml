@@ -8,12 +8,15 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/freecloudinitiative/storage-service.git'
+    repoURL: 'https://github.com/freecloudinitiative/k3s-manifests.git'
     targetRevision: HEAD
-    path: deploy
+    path: applications/storage-service
     helm:
       valueFiles:
         - values.yaml
+      parameters:
+        - name: image.tag
+          value: sha-2f2daba0c43e
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: backend

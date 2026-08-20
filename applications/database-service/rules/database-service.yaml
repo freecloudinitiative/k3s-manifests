@@ -1,0 +1,35 @@
+groups:
+  - name: database-service
+    rules:
+      - alert: DatabaseServiceConnPoolSaturated
+        expr: increase(dbsvc_connpool_saturated_total[10m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Database service connection pool is saturated
+          description: At least one request has exhausted the bounded customer connection pool for five minutes.
+      - alert: DatabaseServiceReconcileFailing
+        expr: dbsvc_clusters{status="failed"} > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Database reconciliation is failing
+          description: At least one customer database remains in failed reconciliation state.
+      - alert: DatabaseServiceBackupFailed
+        expr: dbsvc_backup_status{status="failed"} > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Customer database backup failed
+          description: At least one customer database reports a failed backup status.
+      - alert: DatabaseServiceClusterStuckPending
+        expr: dbsvc_clusters{status="pending"} > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Customer database cluster is stuck pending
+          description: At least one CNPG customer cluster has remained pending for 15 minutes.

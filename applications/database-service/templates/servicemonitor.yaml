@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "database-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "database-service.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "database-service.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics

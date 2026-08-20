@@ -1,0 +1,135 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/freecloudinitiative/database-service
+  pullPolicy: IfNotPresent
+  tag: ""
+  digest: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  containerPort: 8080
+  metricsPort: 9090
+
+# An in-flight COPY should finish its transaction before kubelet sends SIGKILL.
+terminationGracePeriodSeconds: 90
+
+# Imports spool and stream files up to 12 MiB, and the customer connection pool
+# can retain buffers for as many as 100 concurrent connections. These are
+# intentionally higher than the ordinary backend-service defaults.
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+    ephemeral-storage: 128Mi
+  limits:
+    cpu: 1
+    memory: 1Gi
+    ephemeral-storage: 512Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# database-service calls the Kubernetes API to reconcile CNPG resources. The
+# token mount is intentional; RBAC limits writes to explicitly bound customers.
+automountServiceAccountToken: true
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+  # k3s's default kubernetes Service address. Override for another service CIDR.
+  kubernetesAPIServerCIDR: 10.43.0.1/32
+
+kubernetes:
+  enabled: true
+  namespacePrefix: fci-cust-
+
+backup:
+  enabled: false
+  endpoint: ""
+  bucket: ""
+  region: ""
+  credentialsSecret: database-backup-s3
+  schedule: "0 3 * * *"
+  retentionDays: 7
+
+metrics:
+  enabled: false
+  prometheusURL: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+  cacheTTL: 15s
+
+connectionPool:
+  perDatabase: 10
+  global: 100
+  maxPerDatabase: 4
+  idleTTL: 60s
+  acquireTimeout: 2s
+
+import:
+  concurrencyPerDatabase: 2
+
+config:
+  logLevel: info
+  environment: production
+  databaseSchema: database
+  databaseMaxConnections: 10
+  iamServiceURL: http://iam-service.backend.svc.cluster.local
+  valkeyURL: valkey.valkey.svc.cluster.local:6379
+  otelEndpoint: otel-collector.monitoring.svc.cluster.local:4317
+  shutdownGrace: 75s
+
+secrets:
+  database:
+    secretName: database-service-config
+    keyName: DATABASE_URL
+  postgresCACert:
+    # Projected into backend by the k3s-manifests companion PR.
+    secretName: platform-postgresql-ca-bundle
+    keyName: ca.crt
+  internalPublicKey:
+    secretName: internal-token-public-key
+    keyName: internal-public.pem
+  valkey:
+    secretName: valkey-password
+    keyName: password
+  valkeyCACert:
+    secretName: valkey-ca-cert
+    keyName: ca.crt
+
+probes:
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+  liveness:
+    initialDelaySeconds: 10
+    periodSeconds: 20
+    failureThreshold: 3
+
+# Kubernetes cannot express a namespace-name prefix in RBAC. Namespace
+# provisioning owns these Role/RoleBinding objects in production. This list is
+# for bootstrap and tests, and rejects every name outside fci-cust-*.
+customerNamespaces: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

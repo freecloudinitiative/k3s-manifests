@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "database-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "database-service.labels" . | nindent 4 }}
+data:
+  SERVICE_NAME: database-service
+  ENVIRONMENT: {{ .Values.config.environment | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  HTTP_PORT: {{ .Values.service.containerPort | quote }}
+  METRICS_PORT: {{ .Values.service.metricsPort | quote }}
+  DATABASE_SCHEMA: {{ .Values.config.databaseSchema | quote }}
+  DB_MAX_CONNS: {{ .Values.config.databaseMaxConnections | quote }}
+  INTERNAL_PUBLIC_KEY_PATH: /etc/fci/internal-token/internal-public.pem
+  SERVICE_AUDIENCE: database-service
+  IAM_SERVICE_URL: {{ .Values.config.iamServiceURL | quote }}
+  VALKEY_URL: {{ .Values.config.valkeyURL | quote }}
+  VALKEY_CA_CERT_PATH: /etc/fci/valkey/ca.crt
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.config.otelEndpoint | quote }}
+  SHUTDOWN_GRACE: {{ .Values.config.shutdownGrace | quote }}
+  KUBERNETES_ENABLED: {{ .Values.kubernetes.enabled | quote }}
+  KUBERNETES_IN_CLUSTER: "true"
+  KUBERNETES_NAMESPACE_PREFIX: {{ .Values.kubernetes.namespacePrefix | quote }}
+  METRICS_ENABLED: {{ .Values.metrics.enabled | quote }}
+  PROMETHEUS_URL: {{ .Values.metrics.prometheusURL | quote }}
+  METRICS_CACHE_TTL: {{ .Values.metrics.cacheTTL | quote }}
+  BACKUP_ENABLED: {{ .Values.backup.enabled | quote }}
+  {{- if .Values.backup.enabled }}
+  BACKUP_ENDPOINT: {{ required "backup.endpoint is required when backup.enabled" .Values.backup.endpoint | quote }}
+  BACKUP_BUCKET: {{ required "backup.bucket is required when backup.enabled" .Values.backup.bucket | quote }}
+  BACKUP_REGION: {{ required "backup.region is required when backup.enabled" .Values.backup.region | quote }}
+  BACKUP_CREDENTIALS_SECRET: {{ required "backup.credentialsSecret is required when backup.enabled" .Values.backup.credentialsSecret | quote }}
+  BACKUP_SCHEDULE: {{ .Values.backup.schedule | quote }}
+  BACKUP_RETENTION_DAYS: {{ .Values.backup.retentionDays | quote }}
+  {{- end }}
+  CONN_POOL_PER_DATABASE: {{ .Values.connectionPool.perDatabase | quote }}
+  CONN_POOL_GLOBAL: {{ .Values.connectionPool.global | quote }}
+  CONN_POOL_MAX_PER_DB: {{ .Values.connectionPool.maxPerDatabase | quote }}
+  CONN_POOL_IDLE_TTL: {{ .Values.connectionPool.idleTTL | quote }}
+  CONN_POOL_ACQUIRE_TIMEOUT: {{ .Values.connectionPool.acquireTimeout | quote }}
+  IMPORT_CONCURRENCY_PER_DATABASE: {{ .Values.import.concurrencyPerDatabase | quote }}
+  IMPORT_TEMP_DIR: /tmp

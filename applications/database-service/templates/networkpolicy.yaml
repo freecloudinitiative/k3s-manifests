@@ -1,0 +1,78 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "database-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "database-service.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "database-service.selectorLabels" . | nindent 6 }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    # api-gateway and other backend callers; no public Ingress is rendered.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backend
+      ports:
+        - {protocol: TCP, port: {{ .Values.service.containerPort }}}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - {protocol: TCP, port: {{ .Values.service.metricsPort }}}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    # Platform metadata and migrations. The peer NetworkPolicy must select the
+    # shared fci.io/tier=backend pod label used by this chart.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: platform-database
+      ports:
+        - {protocol: TCP, port: 5432}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: valkey
+      ports:
+        - {protocol: TCP, port: 6379}
+    # In-cluster API endpoint; keep the /32 aligned with the k3s service CIDR.
+    - to:
+        - ipBlock:
+            cidr: {{ .Values.networkPolicy.kubernetesAPIServerCIDR }}
+      ports:
+        - {protocol: TCP, port: 443}
+    # Prometheus queries (PR-08) and OTLP export.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - {protocol: TCP, port: 9090}
+        - {protocol: TCP, port: 4317}
+    # iam-service validates authorization/audit context for internal calls.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backend
+      ports:
+        - {protocol: TCP, port: 8080}
+    # PR-06/PR-07: SQL and COPY connect only to namespaces created for customers.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              fci.io/tier: customer
+      ports:
+        - {protocol: TCP, port: 5432}
+{{- end }}

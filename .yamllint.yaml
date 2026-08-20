@@ -1,0 +1,14 @@
+extends: default
+
+rules:
+  line-length: disable
+  document-start: disable
+  comments: disable
+  comments-indentation: disable
+  braces: disable
+  truthy: disable
+  empty-lines: disable
+
+ignore: |
+  **/templates/
+  plans/

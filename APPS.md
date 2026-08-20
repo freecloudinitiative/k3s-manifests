@@ -323,12 +323,13 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 | Secret | Key | Consumed as | Source |
 |---|---|---|---|
-| `database-service-config` | `DATABASE_URL` | `secretKeyRef` env | ExternalSecret → OpenBao `database/postgresql-password`; connection string templated with `sslrootcert=/certs/platform-postgresql/ca.crt` |
-| `platform-postgresql-ca-bundle` | `ca.crt` | volume at `/certs/platform-postgresql/ca.crt` | cert-manager `Certificate` (`platform-postgresql-ca-bundle-backend`, issued by `ca-cluster-issuer`) |
+| `database-service-config` | `DATABASE_URL` | `secretKeyRef` env | ExternalSecret → OpenBao `database/postgresql-password`; connection string templated with `sslrootcert=/certs/platform-postgresql/ca.crt`; password percent-encoded via `urlquery` |
+| `platform-postgresql-ca-bundle` | `ca.crt` | volume at `/certs/platform-postgresql/ca.crt` | ExternalSecret → OpenBao `platform-postgresql/ca-cert` (same key as `storage-service-postgresql-ca-cert`) |
 | `internal-token-public-key` | `internal-public.pem` | volume at `/etc/fci/internal-token/internal-public.pem` | ExternalSecret → OpenBao `api-gateway/internal-public-key` (public half of api-gateway's Ed25519 signing key) |
 
 **ExternalSecrets** (defined in `infrastructure/external-secrets/external-secret-database.yaml`):
 - `database-service-config` (namespace `backend`, wave `-2`)
+- `database-service-postgresql-ca-cert` → target `platform-postgresql-ca-bundle` (namespace `backend`, wave `-2`)
 - `database-service-internal-public-key` → target `internal-token-public-key` (namespace `backend`, wave `-2`)
 
 **Follow-up**: `internal-token-public-key` does not follow the `database-service-*` naming convention used by other backend services. Renaming requires a coordinated change in the `database-service` chart repo.

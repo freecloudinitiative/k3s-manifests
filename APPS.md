@@ -359,6 +359,14 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 ---
 
+### frontend
+
+**What**: React single-page application and web console. Deployed from `applications/frontend` Helm chart, served via nginx.
+
+**Namespace**: `frontend`. Same sync policy.
+
+---
+
 ### random-logger
 
 **What**: Test application. Deploys a single pod that emits random structured JSON log lines on stdout. Used to verify that the log pipeline (Alloy → OTel → Loki → Grafana) works end to end.

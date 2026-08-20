@@ -111,25 +111,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: frontend-ingress
-  namespace: frontend
-spec:
-  ingressClassName: traefik
-  rules:
-    - http:
-        paths:
-          - path: /frontend
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 80
-
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
   name: prometheus-ingress
   namespace: monitoring
 spec:

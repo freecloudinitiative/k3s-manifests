@@ -28,6 +28,7 @@ infrastructure/namespaces/
   cert-manager.yaml                           Namespace: cert-manager
   cloudflared.yaml                            Namespace: cloudflared
   cnpg-system.yaml                            Namespace: cnpg-system (CloudNativePG operator)
+  frontend.yaml                               Namespace: frontend
   garage.yaml                                 Namespace: garage
   kyverno.yaml                                Namespace: kyverno
   longhorn-system.yaml                        Namespace: longhorn-system
@@ -206,6 +207,12 @@ applications/terminal-gateway/
   Chart.yaml                                  Chart descriptor.
   values.yaml                                 Default values.
   templates/                                  12 Kubernetes templates.
+
+applications/frontend/
+  app.yaml                                    ArgoCD Application for frontend Helm chart.
+  Chart.yaml                                  Chart descriptor.
+  values.yaml                                 Default values.
+  templates/                                  8 Kubernetes templates.
 
 applications/random-logger/
   app.yaml                                    ArgoCD Application for inline random-logger Helm chart.

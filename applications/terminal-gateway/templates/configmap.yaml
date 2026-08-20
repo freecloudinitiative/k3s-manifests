@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "terminal-gateway.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "terminal-gateway.labels" . | nindent 4 }}
+data:
+  SERVICE_NAME: terminal-gateway
+  ENVIRONMENT: {{ .Values.config.environment | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  HTTP_PORT: {{ .Values.service.containerPort | quote }}
+  METRICS_PORT: {{ .Values.service.metricsPort | quote }}
+  VALKEY_URL: {{ .Values.config.valkeyURL | quote }}
+  VALKEY_CA_CERT_PATH: /etc/fci/valkey/ca.crt
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.config.otelEndpoint | quote }}
+  SHUTDOWN_GRACE: {{ .Values.config.shutdownGrace | quote }}
+  INTERNAL_SIGNING_KEY_PATH: /etc/fci/signing/internal-signing.key
+  INTERNAL_TOKEN_TTL: 60s
+  # In-cluster service endpoints within the private cluster network
+  COMPUTE_SERVICE_URL: {{ .Values.config.computeServiceURL | quote }}
+  COMPUTE_SERVICE_AUDIENCE: compute-service
+  IAM_SERVICE_URL: {{ .Values.config.iamServiceURL | quote }}
+  IAM_SERVICE_AUDIENCE: iam-service
+  AUDIT_ENABLED: {{ .Values.audit.enabled | quote }}
+  AUDIT_QUEUE_SIZE: {{ .Values.audit.queueSize | quote }}
+  AUDIT_FLUSH_TIMEOUT: {{ .Values.audit.flushTimeout | quote }}
+  MAX_SESSIONS_PER_ACCOUNT: {{ .Values.session.maxPerAccount | quote }}
+  SESSION_IDLE_TIMEOUT: {{ .Values.session.idleTimeout | quote }}
+  SESSION_MAX_DURATION: {{ .Values.session.maxDuration | quote }}
+  SESSION_WARNING_LEAD: {{ .Values.session.warningLead | quote }}
+  SESSION_REGISTRY_TTL: {{ .Values.session.registryTTL | quote }}
+  PING_INTERVAL: {{ .Values.websocket.pingInterval | quote }}
+  PONG_TIMEOUT: {{ .Values.websocket.pongTimeout | quote }}
+  WS_MAX_MESSAGE_SIZE: {{ .Values.websocket.maxMessageSize | quote }}
+  ALLOWED_ORIGINS: {{ .Values.websocket.allowedOrigins | quote }}
+  KUBERNETES_ENABLED: {{ .Values.kubernetes.enabled | quote }}

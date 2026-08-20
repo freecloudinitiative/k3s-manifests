@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "terminal-gateway.fullname" . }}-namespace-reader
+  labels:
+    {{- include "terminal-gateway.labels" . | nindent 4 }}
+rules:
+  # PR-04: resolve and validate the customer namespace before opening exec.
+  # No pod permission belongs at cluster scope.
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "terminal-gateway.fullname" . }}-namespace-reader
+  labels:
+    {{- include "terminal-gateway.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "terminal-gateway.fullname" . }}-namespace-reader
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "terminal-gateway.fullname" . }}
+    namespace: {{ .Release.Namespace }}

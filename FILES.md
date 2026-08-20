@@ -202,7 +202,10 @@ applications/storage-service/
   templates/                                  11 Kubernetes templates.
 
 applications/terminal-gateway/
-  app.yaml                                    ArgoCD Application: terminal-gateway repo → deploy/ → backend namespace.
+  app.yaml                                    ArgoCD Application for terminal-gateway Helm chart.
+  Chart.yaml                                  Chart descriptor.
+  values.yaml                                 Default values.
+  templates/                                  12 Kubernetes templates.
 
 applications/random-logger/
   app.yaml                                    ArgoCD Application for inline random-logger Helm chart.

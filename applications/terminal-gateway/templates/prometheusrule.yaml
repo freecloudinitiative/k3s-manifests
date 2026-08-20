@@ -1,0 +1,59 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "terminal-gateway.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "terminal-gateway.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: terminal-gateway
+      rules:
+        - alert: TerminalExecStreamLeak
+          expr: terminal_exec_streams_open - terminal_sessions_active > 5
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: Terminal exec streams are not closing with sessions
+            description: More than five Kubernetes exec streams have remained open without matching active terminal sessions.
+        - alert: TerminalGoroutineGrowth
+          expr: deriv(terminal_goroutines[15m]) > 0 and on(instance) terminal_sessions_active == 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Terminal gateway goroutines are growing while idle
+            description: Goroutine count is rising even though this replica has no active sessions.
+        - alert: TerminalTicketFailureSpike
+          expr: sum(rate(terminal_ticket_redemptions_total{outcome!="success"}[5m])) > 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Terminal ticket redemption failures are elevated
+            description: Sustained failures may indicate a broken deployment or forged-ticket probing.
+        - alert: TerminalAuthorizationDenials
+          expr: sum(rate(terminal_authorization_total{outcome="denied"}[5m])) > 0.5
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Terminal authorization denials are elevated
+            description: compute-service is denying terminal authorization at an elevated rate.
+        - alert: TerminalAuditDropping
+          expr: increase(terminal_audit_dropped_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Terminal audit records are being dropped
+            description: At least one terminal audit record could not be delivered to iam-service.
+        - alert: TerminalUpstreamErrors
+          expr: sum(rate(terminal_authorization_total{outcome="upstream_error"}[5m])) > 0.1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Terminal compute-service errors are elevated
+            description: Authorization calls to compute-service are failing at an elevated rate.

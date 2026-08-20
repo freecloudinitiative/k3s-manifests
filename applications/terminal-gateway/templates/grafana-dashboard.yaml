@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "terminal-gateway.fullname" . }}-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    {{- include "terminal-gateway.labels" . | nindent 4 }}
+data:
+  terminal-gateway.json: |-
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 1,
+      "panels": [
+        {"type":"timeseries","title":"Active sessions","gridPos":{"h":8,"w":12,"x":0,"y":0},"targets":[{"expr":"sum(terminal_sessions_active)","legendFormat":"active"}]},
+        {"type":"heatmap","title":"Session duration distribution","gridPos":{"h":8,"w":12,"x":12,"y":0},"targets":[{"expr":"sum(rate(terminal_session_duration_seconds_bucket[$__rate_interval])) by (le)","format":"heatmap","legendFormat":"{{`{{le}}`}}"}],"options":{"calculate":false}},
+        {"type":"timeseries","title":"Session outcomes","gridPos":{"h":8,"w":8,"x":0,"y":8},"targets":[{"expr":"sum(rate(terminal_sessions_total[$__rate_interval])) by (outcome)","legendFormat":"{{`{{outcome}}`}}"}]},
+        {"type":"timeseries","title":"Ticket redemption outcomes","gridPos":{"h":8,"w":8,"x":8,"y":8},"targets":[{"expr":"sum(rate(terminal_ticket_redemptions_total[$__rate_interval])) by (outcome)","legendFormat":"{{`{{outcome}}`}}"}]},
+        {"type":"timeseries","title":"Authorization outcomes","gridPos":{"h":8,"w":8,"x":16,"y":8},"targets":[{"expr":"sum(rate(terminal_authorization_total[$__rate_interval])) by (outcome)","legendFormat":"{{`{{outcome}}`}}"}]},
+        {"type":"timeseries","title":"Bytes transferred","gridPos":{"h":8,"w":8,"x":0,"y":16},"targets":[{"expr":"sum(rate(terminal_session_bytes_total[$__rate_interval])) by (direction)","legendFormat":"{{`{{direction}}`}}"}],"fieldConfig":{"defaults":{"unit":"Bps"}}},
+        {"type":"timeseries","title":"Exec streams vs active sessions","gridPos":{"h":8,"w":8,"x":8,"y":16},"targets":[{"expr":"sum(terminal_exec_streams_open)","legendFormat":"exec streams"},{"expr":"sum(terminal_sessions_active)","legendFormat":"active sessions"}]},
+        {"type":"timeseries","title":"Goroutine count","gridPos":{"h":8,"w":8,"x":16,"y":16},"targets":[{"expr":"sum(terminal_goroutines)","legendFormat":"goroutines"}]}
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["terminal-gateway"],
+      "time": {"from":"now-6h","to":"now"},
+      "title": "Terminal Gateway",
+      "uid": "terminal-gateway",
+      "version": 1
+    }

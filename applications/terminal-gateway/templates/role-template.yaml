@@ -1,0 +1,41 @@
+{{- range $namespace := .Values.customerNamespaces }}
+{{- if not (regexMatch "^fci-cust-[a-z0-9]([-a-z0-9]*[a-z0-9])?$" $namespace) }}
+{{- fail (printf "customerNamespaces entry %q must be an fci-cust-* namespace" $namespace) }}
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: terminal-gateway-exec
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: terminal-gateway
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+rules:
+  # PR-04: inspect only the pod compute-service authorized for this session.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  # PR-04: create the terminal exec subresource. No attach, port-forward,
+  # pod writes, secrets, or workload-controller permissions are granted.
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: terminal-gateway-exec
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: terminal-gateway
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: terminal-gateway-exec
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "terminal-gateway.fullname" $ }}
+    namespace: {{ $.Release.Namespace }}
+{{- end }}

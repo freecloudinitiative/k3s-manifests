@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/freecloudinitiative/compute-service.git'
+    repoURL: 'https://github.com/freecloudinitiative/k3s-manifests.git'
     targetRevision: HEAD
-    path: deploy
+    path: applications/compute-service
     helm:
       valueFiles:
         - values.yaml

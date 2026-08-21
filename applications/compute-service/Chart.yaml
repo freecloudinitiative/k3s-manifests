@@ -1,0 +1,12 @@
+apiVersion: v2
+name: compute-service
+description: FCI Compute Service — Kubernetes namespace lifecycle, instance workload provisioning, reconcile worker and metrics.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/freecloudinitiative/compute-service
+sources:
+  - https://github.com/freecloudinitiative/compute-service
+maintainers:
+  - name: FCI Platform Team
+    email: platform@freecloudinitiative.dev

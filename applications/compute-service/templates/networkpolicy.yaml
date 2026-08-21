@@ -1,0 +1,92 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "compute-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "compute-service.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "compute-service.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # api-gateway and other backend-namespace peers reach the API.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backend
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.containerPort }}
+    # Prometheus scrapes metrics.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.metricsPort }}
+  egress:
+    # kube-dns
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # platform-database (Postgres)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: platform-database
+      ports:
+        - protocol: TCP
+          port: 5432
+    # valkey (quota cache and optional events)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: valkey
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Kubernetes API server for namespace lifecycle management.
+    # NetworkPolicy cannot express the control-plane endpoint as a
+    # namespace/pod selector, so this uses an ipBlock for the cluster's
+    # Service CIDR.
+    - to:
+        - ipBlock:
+            cidr: {{ .Values.networkPolicy.kubernetesAPIServerCIDR }}
+      ports:
+        - protocol: TCP
+          port: 443
+    # backend (iam-service for quota checks)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backend
+      ports:
+        - protocol: TCP
+          port: 8080
+    # OTLP trace/metric export to the OpenTelemetry collector in monitoring.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 4317
+    # customer namespaces — compute-service creates and manages workloads
+    # in fci-cust-* namespaces. The wildcard cannot be expressed in a
+    # NetworkPolicy namespaceSelector; runtime access is enforced by RBAC
+    # (ClusterRole + per-namespace RoleBinding) rather than NetworkPolicy.
+    # This egress rule therefore targets the Kubernetes API server via the
+    # ipBlock above, which is the transport for all namespace operations.
+{{- end }}

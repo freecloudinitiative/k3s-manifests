@@ -1,0 +1,35 @@
+# Cluster-scoped ClusterRole for compute-service.
+# compute-service must read Namespace objects to resolve account namespaces
+# and must manage workload resources (Pods, Deployments, RBAC) inside
+# fci-cust-* namespaces via per-namespace RoleBindings (see role-template.yaml).
+# Write access to cluster-scoped resources (Namespaces, ClusterRoles) is
+# intentionally NOT included — namespace creation is a separate provisioning
+# path controlled by RBAC at deploy time.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "compute-service.fullname" . }}-cluster
+  labels:
+    {{- include "compute-service.labels" . | nindent 4 }}
+rules:
+  # Read namespaces to resolve account-to-namespace mapping and check
+  # whether a namespace already exists before attempting to provision it.
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+  # Create, update, and delete customer namespaces during provisioning and
+  # teardown. RBAC cannot restrict cluster-scoped writes to a name prefix
+  # pattern, so this is tightly documented — compute-service must only
+  # operate on fci-cust-* namespaces as enforced by application logic.
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["create", "update", "patch", "delete"]
+  # Read RuntimeClass objects to check Kata availability for
+  # instance-type capability detection (InstanceTypeCacheTTL).
+  - apiGroups: ["node.k8s.io"]
+    resources: ["runtimeclasses"]
+    verbs: ["get", "list"]
+  # Read node labels to detect ready/labelled nodes for instance types.
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]

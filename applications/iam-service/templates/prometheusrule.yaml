@@ -20,7 +20,7 @@ spec:
           annotations:
             summary: "iam-service has a high request error rate"
             description: >-
-              iam-service is returning errors on more than 10% of requests
+              iam-service is returning more than 0.1 errors/sec, averaged
               over the last 5m. Quota checks from all downstream services
               (compute, storage, api-gateway) will be affected.
 

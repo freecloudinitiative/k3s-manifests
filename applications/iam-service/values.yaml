@@ -100,8 +100,8 @@ secrets:
   # Ed25519 public key from terminal-gateway; accepted on direct session
   # validation calls that bypass api-gateway.
   terminalGatewayPublicKey:
-    secretName: iam-service-terminal-gateway-public-key
-    keyName: terminal-gateway-public.pem
+    secretName: terminal-gateway-public-key
+    keyName: internal-public.pem
   # PostgreSQL TLS CA cert.
   postgresqlCA:
     secretName: iam-service-postgresql-ca-cert

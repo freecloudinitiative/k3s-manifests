@@ -89,15 +89,21 @@ spec:
         message: >-
           compute-service may only create/modify a Role named
           compute-service-workloads or terminal-gateway-exec, and every rule
-          in it must draw its apiGroups/resources/verbs only from the small
-          set internal/k8s/rbac.go's two known-good rule sets actually use.
-          This is an allowlist of safe tokens, not an exact match of the two
-          rule sets themselves (Kyverno's array pattern matching cannot
-          reliably enforce "no extra rules" without risking a false sense of
-          security from an untested exact-match) — but an allowlist fails
-          closed on anything unanticipated, where a denylist (the prior
-          version of this rule) fails open on anything its authors didn't
-          think to enumerate, such as pods/ephemeralcontainers.
+          in it must draw its apiGroups/resources/verbs only from the tokens
+          that specific role name actually uses in internal/k8s/rbac.go —
+          not the union of both roles' tokens. A single shared allowlist
+          would let a Role named terminal-gateway-exec carry
+          compute-service-workloads' full CRUD on deployments/services/
+          configmaps/PVCs/quotas; once bound via the approved RoleBinding
+          pairing, that grants terminal-gateway control over customer
+          workloads it was never meant to have. This still isn't an exact
+          match of each role's rule set (Kyverno's array pattern matching
+          cannot reliably enforce "no extra rules" without risking a false
+          sense of security from an untested exact-match, and apiGroup/
+          resource/verb tokens are still validated independently rather
+          than as per-rule triples) — but scoping each name to its own
+          token set closes the specific cross-role recombination this rule
+          exists to prevent.
         deny:
           conditions:
             any:
@@ -106,32 +112,55 @@ spec:
                 value:
                   - compute-service-workloads
                   - terminal-gateway-exec
-              - key: "{{ request.object.rules[].apiGroups[] }}"
-                operator: AnyNotIn
-                value:
-                  - ""
-                  - "apps"
-              - key: "{{ request.object.rules[].resources[] }}"
-                operator: AnyNotIn
-                value:
-                  - deployments
-                  - services
-                  - persistentvolumeclaims
-                  - configmaps
-                  - resourcequotas
-                  - limitranges
-                  - pods
-                  - pods/exec
-              - key: "{{ request.object.rules[].verbs[] }}"
-                operator: AnyNotIn
-                value:
-                  - create
-                  - get
-                  - list
-                  - watch
-                  - update
-                  - patch
-                  - delete
+              - all:
+                  - key: "{{ request.object.metadata.name }}"
+                    operator: Equals
+                    value: compute-service-workloads
+                  - any:
+                      - key: "{{ request.object.rules[].apiGroups[] }}"
+                        operator: AnyNotIn
+                        value:
+                          - ""
+                          - "apps"
+                      - key: "{{ request.object.rules[].resources[] }}"
+                        operator: AnyNotIn
+                        value:
+                          - deployments
+                          - services
+                          - persistentvolumeclaims
+                          - configmaps
+                          - resourcequotas
+                          - limitranges
+                      - key: "{{ request.object.rules[].verbs[] }}"
+                        operator: AnyNotIn
+                        value:
+                          - create
+                          - get
+                          - list
+                          - watch
+                          - update
+                          - patch
+                          - delete
+              - all:
+                  - key: "{{ request.object.metadata.name }}"
+                    operator: Equals
+                    value: terminal-gateway-exec
+                  - any:
+                      - key: "{{ request.object.rules[].apiGroups[] }}"
+                        operator: AnyNotIn
+                        value:
+                          - ""
+                      - key: "{{ request.object.rules[].resources[] }}"
+                        operator: AnyNotIn
+                        value:
+                          - pods
+                          - pods/exec
+                      - key: "{{ request.object.rules[].verbs[] }}"
+                        operator: AnyNotIn
+                        value:
+                          - get
+                          - list
+                          - create
     - name: restrict-rolebinding-content
       match:
         any:

@@ -1,0 +1,91 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-compute-service-rbac-writes
+  annotations:
+    policies.kyverno.io/title: Restrict compute-service RBAC writes
+    policies.kyverno.io/category: RBAC
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      applications/compute-service/templates/clusterrole.yaml grants the
+      compute-service ServiceAccount cluster-wide create/escalate/bind on
+      Roles and RoleBindings so it can provision per-customer-namespace
+      workload RBAC (see internal/k8s/rbac.go in the compute-service repo).
+      Kubernetes RBAC cannot restrict a create request by resourceNames, and
+      has no way to restrict the namespace or subjects of the object being
+      created. So on its own, that ClusterRole lets a compromised or
+      misdirected compute-service identity create a Role with arbitrary
+      rules, or a RoleBinding granting storage-service's or
+      database-service's namespace-role ClusterRole, in any namespace, to
+      any subject — not just the fci-cust-* customer namespaces and the
+      four backend service accounts this is meant for. This policy supplies
+      the namespace and subject restriction RBAC cannot express on its own.
+      Enforced rather than audited: there is no legitimate case where
+      compute-service creates RBAC objects outside a fci-cust-* namespace,
+      or names a subject other than the service accounts it is meant to
+      grant access to.
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: restrict-namespace
+      match:
+        any:
+          - resources:
+              kinds:
+                - Role
+                - RoleBinding
+            subjects:
+              - kind: ServiceAccount
+                name: compute-service
+                namespace: backend
+      validate:
+        message: >-
+          compute-service may only create or modify Roles/RoleBindings in
+          fci-cust-* namespaces.
+        deny:
+          conditions:
+            all:
+              - key: "{{ request.namespace }}"
+                operator: NotEquals
+                value: "fci-cust-*"
+    - name: restrict-rolebinding-content
+      match:
+        any:
+          - resources:
+              kinds:
+                - RoleBinding
+            subjects:
+              - kind: ServiceAccount
+                name: compute-service
+                namespace: backend
+      validate:
+        message: >-
+          compute-service RoleBindings may only reference an approved
+          Role/ClusterRole (compute-service-workloads, terminal-gateway-exec,
+          storage-service-namespace-role, database-service-namespace-role)
+          and grant it to exactly one backend ServiceAccount of the matching
+          service.
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.roleRef.name }}"
+                operator: AnyNotIn
+                value:
+                  - compute-service-workloads
+                  - terminal-gateway-exec
+                  - storage-service-namespace-role
+                  - database-service-namespace-role
+              - key: "{{ length(request.object.subjects) }}"
+                operator: NotEquals
+                value: 1
+              - key: "{{ request.object.subjects[0].namespace }}"
+                operator: NotEquals
+                value: backend
+              - key: "{{ request.object.subjects[0].name }}"
+                operator: AnyNotIn
+                value:
+                  - compute-service
+                  - terminal-gateway
+                  - storage-service
+                  - database-service

@@ -5,6 +5,12 @@
 # Write access to cluster-scoped resources (Namespaces, ClusterRoles) is
 # intentionally NOT included — namespace creation is a separate provisioning
 # path controlled by RBAC at deploy time.
+#
+# The create/escalate/bind grants below are cluster-wide and RBAC alone
+# cannot restrict *which* namespace or subject they're used against — see
+# infrastructure/kyverno-policies/restrict-compute-service-rbac-writes.yaml
+# for the admission-time restriction to fci-cust-* namespaces and the four
+# approved backend service accounts that closes that gap.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

@@ -1,44 +1,28 @@
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: strip-prefix
-  namespace: monitoring
-spec:
-  stripPrefix:
-    prefixes:
-      - /alloy
-      - /traefik-dashboard
-      - /argocd
-
----
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: argocd-strip-prefix
-  namespace: argocd
-spec:
-  stripPrefix:
-    prefixes:
-      - /argocd
-
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: grafana-ingress
   namespace: monitoring
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik
   rules:
-    - http:
+    - host: grafana.freecloudinitiative.com
+      http:
         paths:
-          - path: /grafana
+          - path: /
             pathType: Prefix
             backend:
               service:
                 name: kube-prometheus-stack-grafana
                 port:
                   number: 80
+  tls:
+    - hosts:
+        - grafana.freecloudinitiative.com
+      secretName: grafana-tls
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -46,29 +30,40 @@ kind: Ingress
 metadata:
   name: alloy-ingress
   namespace: monitoring
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik
   rules:
-    - http:
+    - host: alloy.freecloudinitiative.com
+      http:
         paths:
-          - path: /alloy
+          - path: /
             pathType: Prefix
             backend:
               service:
                 name: alloy-external
                 port:
                   number: 12345
+  tls:
+    - hosts:
+        - alloy.freecloudinitiative.com
+      secretName: alloy-tls
 
 ---
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
+apiVersion: cert-manager.io/v1
+kind: Certificate
 metadata:
-  name: traefik-strip-prefix
+  name: traefik-dashboard-tls
   namespace: traefik
 spec:
-  stripPrefix:
-    prefixes:
-      - /traefik-dashboard
+  secretName: traefik-dashboard-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  dnsNames:
+    - traefik.freecloudinitiative.com
 
 ---
 apiVersion: traefik.io/v1alpha1
@@ -78,15 +73,15 @@ metadata:
   namespace: traefik
 spec:
   entryPoints:
-    - web
+    - websecure
   routes:
-    - match: PathPrefix(`/traefik-dashboard`)
+    - match: Host(`traefik.freecloudinitiative.com`)
       kind: Rule
       services:
         - name: api@internal
           kind: TraefikService
-      middlewares:
-        - name: traefik-strip-prefix
+  tls:
+    secretName: traefik-dashboard-tls
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -94,18 +89,26 @@ kind: Ingress
 metadata:
   name: argocd-ingress
   namespace: argocd
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik
   rules:
-    - http:
+    - host: argocd.freecloudinitiative.com
+      http:
         paths:
-          - path: /argocd
+          - path: /
             pathType: Prefix
             backend:
               service:
                 name: argocd-server
                 port:
                   number: 80
+  tls:
+    - hosts:
+        - argocd.freecloudinitiative.com
+      secretName: argocd-tls
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -113,15 +116,23 @@ kind: Ingress
 metadata:
   name: prometheus-ingress
   namespace: monitoring
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik
   rules:
-    - http:
+    - host: prometheus.freecloudinitiative.com
+      http:
         paths:
-          - path: /prometheus
+          - path: /
             pathType: Prefix
             backend:
               service:
                 name: kube-prometheus-stack-prometheus
                 port:
                   number: 9090
+  tls:
+    - hosts:
+        - prometheus.freecloudinitiative.com
+      secretName: prometheus-tls

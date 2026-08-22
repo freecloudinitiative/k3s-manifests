@@ -1,0 +1,142 @@
+global:
+  enabled: true
+  tlsDisable: false
+
+injector:
+  enabled: false
+
+csi:
+  enabled: false
+
+server:
+  enabled: true
+  logFormat: json
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: false
+  authDelegator:
+    enabled: true
+
+  dataStorage:
+    enabled: true
+    size: 5Gi
+    storageClass: null
+  auditStorage:
+    enabled: true
+    size: 5Gi
+    storageClass: null
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+
+  volumes:
+    - name: openbao-server-tls
+      secret:
+        secretName: openbao-server-tls
+        defaultMode: 0440
+  volumeMounts:
+    - name: openbao-server-tls
+      mountPath: /openbao/tls
+      readOnly: true
+
+  networkPolicy:
+    enabled: true
+    ingress:
+      - from:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: openbao
+        ports:
+          - port: 8200
+            protocol: TCP
+          - port: 8201
+            protocol: TCP
+      - from:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: external-secrets
+        ports:
+          - port: 8200
+            protocol: TCP
+
+  tolerations:
+    - key: "node-role.kubernetes.io/master"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+
+  statefulSet:
+    securityContext:
+      pod:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      container:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+
+  standalone:
+    enabled: false
+  dev:
+    enabled: false
+  ha:
+    enabled: true
+    replicas: 3
+    disruptionBudget:
+      enabled: true
+      maxUnavailable: 1
+    raft:
+      enabled: true
+      setNodeId: true
+      config: |
+        ui = true
+
+        listener "tcp" {
+          address         = "[::]:8200"
+          cluster_address = "[::]:8201"
+          tls_disable     = 0
+          tls_cert_file   = "/openbao/tls/tls.crt"
+          tls_key_file    = "/openbao/tls/tls.key"
+        }
+
+        storage "raft" {
+          path = "/openbao/data"
+          retry_join {
+            leader_api_addr       = "https://openbao-0.openbao-internal.openbao.svc.cluster.local:8200"
+            leader_ca_cert_file   = "/openbao/tls/ca.crt"
+            leader_tls_servername = "openbao-0.openbao-internal.openbao.svc.cluster.local"
+          }
+          retry_join {
+            leader_api_addr       = "https://openbao-1.openbao-internal.openbao.svc.cluster.local:8200"
+            leader_ca_cert_file   = "/openbao/tls/ca.crt"
+            leader_tls_servername = "openbao-1.openbao-internal.openbao.svc.cluster.local"
+          }
+          retry_join {
+            leader_api_addr       = "https://openbao-2.openbao-internal.openbao.svc.cluster.local:8200"
+            leader_ca_cert_file   = "/openbao/tls/ca.crt"
+            leader_tls_servername = "openbao-2.openbao-internal.openbao.svc.cluster.local"
+          }
+        }
+
+        service_registration "kubernetes" {}
+
+ui:
+  enabled: true
+  serviceType: ClusterIP
+  activeOpenbaoPodOnly: true

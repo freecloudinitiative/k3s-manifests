@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: openbao
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave-health: all
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://openbao.github.io/openbao-helm
+      chart: openbao
+      targetRevision: 0.28.6
+      helm:
+        valueFiles:
+          - $values/infrastructure/openbao/values.yaml
+    - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
+      targetRevision: HEAD
+      path: infrastructure/openbao
+      ref: values
+      directory:
+        include: "*.yaml"
+        exclude: "app.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openbao
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: true
+    syncOptions:
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true

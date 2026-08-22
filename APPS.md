@@ -311,6 +311,22 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 **Namespace**: `backend`. Same sync policy.
 
+**Secrets contract (namespace `backend`)**:
+
+| Secret | Key | Consumed as / required mount path | Source |
+|---|---|---|---|
+| `compute-service-postgresql-credentials` | `url` | `DATABASE_URL` via `secretKeyRef`; URL requires CA at `/etc/compute-service/postgres/ca.crt` | OpenBao `compute/postgresql-password` |
+| `compute-service-postgresql-ca-cert` | `ca.crt` | volume at `/etc/compute-service/postgres/ca.crt` | OpenBao `platform-postgresql/ca-cert` |
+| `compute-service-valkey-password` | `password` | `VALKEY_PASSWORD` via `secretKeyRef` | OpenBao `valkey/password` |
+| `compute-service-valkey-ca-cert` | `ca.crt` | volume at `/etc/compute-service/valkey/ca.crt` | OpenBao `valkey/ca-cert` |
+| `compute-service-internal-public-key` | `internal-public.pem` | volume at `/etc/fci/keys/internal-token-public.pem` | OpenBao `api-gateway/internal-public-key` |
+| `terminal-gateway-public-key` (shared) | `internal-public.pem` | volume at `/etc/fci/keys/terminal-gateway-public.pem` | OpenBao `terminal-gateway/internal-public-key`; defined once in `external-secret-terminal.yaml` |
+
+The Postgres and Valkey CA paths are part of the chart contract: the future compute-service chart
+must mount the corresponding keys at exactly these paths. Until that chart exists, this Application
+is expected to remain in `ComparisonError`; staging these inert ExternalSecrets does not cause that
+pre-existing failure.
+
 ---
 
 ### database-service
@@ -340,6 +356,19 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 **What**: Identity and access management service. Deployed from `iam-service` repo.
 
 **Namespace**: `backend`. Same sync policy.
+
+**Secrets contract (namespace `backend`)**:
+
+| Secret | Key | Consumed as / required mount path | Source |
+|---|---|---|---|
+| `iam-service-postgresql-credentials` | `url` | `DATABASE_URL` via `secretKeyRef`; URL requires CA at `/etc/iam-service/postgres/ca.crt` | OpenBao `iam/postgresql-password` |
+| `iam-service-postgresql-ca-cert` | `ca.crt` | volume at `/etc/iam-service/postgres/ca.crt` | OpenBao `platform-postgresql/ca-cert` |
+| `iam-service-internal-public-key` | `internal-public.pem` | volume at `/etc/fci/keys/internal-token-public.pem` | OpenBao `api-gateway/internal-public-key` |
+| `terminal-gateway-public-key` (shared) | `internal-public.pem` | volume at `/etc/fci/keys/terminal-gateway-public.pem` | OpenBao `terminal-gateway/internal-public-key`; defined once in `external-secret-terminal.yaml` |
+
+The Postgres CA path is part of the chart contract: the future iam-service chart must mount `ca.crt`
+at exactly this path. Until that chart exists, this Application is expected to remain in
+`ComparisonError`; staging these inert ExternalSecrets does not cause that pre-existing failure.
 
 ---
 

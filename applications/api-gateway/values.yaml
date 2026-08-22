@@ -3,7 +3,7 @@
 replicaCount: 2
 
 image:
-  repository: registry.freecloudinitiative.com/api-gateway
+  repository: ghcr.io/freecloudinitiative/api-gateway
   pullPolicy: IfNotPresent
   # tag is injected by the ArgoCD Application via helm.parameters (image.tag=sha-<12>).
   # Leave empty here so that a missing parameter causes an explicit helm template failure

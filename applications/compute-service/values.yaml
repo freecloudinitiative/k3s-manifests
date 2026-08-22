@@ -145,8 +145,8 @@ secrets:
     keyName: internal-public.pem
   # Ed25519 public key from terminal-gateway; trusted on the exec-target route only.
   terminalGatewayPublicKey:
-    secretName: compute-service-terminal-gateway-public-key
-    keyName: terminal-gateway-public.pem
+    secretName: terminal-gateway-public-key
+    keyName: internal-public.pem
   # PostgreSQL TLS CA cert.
   postgresqlCA:
     secretName: compute-service-postgresql-ca-cert

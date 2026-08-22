@@ -39,12 +39,21 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
+{{/*
+compute-service.serviceAccountName — deliberately ignores
+.Values.serviceAccount.name. The Kyverno policy in
+infrastructure/kyverno-policies/restrict-compute-service-rbac-writes.yaml
+hardcodes its match.subjects to ServiceAccount "compute-service" in
+namespace "backend" — it is a plain YAML resource outside this chart and
+cannot read Helm values, so it cannot follow an override here. Letting the
+name diverge would silently stop that policy from matching this chart's
+real identity, disabling the RBAC-write restriction entirely rather than
+loudly failing. The name is therefore always the chart's canonical
+fullname; serviceAccount.create still controls whether this chart creates
+the object (see serviceaccount.yaml).
+*/}}
 {{- define "compute-service.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "compute-service.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
+{{- include "compute-service.fullname" . }}
 {{- end }}
 
 {{/*

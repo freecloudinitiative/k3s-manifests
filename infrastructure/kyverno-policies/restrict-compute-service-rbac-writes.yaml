@@ -27,7 +27,13 @@ metadata:
       grants a Role other than its own two known-good rule sets, or pairs
       an approved Role/ClusterRole with the wrong service account.
 spec:
-  validationFailureAction: Enforce
+  # spec.validationFailureAction has had no effect since Kyverno 1.11 (the
+  # chart pinned in infrastructure/kyverno/app.yaml is 3.8.1, well past
+  # that) — it's deprecated in favor of a per-rule failureAction under each
+  # rule's validate block, set below on all three rules. Leaving only the
+  # top-level field, as every other file in this directory currently does,
+  # would silently run this policy in Kyverno's default (non-enforcing)
+  # mode instead of the Enforce this policy depends on.
   background: false
   rules:
     - name: restrict-namespace
@@ -38,10 +44,19 @@ spec:
                 - Role
                 - RoleBinding
             subjects:
+              # Hardcoded because this policy is plain YAML, not part of the
+              # compute-service Helm chart, so it cannot read Helm values.
+              # This name is guaranteed to match the chart's actual
+              # ServiceAccount by compute-service.serviceAccountName in
+              # applications/compute-service/templates/_helpers.tpl, which
+              # deliberately ignores serviceAccount.name overrides for
+              # exactly this reason — if the two drift, this policy stops
+              # matching the real identity and silently stops enforcing.
               - kind: ServiceAccount
                 name: compute-service
                 namespace: backend
       validate:
+        failureAction: Enforce
         message: >-
           compute-service may only create or modify Roles/RoleBindings in
           fci-cust-* namespaces.
@@ -58,10 +73,19 @@ spec:
               kinds:
                 - Role
             subjects:
+              # Hardcoded because this policy is plain YAML, not part of the
+              # compute-service Helm chart, so it cannot read Helm values.
+              # This name is guaranteed to match the chart's actual
+              # ServiceAccount by compute-service.serviceAccountName in
+              # applications/compute-service/templates/_helpers.tpl, which
+              # deliberately ignores serviceAccount.name overrides for
+              # exactly this reason — if the two drift, this policy stops
+              # matching the real identity and silently stops enforcing.
               - kind: ServiceAccount
                 name: compute-service
                 namespace: backend
       validate:
+        failureAction: Enforce
         message: >-
           compute-service may only create/modify a Role named
           compute-service-workloads or terminal-gateway-exec, and its rules
@@ -108,10 +132,19 @@ spec:
               kinds:
                 - RoleBinding
             subjects:
+              # Hardcoded because this policy is plain YAML, not part of the
+              # compute-service Helm chart, so it cannot read Helm values.
+              # This name is guaranteed to match the chart's actual
+              # ServiceAccount by compute-service.serviceAccountName in
+              # applications/compute-service/templates/_helpers.tpl, which
+              # deliberately ignores serviceAccount.name overrides for
+              # exactly this reason — if the two drift, this policy stops
+              # matching the real identity and silently stops enforcing.
               - kind: ServiceAccount
                 name: compute-service
                 namespace: backend
       validate:
+        failureAction: Enforce
         message: >-
           compute-service RoleBindings may only pair an approved
           Role/ClusterRole with its corresponding backend ServiceAccount —

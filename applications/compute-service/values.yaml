@@ -124,7 +124,8 @@ events:
 
 serviceAccount:
   create: true
-  name: ""
+  # name is intentionally not configurable — see
+  # compute-service.serviceAccountName in templates/_helpers.tpl.
   annotations: {}
 
 probes:

@@ -20,12 +20,17 @@ metadata:
       storage-service's or database-service's namespace-role ClusterRole,
       in any namespace, to any subject — not just the fci-cust-* customer
       namespaces and the four backend service accounts this is meant for.
-      This policy supplies the namespace, Role-content, and
-      role-to-subject-pairing restrictions RBAC cannot express on its own.
-      Enforced rather than audited: there is no legitimate case where
-      compute-service creates RBAC objects outside a fci-cust-* namespace,
-      grants a Role other than its own two known-good rule sets, or pairs
-      an approved Role/ClusterRole with the wrong service account.
+      The same ClusterRole also grants unrestricted create/update/patch/
+      delete on Namespace objects themselves — RBAC cannot express a name
+      prefix restriction, so on its own it lets that identity delete any
+      namespace in the cluster, platform namespaces included, not just the
+      ones it created. This policy supplies the namespace, Role-content,
+      role-to-subject-pairing, and Namespace-name restrictions RBAC cannot
+      express on its own. Enforced rather than audited: there is no
+      legitimate case where compute-service creates RBAC objects outside a
+      fci-cust-* namespace, grants a Role other than its own two known-good
+      rule sets, pairs an approved Role/ClusterRole with the wrong service
+      account, or writes to a Namespace outside fci-cust-*.
 spec:
   # spec.validationFailureAction has had no effect since Kyverno 1.11 (the
   # chart pinned in infrastructure/kyverno/app.yaml is 3.8.1, well past
@@ -64,6 +69,35 @@ spec:
           conditions:
             all:
               - key: "{{ request.namespace }}"
+                operator: NotEquals
+                value: "fci-cust-*"
+    - name: restrict-namespace-writes
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+            subjects:
+              # Same identity as restrict-namespace above; see that rule's
+              # comment for why this is hardcoded rather than templated.
+              - kind: ServiceAccount
+                name: compute-service
+                namespace: backend
+      validate:
+        failureAction: Enforce
+        message: >-
+          compute-service may only create, update, patch, or delete
+          Namespaces whose name matches fci-cust-*.
+        deny:
+          conditions:
+            all:
+              # Namespace is cluster-scoped, so there's no request.namespace
+              # to check (that's the containing namespace of a namespaced
+              # resource, which doesn't apply here). request.name is the
+              # object's own name and — unlike request.object.metadata.name
+              # — is populated by the API server for update/delete requests
+              # too, where request.object may be absent.
+              - key: "{{ request.name }}"
                 operator: NotEquals
                 value: "fci-cust-*"
     - name: restrict-role-content

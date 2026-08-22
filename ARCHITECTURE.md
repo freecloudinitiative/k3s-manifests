@@ -20,6 +20,36 @@ ArgoCD syncs every 3 minutes and on any Git push. Any drift from declared state 
 
 ---
 
+## Application Image Promotion
+
+Application images are promoted with static ArgoCD Helm parameters in each
+`applications/<name>/app.yaml`. The parameter is part of Git history, so a
+deployment and its rollback are ordinary reviewed commits to this repository.
+A human operator updates it after the corresponding image build succeeds; CI
+may automate that commit later, but ArgoCD Image Updater is not deployed.
+
+Builds use tags in the form `sha-<first 12 characters of the source commit SHA>`.
+Tags must never be `latest`. A chart receives `image.tag` explicitly and must
+fail rendering when neither `image.tag` nor `image.digest` is set. Digests are
+preferred when the publishing workflow records them, but this repository uses
+the published tags currently recorded in Git rather than inventing digest
+values that cannot be checked.
+
+`registry.freecloudinitiative.com` is protected by Traefik basic authentication.
+External Secrets Operator materializes `zot-registry-pull-credentials` in the
+`backend` namespace from the out-of-band OpenBao properties
+`zot-registry/pull-username` and `zot-registry/pull-password`. Backend
+Applications pass that Secret as `imagePullSecrets[0].name` through the same
+Helm parameter block as the image tag. The pull user must also be present in
+the `zot-registry/htpasswd` value enforced by Traefik.
+
+Publishing must succeed before the tag is promoted. The reusable image-build
+workflow and its LAN-accessible runner are owned outside this repository; a
+placeholder `sha-xxxxxxxxxxxx` deliberately leaves an Application unsyncable
+until a real image exists.
+
+---
+
 ## Startup Order (ArgoCD Sync Waves)
 
 Sync waves control order. Lower wave number runs first. Apps with no annotation run in wave `0` or after dependencies are healthy.
@@ -143,6 +173,7 @@ The following paths must be seeded **out of band** before the corresponding `Ext
 | `secret/data/terminal-gateway` | `internal-public-key` | iam-service and compute-service terminal-token verification | `terminal-gateway-public-key` (backend, shared) |
 | `secret/data/valkey` | `password` | compute-service Valkey authentication | `compute-service-valkey-password` (backend) |
 | `secret/data/valkey` | `ca-cert` | compute-service Valkey TLS verification | `compute-service-valkey-ca-cert` (backend) |
+| `secret/data/zot-registry` | `pull-username`, `pull-password` | Authenticated backend image pulls | `zot-registry-pull-credentials` (backend) |
 
 Note: `secret/data/database / postgresql-password` is shared between the `database-role` DatabaseRole
 (platform-database, PR-02) and the `database-service-config` ExternalSecret (backend, PR-03). Both

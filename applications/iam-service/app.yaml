@@ -8,14 +8,20 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/freecloudinitiative/iam-service.git'
+    repoURL: 'https://github.com/freecloudinitiative/k3s-manifests.git'
     targetRevision: HEAD
-    path: deploy
+    path: applications/iam-service
     helm:
       valueFiles:
         - values.yaml
       parameters:
-        # Placeholder: this Application will not sync until a real image is published.
+        # Placeholder: iam-service has no build pipeline yet (no
+        # build-arm64-image.yml workflow in that repo), so there is no real
+        # tag to put here. automated sync is deliberately OFF below —
+        # ArgoCD would otherwise apply this placeholder immediately and
+        # spin up a Deployment stuck in ImagePullBackOff. Once a real image
+        # is published, set image.tag to the real sha AND re-enable
+        # syncPolicy.automated in the same change.
         - name: image.tag
           value: "sha-xxxxxxxxxxxx"
         - name: imagePullSecrets[0].name
@@ -24,10 +30,6 @@ spec:
     server: 'https://kubernetes.default.svc'
     namespace: backend
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-      allowEmpty: true
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true

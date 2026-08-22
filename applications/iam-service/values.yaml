@@ -1,0 +1,143 @@
+# iam-service — Helm values.
+#
+# Mirrors the environment variables declared in
+# internal/config/config.go (embeds platform-common config.Base).
+#
+# Note: iam-service never calls the Kubernetes API — automountServiceAccountToken
+# is intentionally false here (contrast compute-service and storage-service).
+
+replicaCount: 2
+revisionHistoryLimit: 3
+
+image:
+  # CI pushes to registry.freecloudinitiative.com/<name>:sha-<12> (see
+  # platform-common/.github/workflows/build-arm64-image.yml, step "Derive
+  # image tags").  The tag or digest MUST be supplied by the caller (e.g.
+  # ArgoCD Application helm.parameters) — an empty tag is a hard error in
+  # deploy/templates/_helpers.tpl.  Never falls back to Chart.appVersion.
+  repository: registry.freecloudinitiative.com/iam-service
+  tag: ""
+  digest: ""
+  pullPolicy: IfNotPresent
+
+# imagePullSecrets is required: registry.freecloudinitiative.com sits behind
+# Traefik's basicAuth middleware. Create a Secret of type
+# kubernetes.io/dockerconfigjson with credentials for the registry and
+# reference it here.
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+logLevel: info
+
+service:
+  type: ClusterIP
+  port: 80
+  containerPort: 8080
+  metricsPort: 9090
+
+# terminationGracePeriodSeconds must exceed ShutdownGrace (25s default in
+# platform-common) so in-flight requests drain before SIGKILL.
+terminationGracePeriodSeconds: 40
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+    ephemeral-storage: 50Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+    ephemeral-storage: 100Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# iam-service never calls the Kubernetes API. Mounting a token here would
+# only create an extra credential that a compromise could pivot with.
+automountServiceAccountToken: false
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+probes:
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+  liveness:
+    initialDelaySeconds: 10
+    periodSeconds: 20
+    failureThreshold: 3
+
+# Secret references — names of Kubernetes Secrets created by ExternalSecret.
+secrets:
+  # Ed25519 public key used to verify internal JWTs from api-gateway.
+  internalPublicKey:
+    secretName: iam-service-internal-public-key
+    keyName: internal-public.pem
+  # Ed25519 public key from terminal-gateway; accepted on direct session
+  # validation calls that bypass api-gateway.
+  terminalGatewayPublicKey:
+    secretName: iam-service-terminal-gateway-public-key
+    keyName: terminal-gateway-public.pem
+  # PostgreSQL TLS CA cert.
+  postgresqlCA:
+    secretName: iam-service-postgresql-ca-cert
+  # PostgreSQL credentials (DSN URL).
+  postgresqlCredentials:
+    secretName: iam-service-postgresql-credentials
+  # Valkey password.
+  valkey:
+    secretName: iam-service-valkey-password
+    keyName: password
+  # Valkey TLS CA cert.
+  valkeyCACert:
+    secretName: iam-service-valkey-ca-cert
+    keyName: ca.crt
+
+config:
+  logLevel: info
+  environment: production
+  valkeyURL: valkey.valkey.svc.cluster.local:6379
+  otelEndpoint: opentelemetry-collector.monitoring.svc.cluster.local:4317
+  shutdownGrace: 25s
+  # Authentik OIDC issuer — must match the iss claim in Authentik-minted tokens.
+  # Format: https://<host>/application/o/<slug>/ (trailing slash is load-bearing).
+  authentikIssuer: "https://auth.freecloudinitiative.com/application/o/freecloudinitiative/"
+  authentikClientID: "freecloudinitiative-frontend"
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  namespace: monitoring
+
+prometheusRule:
+  enabled: true
+  namespace: monitoring
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

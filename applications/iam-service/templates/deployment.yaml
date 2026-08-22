@@ -1,0 +1,168 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "iam-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "iam-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      {{- include "iam-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "iam-service.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ toYaml .Values | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "iam-service.serviceAccountName" . }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      # iam-service never calls the Kubernetes API — the token mount is
+      # intentionally absent. See values.yaml and storage-service's
+      # serviceaccount.yaml for the contrasting case.
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: iam-service
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "iam-service.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.containerPort }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.service.metricsPort }}
+              protocol: TCP
+          env:
+            - name: SERVICE_NAME
+              value: iam-service
+            - name: LOG_LEVEL
+              value: {{ .Values.logLevel | default "info" | quote }}
+            - name: HTTP_PORT
+              value: {{ .Values.service.containerPort | quote }}
+            - name: METRICS_PORT
+              value: {{ .Values.service.metricsPort | quote }}
+            - name: SHUTDOWN_GRACE
+              value: {{ .Values.config.shutdownGrace | quote }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.postgresqlCredentials.secretName }}
+                  key: url
+            - name: DATABASE_SCHEMA
+              value: iam
+            - name: DB_MAX_CONNS
+              value: "10"
+            - name: INTERNAL_PUBLIC_KEY_PATH
+              value: /etc/iam-service/internal/internal-public.pem
+            - name: TERMINAL_GATEWAY_PUBLIC_KEY_PATH
+              value: /etc/iam-service/terminal-gateway/terminal-gateway-public.pem
+            - name: SERVICE_AUDIENCE
+              value: iam-service
+            - name: VALKEY_URL
+              value: {{ .Values.config.valkeyURL | quote }}
+            - name: VALKEY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.valkey.secretName }}
+                  key: {{ .Values.secrets.valkey.keyName }}
+            - name: VALKEY_CA_CERT_PATH
+              value: /etc/iam-service/valkey/ca.crt
+            - name: AUTHENTIK_ISSUER
+              value: {{ .Values.config.authentikIssuer | quote }}
+            - name: OIDC_CLIENT_ID
+              value: {{ .Values.config.authentikClientID | quote }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ printf "http://%s" .Values.config.otelEndpoint | quote }}
+            # Downward API for OTel resource attributes.
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: postgresql-ca
+              mountPath: /etc/iam-service/postgres
+              readOnly: true
+            - name: internal-public-key
+              mountPath: /etc/iam-service/internal
+              readOnly: true
+            - name: terminal-gateway-public-key
+              mountPath: /etc/iam-service/terminal-gateway
+              readOnly: true
+            - name: valkey-ca
+              mountPath: /etc/iam-service/valkey
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+      volumes:
+        - name: postgresql-ca
+          secret:
+            secretName: {{ .Values.secrets.postgresqlCA.secretName }}
+        - name: internal-public-key
+          secret:
+            secretName: {{ .Values.secrets.internalPublicKey.secretName }}
+            items:
+              - key: {{ .Values.secrets.internalPublicKey.keyName }}
+                path: internal-public.pem
+            defaultMode: 0444
+        - name: terminal-gateway-public-key
+          secret:
+            secretName: {{ .Values.secrets.terminalGatewayPublicKey.secretName }}
+            items:
+              - key: {{ .Values.secrets.terminalGatewayPublicKey.keyName }}
+                path: terminal-gateway-public.pem
+            defaultMode: 0444
+        - name: valkey-ca
+          secret:
+            secretName: {{ .Values.secrets.valkeyCACert.secretName }}
+            items:
+              - key: {{ .Values.secrets.valkeyCACert.keyName }}
+                path: ca.crt
+            defaultMode: 0444
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

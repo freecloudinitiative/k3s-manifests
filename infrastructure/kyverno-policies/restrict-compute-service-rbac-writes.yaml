@@ -1,0 +1,250 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-compute-service-rbac-writes
+  annotations:
+    policies.kyverno.io/title: Restrict compute-service RBAC writes
+    policies.kyverno.io/category: RBAC
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      applications/compute-service/templates/clusterrole.yaml grants the
+      compute-service ServiceAccount cluster-wide create/escalate/bind on
+      Roles and RoleBindings so it can provision per-customer-namespace
+      workload RBAC (see internal/k8s/rbac.go in the compute-service repo).
+      Kubernetes RBAC cannot restrict the base "create"/"list"/"watch"
+      authorization by resourceNames (that check runs before the request
+      body is even decoded), and has no way to restrict the namespace of
+      the object being created either. So on its own, that ClusterRole lets
+      a compromised or misdirected compute-service identity create a Role
+      with arbitrary rules (e.g. Secret read), or a RoleBinding granting
+      storage-service's or database-service's namespace-role ClusterRole,
+      in any namespace, to any subject — not just the fci-cust-* customer
+      namespaces and the four backend service accounts this is meant for.
+      The same ClusterRole also grants unrestricted create/update/patch/
+      delete on Namespace objects themselves — RBAC cannot express a name
+      prefix restriction, so on its own it lets that identity delete any
+      namespace in the cluster, platform namespaces included, not just the
+      ones it created. This policy supplies the namespace, Role-content,
+      role-to-subject-pairing, and Namespace-name restrictions RBAC cannot
+      express on its own. Enforced rather than audited: there is no
+      legitimate case where compute-service creates RBAC objects outside a
+      fci-cust-* namespace, grants a Role other than its own two known-good
+      rule sets, pairs an approved Role/ClusterRole with the wrong service
+      account, or writes to a Namespace outside fci-cust-*.
+spec:
+  # spec.validationFailureAction has had no effect since Kyverno 1.11 (the
+  # chart pinned in infrastructure/kyverno/app.yaml is 3.8.1, well past
+  # that) — it's deprecated in favor of a per-rule failureAction under each
+  # rule's validate block, set below on all three rules. Leaving only the
+  # top-level field, as every other file in this directory currently does,
+  # would silently run this policy in Kyverno's default (non-enforcing)
+  # mode instead of the Enforce this policy depends on.
+  background: false
+  rules:
+    - name: restrict-namespace
+      match:
+        any:
+          - resources:
+              kinds:
+                - Role
+                - RoleBinding
+            subjects:
+              # Hardcoded because this policy is plain YAML, not part of the
+              # compute-service Helm chart, so it cannot read Helm values.
+              # This name is guaranteed to match the chart's actual
+              # ServiceAccount by compute-service.serviceAccountName in
+              # applications/compute-service/templates/_helpers.tpl, which
+              # deliberately ignores serviceAccount.name overrides for
+              # exactly this reason — if the two drift, this policy stops
+              # matching the real identity and silently stops enforcing.
+              - kind: ServiceAccount
+                name: compute-service
+                namespace: backend
+      validate:
+        failureAction: Enforce
+        message: >-
+          compute-service may only create or modify Roles/RoleBindings in
+          fci-cust-* namespaces.
+        deny:
+          conditions:
+            all:
+              - key: "{{ request.namespace }}"
+                operator: NotEquals
+                value: "fci-cust-*"
+    - name: restrict-namespace-writes
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+            subjects:
+              # Same identity as restrict-namespace above; see that rule's
+              # comment for why this is hardcoded rather than templated.
+              - kind: ServiceAccount
+                name: compute-service
+                namespace: backend
+      validate:
+        failureAction: Enforce
+        message: >-
+          compute-service may only create, update, patch, or delete
+          Namespaces whose name matches fci-cust-*.
+        deny:
+          conditions:
+            all:
+              # Namespace is cluster-scoped, so there's no request.namespace
+              # to check (that's the containing namespace of a namespaced
+              # resource, which doesn't apply here). request.name is the
+              # object's own name and — unlike request.object.metadata.name
+              # — is populated by the API server for update/delete requests
+              # too, where request.object may be absent.
+              - key: "{{ request.name }}"
+                operator: NotEquals
+                value: "fci-cust-*"
+    - name: restrict-role-content
+      match:
+        any:
+          - resources:
+              kinds:
+                - Role
+            subjects:
+              # Hardcoded because this policy is plain YAML, not part of the
+              # compute-service Helm chart, so it cannot read Helm values.
+              # This name is guaranteed to match the chart's actual
+              # ServiceAccount by compute-service.serviceAccountName in
+              # applications/compute-service/templates/_helpers.tpl, which
+              # deliberately ignores serviceAccount.name overrides for
+              # exactly this reason — if the two drift, this policy stops
+              # matching the real identity and silently stops enforcing.
+              - kind: ServiceAccount
+                name: compute-service
+                namespace: backend
+      validate:
+        failureAction: Enforce
+        message: >-
+          compute-service may only create/modify a Role named
+          compute-service-workloads or terminal-gateway-exec, and every rule
+          in it must draw its apiGroups/resources/verbs only from the tokens
+          that specific role name actually uses in internal/k8s/rbac.go —
+          not the union of both roles' tokens. A single shared allowlist
+          would let a Role named terminal-gateway-exec carry
+          compute-service-workloads' full CRUD on deployments/services/
+          configmaps/PVCs/quotas; once bound via the approved RoleBinding
+          pairing, that grants terminal-gateway control over customer
+          workloads it was never meant to have. This still isn't an exact
+          match of each role's rule set (Kyverno's array pattern matching
+          cannot reliably enforce "no extra rules" without risking a false
+          sense of security from an untested exact-match, and apiGroup/
+          resource/verb tokens are still validated independently rather
+          than as per-rule triples) — but scoping each name to its own
+          token set closes the specific cross-role recombination this rule
+          exists to prevent.
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.metadata.name }}"
+                operator: AnyNotIn
+                value:
+                  - compute-service-workloads
+                  - terminal-gateway-exec
+              - all:
+                  - key: "{{ request.object.metadata.name }}"
+                    operator: Equals
+                    value: compute-service-workloads
+                  - any:
+                      - key: "{{ request.object.rules[].apiGroups[] }}"
+                        operator: AnyNotIn
+                        value:
+                          - ""
+                          - "apps"
+                      - key: "{{ request.object.rules[].resources[] }}"
+                        operator: AnyNotIn
+                        value:
+                          - deployments
+                          - services
+                          - persistentvolumeclaims
+                          - configmaps
+                          - resourcequotas
+                          - limitranges
+                      - key: "{{ request.object.rules[].verbs[] }}"
+                        operator: AnyNotIn
+                        value:
+                          - create
+                          - get
+                          - list
+                          - watch
+                          - update
+                          - patch
+                          - delete
+              - all:
+                  - key: "{{ request.object.metadata.name }}"
+                    operator: Equals
+                    value: terminal-gateway-exec
+                  - any:
+                      - key: "{{ request.object.rules[].apiGroups[] }}"
+                        operator: AnyNotIn
+                        value:
+                          - ""
+                      - key: "{{ request.object.rules[].resources[] }}"
+                        operator: AnyNotIn
+                        value:
+                          - pods
+                          - pods/exec
+                      - key: "{{ request.object.rules[].verbs[] }}"
+                        operator: AnyNotIn
+                        value:
+                          - get
+                          - list
+                          - create
+    - name: restrict-rolebinding-content
+      match:
+        any:
+          - resources:
+              kinds:
+                - RoleBinding
+            subjects:
+              # Hardcoded because this policy is plain YAML, not part of the
+              # compute-service Helm chart, so it cannot read Helm values.
+              # This name is guaranteed to match the chart's actual
+              # ServiceAccount by compute-service.serviceAccountName in
+              # applications/compute-service/templates/_helpers.tpl, which
+              # deliberately ignores serviceAccount.name overrides for
+              # exactly this reason — if the two drift, this policy stops
+              # matching the real identity and silently stops enforcing.
+              - kind: ServiceAccount
+                name: compute-service
+                namespace: backend
+      validate:
+        failureAction: Enforce
+        message: >-
+          compute-service RoleBindings may only pair an approved
+          Role/ClusterRole with its corresponding backend ServiceAccount —
+          compute-service-workloads with compute-service,
+          terminal-gateway-exec with terminal-gateway,
+          storage-service-namespace-role with storage-service, or
+          database-service-namespace-role with database-service. Checking
+          roleRef and the subject name as independent allowlists (rather
+          than as a single paired value, as below) would let a compromised
+          identity mix and match, e.g. granting a database or storage
+          namespace role to compute-service or terminal-gateway itself.
+        deny:
+          conditions:
+            any:
+              - key: "{{ length(request.object.subjects) }}"
+                operator: NotEquals
+                value: 1
+              - key: "{{ request.object.subjects[0].kind }}"
+                operator: NotEquals
+                value: ServiceAccount
+              - key: "{{ request.object.subjects[0].namespace }}"
+                operator: NotEquals
+                value: backend
+              - key: >-
+                  {{ join('/', [request.object.roleRef.kind,
+                  request.object.roleRef.name,
+                  request.object.subjects[0].name]) }}
+                operator: NotIn
+                value:
+                  - Role/compute-service-workloads/compute-service
+                  - Role/terminal-gateway-exec/terminal-gateway
+                  - ClusterRole/storage-service-namespace-role/storage-service
+                  - ClusterRole/database-service-namespace-role/database-service

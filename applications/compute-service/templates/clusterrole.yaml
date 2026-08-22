@@ -1,0 +1,90 @@
+# Cluster-scoped ClusterRole for compute-service.
+# compute-service must read Namespace objects to resolve account namespaces
+# and must manage workload resources (Pods, Deployments, RBAC) inside
+# fci-cust-* namespaces via per-namespace RoleBindings (see role-template.yaml).
+# Write access to cluster-scoped resources (Namespaces, ClusterRoles) is
+# intentionally NOT included — namespace creation is a separate provisioning
+# path controlled by RBAC at deploy time.
+#
+# The create/escalate/bind grants below are cluster-wide and RBAC alone
+# cannot restrict *which* namespace or subject they're used against — see
+# infrastructure/kyverno-policies/restrict-compute-service-rbac-writes.yaml
+# for the admission-time restriction to fci-cust-* namespaces and the four
+# approved backend service accounts that closes that gap.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "compute-service.fullname" . }}-cluster
+  labels:
+    {{- include "compute-service.labels" . | nindent 4 }}
+rules:
+  # Read namespaces to resolve account-to-namespace mapping and check
+  # whether a namespace already exists before attempting to provision it.
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+  # Create, update, and delete customer namespaces during provisioning and
+  # teardown. RBAC cannot restrict cluster-scoped writes to a name prefix
+  # pattern, so this is tightly documented — compute-service must only
+  # operate on fci-cust-* namespaces as enforced by application logic.
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["create", "update", "patch", "delete"]
+  # Read RuntimeClass objects to check Kata availability for
+  # instance-type capability detection (InstanceTypeCacheTTL).
+  - apiGroups: ["node.k8s.io"]
+    resources: ["runtimeclasses"]
+    verbs: ["get", "list"]
+  # Read node labels to detect ready/labelled nodes for instance types.
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+  # Provision and reconcile the namespaced Roles this chart owns
+  # (compute-service-workloads, terminal-gateway-exec — see rbac.go) inside
+  # every fci-cust-* namespace.
+  #
+  # "create" (and "list"/"watch", which also hit the collection endpoint)
+  # CANNOT be combined with resourceNames: the RBAC authorizer evaluates
+  # these verbs from the request URL alone, before the body is decoded, so
+  # there is no object name to compare against resourceNames yet — the
+  # empty name never matches a non-empty resourceNames list, and the verb
+  # is unconditionally Forbidden. They must be granted unscoped here;
+  # application logic (rbac.go's hard-coded role names) plus the Kyverno
+  # policy below are what actually bound what gets created.
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles"]
+    verbs: ["create", "list", "watch"]
+  # get/update/patch/delete carry the object name in the request URL, so
+  # resourceNames restricts them correctly here. "escalate" is likewise
+  # safe to scope: unlike the base "create" authorization check above, the
+  # RBAC self-escalation check runs after the body is decoded and is keyed
+  # on the object's own name, so resourceNames applies to it too. Required
+  # because a subject may only create/update a Role containing rules it
+  # doesn't already hold if it has "escalate" on that Role.
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles"]
+    resourceNames: ["compute-service-workloads", "terminal-gateway-exec"]
+    verbs: ["get", "update", "patch", "delete", "escalate"]
+  # Create the RoleBindings that grant the above Roles, plus the
+  # storage-service-namespace-role / database-service-namespace-role
+  # ClusterRoles owned by their respective charts (see role-template.yaml
+  # and internal/k8s/rbac.go). Same create/list/watch vs.
+  # get/update/patch/delete split as the roles rules above, for the same
+  # reason — resourceNames cannot be combined with create/list/watch.
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["rolebindings"]
+    verbs: ["create", "list", "watch"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["rolebindings"]
+    resourceNames: ["compute-service-workloads", "terminal-gateway-exec",
+                     "storage-service-namespace", "database-service-namespace"]
+    verbs: ["get", "update", "patch", "delete"]
+  # "bind" grants permission to reference a ClusterRole this chart doesn't
+  # itself hold the rules of — required by the same RBAC self-escalation
+  # rule as "escalate" above, but for RoleBindings whose roleRef.kind is
+  # ClusterRole. Scoped to the two cross-repo ClusterRoles rbac.go binds by
+  # name (defaults documented in compute-service's internal/k8s/config.go).
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles"]
+    resourceNames: ["storage-service-namespace-role", "database-service-namespace-role"]
+    verbs: ["bind"]

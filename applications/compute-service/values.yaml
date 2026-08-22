@@ -1,0 +1,185 @@
+# compute-service — Helm values.
+#
+# Mirrors the environment variables declared in
+# internal/config/config.go and internal/k8s/config.go.
+
+replicaCount: 2
+revisionHistoryLimit: 3
+
+image:
+  # CI pushes to registry.freecloudinitiative.com/<name>:sha-<12> (see
+  # platform-common/.github/workflows/build-arm64-image.yml, step "Derive
+  # image tags").  The tag or digest MUST be supplied by the caller (e.g.
+  # ArgoCD Application helm.parameters) — an empty tag is a hard error in
+  # deploy/templates/_helpers.tpl.  Never falls back to Chart.appVersion.
+  repository: registry.freecloudinitiative.com/compute-service
+  tag: ""
+  digest: ""
+  pullPolicy: IfNotPresent
+
+# imagePullSecrets is required: registry.freecloudinitiative.com sits behind
+# Traefik's basicAuth middleware. Create a Secret of type
+# kubernetes.io/dockerconfigjson with credentials for the registry and
+# reference it here.
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+logLevel: info
+
+service:
+  type: ClusterIP
+  port: 80
+  containerPort: 8080
+  metricsPort: 9090
+
+# terminationGracePeriodSeconds must exceed ShutdownGrace so the reconcile
+# worker can drain before kubelet sends SIGKILL.
+terminationGracePeriodSeconds: 40
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+    ephemeral-storage: 50Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+    ephemeral-storage: 100Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# compute-service is a genuine Kubernetes API client: it provisions
+# fci-cust-* namespaces and manages workload RBAC inside them. The
+# service-account token is required; setting this false breaks all
+# namespace lifecycle calls.
+automountServiceAccountToken: true
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+  # k3s default Kubernetes API Service ClusterIP. Override if your cluster
+  # service CIDR differs.
+  kubernetesAPIServerCIDR: 10.43.0.1/32
+
+# kubernetes configures the in-cluster API client and namespace
+# provisioner (internal/k8s/config.go).
+kubernetes:
+  enabled: true
+  inCluster: true
+  qps: 20
+  burst: 30
+  timeoutSeconds: 30
+  namespacePrefix: "fci-cust-"
+  # Service account that compute-service runs as — used when creating
+  # per-namespace RoleBindings so the SA can manage workloads there.
+  serviceAccountName: compute-service
+  serviceAccountNamespace: backend
+  # terminal-gateway SA for which compute-service creates exec-target RoleBindings.
+  terminalGatewayServiceAccountName: terminal-gateway
+  terminalGatewayServiceAccountNamespace: backend
+
+reconcile:
+  interval: 2s
+  batchSize: 10
+  staleAfter: 5m
+  maxAttempts: 10
+  resyncInterval: 5m
+
+quota:
+  cacheTTL: 60s
+  iamTimeout: 5s
+  iamServiceURL: http://iam-service.backend.svc.cluster.local
+
+# metrics.enabled enables the optional Prometheus query endpoint that
+# surfaces per-instance CPU/memory metrics. Requires prometheusURL to be set.
+metrics:
+  enabled: false
+  prometheusURL: ""
+  prometheusTimeout: 10s
+  metricsCacheTTL: 15s
+
+instanceTypeCacheTTL: 5m
+
+# events.enabled publishes instance state-change events to Valkey Pub/Sub.
+# Off by default: no subscriber exists yet.
+events:
+  enabled: false
+
+serviceAccount:
+  create: true
+  # name is intentionally not configurable — see
+  # compute-service.serviceAccountName in templates/_helpers.tpl.
+  annotations: {}
+
+probes:
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+  liveness:
+    initialDelaySeconds: 10
+    periodSeconds: 20
+    failureThreshold: 3
+
+# Secret references — names of Kubernetes Secrets created by ExternalSecret.
+secrets:
+  # Ed25519 public key used to verify internal JWTs from api-gateway.
+  internalPublicKey:
+    secretName: compute-service-internal-public-key
+    keyName: internal-public.pem
+  # Ed25519 public key from terminal-gateway; trusted on the exec-target route only.
+  terminalGatewayPublicKey:
+    secretName: terminal-gateway-public-key
+    keyName: internal-public.pem
+  # PostgreSQL TLS CA cert.
+  postgresqlCA:
+    secretName: compute-service-postgresql-ca-cert
+  # PostgreSQL credentials (DSN URL).
+  postgresqlCredentials:
+    secretName: compute-service-postgresql-credentials
+  # Valkey password.
+  valkey:
+    secretName: compute-service-valkey-password
+    keyName: password
+  # Valkey TLS CA cert.
+  valkeyCACert:
+    secretName: compute-service-valkey-ca-cert
+    keyName: ca.crt
+
+config:
+  logLevel: info
+  environment: production
+  valkeyURL: valkey.valkey.svc.cluster.local:6379
+  otelEndpoint: opentelemetry-collector.monitoring.svc.cluster.local:4317
+  shutdownGrace: 30s
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  namespace: monitoring
+
+prometheusRule:
+  enabled: true
+  namespace: monitoring
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

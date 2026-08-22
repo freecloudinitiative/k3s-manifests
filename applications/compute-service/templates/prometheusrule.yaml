@@ -1,0 +1,63 @@
+{{- if .Values.prometheusRule.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "compute-service.fullname" . }}
+  namespace: {{ .Values.prometheusRule.namespace }}
+  labels:
+    {{- include "compute-service.labels" . | nindent 4 }}
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: compute-service
+      rules:
+        - alert: ComputeReconcileWorkerFailing
+          expr: |
+            rate(computesvc_reconcile_errors_total[5m]) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "compute-service reconcile worker is failing"
+            description: >-
+              The reconcile worker has recorded errors for 10m. Instance
+              provisioning tasks may be stuck or stalled.
+
+        - alert: ComputeInstanceProvisioningFailed
+          expr: |
+            sum by (reason) (rate(computesvc_instance_provision_errors_total[5m])) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "compute-service instance provisioning errors"
+            description: >-
+              Sustained errors provisioning customer compute instances over
+              the last 5m, broken out by the `reason` label.
+
+        - alert: ComputeNamespaceLifecycleError
+          expr: |
+            rate(computesvc_namespace_lifecycle_errors_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "compute-service namespace lifecycle errors"
+            description: >-
+              compute-service is encountering errors managing fci-cust-*
+              namespaces. Customer isolation may be affected. Investigate
+              immediately.
+
+        - alert: ComputeQuotaCacheDown
+          expr: |
+            rate(computesvc_quota_cache_hits_total[15m]) == 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "compute-service quota cache has no hits"
+            description: >-
+              The quota cache (Valkey) has recorded no hits for 15m.
+              All quota checks are hitting iam-service directly, which
+              increases latency and load.
+{{- end }}

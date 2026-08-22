@@ -1,0 +1,215 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "compute-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "compute-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      {{- include "compute-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "compute-service.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ toYaml .Values | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "compute-service.serviceAccountName" . }}
+      # terminationGracePeriodSeconds must exceed ShutdownGrace so the
+      # reconcile worker can fully drain before kubelet sends SIGKILL.
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: compute-service
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "compute-service.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.containerPort }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.service.metricsPort }}
+              protocol: TCP
+          env:
+            - name: SERVICE_NAME
+              value: compute-service
+            - name: LOG_LEVEL
+              value: {{ .Values.logLevel | default "info" | quote }}
+            - name: HTTP_PORT
+              value: {{ .Values.service.containerPort | quote }}
+            - name: METRICS_PORT
+              value: {{ .Values.service.metricsPort | quote }}
+            - name: SHUTDOWN_GRACE
+              value: {{ .Values.config.shutdownGrace | quote }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.postgresqlCredentials.secretName }}
+                  key: url
+            - name: DATABASE_SCHEMA
+              value: compute
+            - name: DB_MAX_CONNS
+              value: "10"
+            - name: INTERNAL_PUBLIC_KEY_PATH
+              value: /etc/compute-service/internal/internal-public.pem
+            - name: TERMINAL_GATEWAY_PUBLIC_KEY_PATH
+              value: /etc/compute-service/terminal-gateway/terminal-gateway-public.pem
+            - name: SERVICE_AUDIENCE
+              value: compute-service
+            - name: IAM_SERVICE_URL
+              value: {{ .Values.quota.iamServiceURL | quote }}
+            - name: QUOTA_CACHE_TTL
+              value: {{ .Values.quota.cacheTTL | quote }}
+            - name: IAM_TIMEOUT
+              value: {{ .Values.quota.iamTimeout | quote }}
+            - name: VALKEY_URL
+              value: {{ .Values.config.valkeyURL | quote }}
+            - name: VALKEY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.valkey.secretName }}
+                  key: {{ .Values.secrets.valkey.keyName }}
+            - name: VALKEY_CA_CERT_PATH
+              value: /etc/compute-service/valkey/ca.crt
+            - name: KUBERNETES_ENABLED
+              value: {{ .Values.kubernetes.enabled | quote }}
+            {{- if .Values.kubernetes.enabled }}
+            - name: KUBERNETES_IN_CLUSTER
+              value: {{ .Values.kubernetes.inCluster | quote }}
+            - name: KUBERNETES_QPS
+              value: {{ .Values.kubernetes.qps | quote }}
+            - name: KUBERNETES_BURST
+              value: {{ .Values.kubernetes.burst | quote }}
+            - name: KUBERNETES_TIMEOUT
+              value: "{{ .Values.kubernetes.timeoutSeconds }}s"
+            - name: KUBERNETES_NAMESPACE_PREFIX
+              value: {{ .Values.kubernetes.namespacePrefix | quote }}
+            - name: KUBERNETES_SERVICE_ACCOUNT
+              value: {{ .Values.kubernetes.serviceAccountName | quote }}
+            - name: KUBERNETES_SERVICE_ACCOUNT_NAMESPACE
+              value: {{ .Values.kubernetes.serviceAccountNamespace | quote }}
+            - name: TERMINAL_GATEWAY_SERVICE_ACCOUNT
+              value: {{ .Values.kubernetes.terminalGatewayServiceAccountName | quote }}
+            - name: TERMINAL_GATEWAY_SERVICE_ACCOUNT_NAMESPACE
+              value: {{ .Values.kubernetes.terminalGatewayServiceAccountNamespace | quote }}
+            - name: RECONCILE_INTERVAL
+              value: {{ .Values.reconcile.interval | quote }}
+            - name: RECONCILE_BATCH_SIZE
+              value: {{ .Values.reconcile.batchSize | quote }}
+            - name: RECONCILE_STALE_AFTER
+              value: {{ .Values.reconcile.staleAfter | quote }}
+            - name: RECONCILE_MAX_ATTEMPTS
+              value: {{ .Values.reconcile.maxAttempts | quote }}
+            - name: RESYNC_INTERVAL
+              value: {{ .Values.reconcile.resyncInterval | quote }}
+            {{- end }}
+            - name: METRICS_ENABLED
+              value: {{ .Values.metrics.enabled | quote }}
+            {{- if .Values.metrics.enabled }}
+            - name: PROMETHEUS_URL
+              value: {{ .Values.metrics.prometheusURL | quote }}
+            - name: PROMETHEUS_TIMEOUT
+              value: {{ .Values.metrics.prometheusTimeout | quote }}
+            - name: METRICS_CACHE_TTL
+              value: {{ .Values.metrics.metricsCacheTTL | quote }}
+            {{- end }}
+            - name: INSTANCE_TYPE_CACHE_TTL
+              value: {{ .Values.instanceTypeCacheTTL | quote }}
+            - name: EVENTS_ENABLED
+              value: {{ .Values.events.enabled | quote }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ printf "http://%s" .Values.config.otelEndpoint | quote }}
+            # Downward API for OTel resource attributes.
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: postgresql-ca
+              mountPath: /etc/compute-service/postgres
+              readOnly: true
+            - name: internal-public-key
+              mountPath: /etc/compute-service/internal
+              readOnly: true
+            - name: terminal-gateway-public-key
+              mountPath: /etc/compute-service/terminal-gateway
+              readOnly: true
+            - name: valkey-ca
+              mountPath: /etc/compute-service/valkey
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+      volumes:
+        - name: postgresql-ca
+          secret:
+            secretName: {{ .Values.secrets.postgresqlCA.secretName }}
+        - name: internal-public-key
+          secret:
+            secretName: {{ .Values.secrets.internalPublicKey.secretName }}
+            items:
+              - key: {{ .Values.secrets.internalPublicKey.keyName }}
+                path: internal-public.pem
+            defaultMode: 0444
+        - name: terminal-gateway-public-key
+          secret:
+            secretName: {{ .Values.secrets.terminalGatewayPublicKey.secretName }}
+            items:
+              - key: {{ .Values.secrets.terminalGatewayPublicKey.keyName }}
+                path: terminal-gateway-public.pem
+            defaultMode: 0444
+        - name: valkey-ca
+          secret:
+            secretName: {{ .Values.secrets.valkeyCACert.secretName }}
+            items:
+              - key: {{ .Values.secrets.valkeyCACert.keyName }}
+                path: ca.crt
+            defaultMode: 0444
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

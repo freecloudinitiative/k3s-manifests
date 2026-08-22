@@ -1,0 +1,65 @@
+{{- if .Values.prometheusRule.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "iam-service.fullname" . }}
+  namespace: {{ .Values.prometheusRule.namespace }}
+  labels:
+    {{- include "iam-service.labels" . | nindent 4 }}
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: iam-service
+      rules:
+        - alert: IAMServiceHighErrorRate
+          expr: |
+            rate(iamsvc_request_errors_total[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "iam-service has a high request error rate"
+            description: >-
+              iam-service is returning more than 0.1 errors/sec, averaged
+              over the last 5m. Quota checks from all downstream services
+              (compute, storage, api-gateway) will be affected.
+
+        - alert: IAMServiceQuotaCheckFailing
+          expr: |
+            rate(iamsvc_quota_check_errors_total[5m]) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "iam-service quota checks are failing"
+            description: >-
+              Sustained quota check errors for 10m. Downstream services
+              applying quota enforcement will fail open or closed depending
+              on their error policy.
+
+        - alert: IAMServiceDatabaseDown
+          expr: |
+            iamsvc_db_up == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "iam-service cannot reach its database"
+            description: >-
+              iam-service reports its database health check as failing.
+              All account and quota operations will fail. This is a
+              platform-wide incident.
+
+        - alert: IAMServiceTokenVerificationFailing
+          expr: |
+            rate(iamsvc_token_verification_failures_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "iam-service JWT verification failures increasing"
+            description: >-
+              Internal JWT verification failures are increasing. This may
+              indicate a key rotation issue or a misconfigured issuer in
+              api-gateway or terminal-gateway.
+{{- end }}

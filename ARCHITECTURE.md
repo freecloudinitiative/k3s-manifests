@@ -136,11 +136,22 @@ The following paths must be seeded **out of band** before the corresponding `Ext
 | `secret/data/platform-postgresql` | `ca-cert` | TLS verification | service CA bundles (backend) |
 | `secret/data/database` | `postgresql-password` | database-service pod DATABASE_URL | `database-service-config` (backend) |
 | `secret/data/api-gateway` | `internal-public-key` | database-service token verification | `internal-token-public-key` (backend) |
+| `secret/data/iam` | `postgresql-password` | iam-service pod DATABASE_URL | `iam-service-postgresql-credentials` (backend) |
+| `secret/data/compute` | `postgresql-password` | compute-service pod DATABASE_URL | `compute-service-postgresql-credentials` (backend) |
+| `secret/data/platform-postgresql` | `ca-cert` | iam-service and compute-service Postgres TLS verification | `iam-service-postgresql-ca-cert`, `compute-service-postgresql-ca-cert` (backend) |
+| `secret/data/api-gateway` | `internal-public-key` | iam-service and compute-service gateway-token verification | `iam-service-internal-public-key`, `compute-service-internal-public-key` (backend) |
+| `secret/data/terminal-gateway` | `internal-public-key` | iam-service and compute-service terminal-token verification | `terminal-gateway-public-key` (backend, shared) |
+| `secret/data/valkey` | `password` | compute-service Valkey authentication | `compute-service-valkey-password` (backend) |
+| `secret/data/valkey` | `ca-cert` | compute-service Valkey TLS verification | `compute-service-valkey-ca-cert` (backend) |
 
 Note: `secret/data/database / postgresql-password` is shared between the `database-role` DatabaseRole
 (platform-database, PR-02) and the `database-service-config` ExternalSecret (backend, PR-03). Both
 read the same OpenBao key; the DatabaseRole copy feeds CNPG role creation, the backend copy feeds the
 pod's `DATABASE_URL` environment variable.
+
+Likewise, the iam and compute Postgres password paths each feed both a `DatabaseRole` credential in
+`platform-database` and a chart-facing connection string in `backend`. The terminal-gateway public
+key is intentionally represented by one shared Kubernetes Secret for both verifier services.
 
 ### CNPG same-namespace resolution rule
 

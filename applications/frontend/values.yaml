@@ -10,6 +10,11 @@ image:
 # replicaCount -- number of pods.
 replicaCount: 2
 
+# imagePullSecrets -- pull credentials for registry.freecloudinitiative.com, which sits
+# behind Traefik basicAuth (infrastructure/zot-registry/middleware.yaml). Set via the
+# app.yaml helm parameter to zot-registry-pull-credentials.
+imagePullSecrets: []
+
 # service -- Kubernetes Service settings.
 service:
   port: 8080

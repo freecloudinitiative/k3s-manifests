@@ -25,6 +25,10 @@ spec:
         runAsUser: {{ .Values.securityContext.runAsUser }}
         seccompProfile:
           type: {{ .Values.securityContext.seccompProfile.type }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: frontend
           image: {{ include "frontend.image" . }}

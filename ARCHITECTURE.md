@@ -94,9 +94,25 @@ Cloudflare (DNS + CDN)
    │
    ├── auth.freecloudinitiative.com ──► Cloudflare Tunnel (cloudflared) ──► Authentik
    │
-   └── registry.freecloudinitiative.com ──► Cloudflare Tunnel ──► Zot Registry
-                                                                  (Traefik middleware: auth)
+   ├── registry.freecloudinitiative.com ──► Cloudflare Tunnel ──► Zot Registry
+   │                                                              (Traefik middleware: auth)
+   │
+   └── frontend.freecloudinitiative.com ──► Cloudflare Tunnel ──► Traefik (websecure, TLS via
+                                             letsencrypt-production) ──► frontend nginx (namespace:
+                                             frontend) ──► api-gateway (namespace: backend) ──►
+                                             {iam, compute, database, storage, terminal-gateway}
 ```
+
+api-gateway and terminal-gateway have no Ingress of their own, by design — api-gateway's chart
+asserts this with `TestChart_NoIngress`, and both NetworkPolicies admit ingress only from specific
+in-cluster namespaces (`frontend` for api-gateway, `backend` for terminal-gateway). frontend nginx
+proxies `/api/` and `/ws/` same-origin to api-gateway, which in turn proxies `/ws/terminal/` on to
+terminal-gateway — so the frontend host is the platform's only public entry point, and reaching
+either gateway directly from outside the cluster is not possible.
+
+Adding `frontend.freecloudinitiative.com` as a public hostname in the Cloudflare Tunnel config
+(dashboard/Terraform, outside this repo) is a prerequisite for both the HTTP-01 ACME challenge and
+real traffic to reach this Ingress — it is not something `k3s-manifests` can configure on its own.
 
 ### Internal HTTP (cluster LAN access)
 
@@ -106,7 +122,6 @@ Browser → master-node-IP:80
    ▼
 Traefik (DaemonSet on master node, hostPort 80/443)
    │
-   ├── /frontend       ──► frontend pod (namespace: frontend)
    ├── /grafana        ──► Grafana (namespace: monitoring)
    ├── /prometheus     ──► Prometheus (namespace: monitoring)
    ├── /alloy          ──► Alloy UI (namespace: monitoring)
@@ -308,3 +323,4 @@ Key rules:
 | iam-service | `backend` | any node |
 | storage-service | `backend` | any node |
 | terminal-gateway | `backend` | any node |
+| frontend | `frontend` | any node |

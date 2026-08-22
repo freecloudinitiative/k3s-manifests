@@ -8,7 +8,7 @@
 
 Creates all Kubernetes namespaces before any other app deploys. ArgoCD sync-wave `-1` ensures these exist first.
 
-Namespaces: `authentik`, `cert-manager`, `cloudflared`, `cnpg-system`, `garage`, `kyverno`, `longhorn-system`, `metallb-system`, `monitoring`, `platform-database`, `traefik`, `valkey`, `zot-registry`.
+Namespaces: `authentik`, `cert-manager`, `cloudflared`, `cnpg-system`, `frontend`, `garage`, `kyverno`, `longhorn-system`, `metallb-system`, `monitoring`, `platform-database`, `traefik`, `valkey`, `zot-registry`.
 
 ---
 
@@ -74,10 +74,11 @@ Both: `reclaimPolicy: Retain` (volumes survive pod deletion), `allowVolumeExpans
 | `/alloy` | Alloy UI (monitoring) |
 | `/argocd` | ArgoCD UI (argocd) |
 | `/traefik-dashboard` | Traefik dashboard (traefik) |
-| `/frontend` | FCI frontend (frontend) |
 | `/ui`, `/v1` | OpenBao UI + API (openbao) |
 
-Public endpoints (Authentik, Zot Registry) route via Cloudflare + Let's Encrypt TLS.
+Public endpoints (Authentik, Zot Registry, frontend) route via Cloudflare + Let's Encrypt TLS, each
+on its own host (`auth.`, `registry.`, `frontend.freecloudinitiative.com`) rather than a path prefix
+on this table.
 
 ---
 
@@ -87,7 +88,7 @@ Public endpoints (Authentik, Zot Registry) route via Cloudflare + Let's Encrypt 
 
 **Config**:
 - One `ClusterSecretStore` named `openbao-store`. Connects to `openbao-active.openbao.svc.cluster.local:8200` using Kubernetes service account auth.
-- Store restricted to allowed namespaces: `authentik`, `backend`, `zot-registry`, `monitoring`, `platform-database`, `valkey`.
+- Store restricted to allowed namespaces: `authentik`, `backend`, `frontend`, `zot-registry`, `monitoring`, `platform-database`, `valkey`.
 
 **ExternalSecrets managed**:
 
@@ -105,6 +106,7 @@ Public endpoints (Authentik, Zot Registry) route via Cloudflare + Let's Encrypt 
 | `compute-postgresql-credentials` | `platform-database` | CNPG `compute` role password (feeds `compute-role` DatabaseRole) |
 | `database-postgresql-credentials` | `platform-database` | CNPG `database` role password (feeds `database-role` DatabaseRole) |
 | `zot-registry-pull-credentials` | `backend` | Docker registry credentials for FCI application image pulls |
+| `zot-registry-pull-credentials` | `frontend` | Docker registry credentials for the frontend image pull |
 
 **Namespace rule**: CNPG resolves `DatabaseRole.spec.passwordSecret` in the namespace where the `DatabaseRole` reconciles (`platform-database`). Secrets that feed a `DatabaseRole` must live in `platform-database`, not `backend`. Backend-namespace copies for pod consumption are separate `ExternalSecret` objects (PR-03, PR-04).
 

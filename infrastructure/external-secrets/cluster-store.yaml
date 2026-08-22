@@ -9,6 +9,7 @@ spec:
     - namespaces:
         - authentik
         - backend
+        - frontend
         - zot-registry
         - monitoring
         - platform-database

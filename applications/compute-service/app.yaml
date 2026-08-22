@@ -14,6 +14,12 @@ spec:
     helm:
       valueFiles:
         - values.yaml
+      parameters:
+        # Placeholder: this Application will not sync until a real image is published.
+        - name: image.tag
+          value: "sha-xxxxxxxxxxxx"
+        - name: imagePullSecrets[0].name
+          value: zot-registry-pull-credentials
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: backend

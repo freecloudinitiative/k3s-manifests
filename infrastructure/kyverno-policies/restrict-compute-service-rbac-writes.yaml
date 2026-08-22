@@ -88,13 +88,16 @@ spec:
         failureAction: Enforce
         message: >-
           compute-service may only create/modify a Role named
-          compute-service-workloads or terminal-gateway-exec, and its rules
-          may not touch Secrets, ServiceAccount tokens, RBAC objects, or use
-          a wildcard apiGroup/resource/verb. This is a denylist, not an
-          exact match of the two known-good rule sets in
-          internal/k8s/rbac.go — deliberately, since Kyverno's array
-          pattern matching cannot reliably enforce "no extra rules" without
-          risking a false sense of security from an untested exact-match.
+          compute-service-workloads or terminal-gateway-exec, and every rule
+          in it must draw its apiGroups/resources/verbs only from the small
+          set internal/k8s/rbac.go's two known-good rule sets actually use.
+          This is an allowlist of safe tokens, not an exact match of the two
+          rule sets themselves (Kyverno's array pattern matching cannot
+          reliably enforce "no extra rules" without risking a false sense of
+          security from an untested exact-match) — but an allowlist fails
+          closed on anything unanticipated, where a denylist (the prior
+          version of this rule) fails open on anything its authors didn't
+          think to enumerate, such as pods/ephemeralcontainers.
         deny:
           conditions:
             any:
@@ -104,27 +107,31 @@ spec:
                   - compute-service-workloads
                   - terminal-gateway-exec
               - key: "{{ request.object.rules[].apiGroups[] }}"
-                operator: AnyIn
+                operator: AnyNotIn
                 value:
-                  - "*"
-                  - "rbac.authorization.k8s.io"
+                  - ""
+                  - "apps"
               - key: "{{ request.object.rules[].resources[] }}"
-                operator: AnyIn
+                operator: AnyNotIn
                 value:
-                  - "*"
-                  - "secrets"
-                  - "serviceaccounts/token"
-                  - "roles"
-                  - "rolebindings"
-                  - "clusterroles"
-                  - "clusterrolebindings"
+                  - deployments
+                  - services
+                  - persistentvolumeclaims
+                  - configmaps
+                  - resourcequotas
+                  - limitranges
+                  - pods
+                  - pods/exec
               - key: "{{ request.object.rules[].verbs[] }}"
-                operator: AnyIn
+                operator: AnyNotIn
                 value:
-                  - "*"
-                  - "escalate"
-                  - "bind"
-                  - "impersonate"
+                  - create
+                  - get
+                  - list
+                  - watch
+                  - update
+                  - patch
+                  - delete
     - name: restrict-rolebinding-content
       match:
         any:
@@ -162,6 +169,9 @@ spec:
               - key: "{{ length(request.object.subjects) }}"
                 operator: NotEquals
                 value: 1
+              - key: "{{ request.object.subjects[0].kind }}"
+                operator: NotEquals
+                value: ServiceAccount
               - key: "{{ request.object.subjects[0].namespace }}"
                 operator: NotEquals
                 value: backend

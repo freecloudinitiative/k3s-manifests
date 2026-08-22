@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: openbao-ingress
   namespace: openbao
+  annotations:
+    traefik.ingress.kubernetes.io/service.serversscheme: https
 spec:
   ingressClassName: traefik
   rules:

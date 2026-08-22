@@ -23,7 +23,7 @@ spec:
       ref: values
       directory:
         include: "*.yaml"
-        exclude: "app.yaml"
+        exclude: "{app.yaml,values.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: openbao

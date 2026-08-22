@@ -24,6 +24,22 @@ Having everything in one Git repo means:
 - Accidental drift gets self-healed automatically.
 - Full cluster state is recoverable from this repo alone.
 
+## Prerequisites
+
+OpenBao is **not** deployed by this repo and must already be running, initialised, and unsealed
+before the first ArgoCD sync.
+
+- Its Service must resolve at `openbao-active.openbao.svc.cluster.local:8200` — this is hardcoded
+  in [infrastructure/external-secrets/cluster-store.yaml](infrastructure/external-secrets/cluster-store.yaml)
+  and must match whatever provisions OpenBao out of band.
+- The `openbao` namespace and a Kubernetes auth role/mount granting the `external-secrets-openbao`
+  ServiceAccount (namespace `external-secrets`) read access must exist in OpenBao — see
+  [infrastructure/external-secrets/service-account.yaml](infrastructure/external-secrets/service-account.yaml)
+  and [rbac.yaml](infrastructure/external-secrets/rbac.yaml).
+- Every `ExternalSecret` in this repo fails closed (`SecretSyncedError`, indefinitely, with no other
+  signal) without it, and every pod mounting a Secret then fails to start. See
+  [ARCHITECTURE.md § Secret Flow](ARCHITECTURE.md) for the full key inventory to seed.
+
 ## How Start
 
 This repo is not applied manually. The `ansible-automation` playbook bootstraps ArgoCD, which then picks up this repo automatically.
@@ -110,7 +126,7 @@ git add . && git commit -m "add my-namespace namespace" && git push
 
 ## Language
 
-YAML. Helm charts and values files. Jinja2 templates (in `random-logger` and `cloudflared` inline charts). Makefile shells out to yamllint, helm, kubeconform, and helm-unittest. No Go.
+YAML. Helm charts and values files. Jinja2 templates (in the `cloudflared` inline chart). Makefile shells out to yamllint, helm, kubeconform, and helm-unittest. No Go.
 
 ## Folders
 
@@ -149,7 +165,6 @@ applications/
   iam-service/        Identity and access management service.
   storage-service/    Garage S3-backed object storage service.
   terminal-gateway/   WebSocket-to-Kubernetes exec terminal proxy.
-  random-logger/      Test app — generates random structured logs (dev/testing).
 ```
 
 ## Read More

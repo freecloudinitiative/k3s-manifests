@@ -126,9 +126,11 @@ Traefik (DaemonSet on master node, hostPort 80/443)
    ├── /prometheus     ──► Prometheus (namespace: monitoring)
    ├── /alloy          ──► Alloy UI (namespace: monitoring)
    ├── /argocd         ──► ArgoCD server (namespace: argocd)
-   ├── /traefik-dashboard ► Traefik internal API
-   └── /ui, /v1        ──► OpenBao (namespace: openbao)
+   └── /traefik-dashboard ► Traefik internal API
 ```
+
+OpenBao is not routed through this repo's Traefik — it is an out-of-band prerequisite (see
+[README.md § Prerequisites](README.md)), and this repo never creates its namespace or Service.
 
 ### API Traffic (authenticated)
 
@@ -189,6 +191,20 @@ The following paths must be seeded **out of band** before the corresponding `Ext
 | `secret/data/valkey` | `password` | compute-service Valkey authentication | `compute-service-valkey-password` (backend) |
 | `secret/data/valkey` | `ca-cert` | compute-service Valkey TLS verification | `compute-service-valkey-ca-cert` (backend) |
 | `secret/data/zot-registry` | `pull-username`, `pull-password` | Authenticated backend image pulls | `zot-registry-pull-credentials` (backend) |
+| `secret/data/authentik` | `postgresql-password` | authentik pod DB config | `authentik-config` (authentik) |
+| `secret/data/authentik` | `secret-key` | authentik pod signing key | `authentik-config` (authentik) |
+| `secret/data/authentik` | `bootstrap-email` | authentik first-run bootstrap | `authentik-bootstrap` (authentik) |
+| `secret/data/authentik` | `bootstrap-password` | authentik first-run bootstrap | `authentik-bootstrap` (authentik) |
+| `secret/data/authentik` | `postgresql-password` | authentik `DatabaseRole` credential | `authentik-postgresql-credentials` (platform-database) |
+| `secret/data/platform-postgresql` | `password` | shared `platform` role credential | `platform-postgresql-credentials` (platform-database) |
+| `secret/data/grafana` | `admin-user`, `admin-password` | Grafana admin login | `grafana-secrets` (monitoring) |
+| `secret/data/cloudflared` | `tunnel-token` | cloudflared tunnel authentication | `cloudflared-tunnel-token` (cloudflared) |
+| `secret/data/zot-registry` | `s3-access-key-id`, `s3-secret-access-key` | zot-registry Garage S3 backend | `zot-s3-credentials` (zot-registry) |
+| `secret/data/zot-registry` | `htpasswd` | zot-registry basic-auth users | `zot-registry-auth` (zot-registry) |
+| `secret/data/api-gateway` | `internal-signing-key` | api-gateway token issuance (private half) | `api-gateway-signing-key` (backend) |
+| `secret/data/terminal-gateway` | `internal-signing-key` | terminal-gateway token issuance (private half) | `terminal-gateway-signing-key` (backend) |
+| `secret/data/garage` | `storage-service-access-key`, `storage-service-secret-key` | storage-service Garage S3 client | `storage-service-objectstore-credentials` (backend) |
+| `secret/data/garage` | `ca-cert` | storage-service Garage TLS verification | `storage-service-objectstore-credentials` (backend) |
 
 Note: `secret/data/database / postgresql-password` is shared between the `database-role` DatabaseRole
 (platform-database, PR-02) and the `database-service-config` ExternalSecret (backend, PR-03). Both

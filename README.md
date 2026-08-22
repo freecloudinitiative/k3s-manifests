@@ -2,54 +2,67 @@
 
 ## What Code Do
 
-GitOps source of truth for the FCI Kubernetes cluster. Everything that runs in the cluster is declared here.
+GitOps source of truth for FCI Kubernetes cluster. Everything that runs in
+cluster is declared here.
 
-ArgoCD watches this repo. Any change pushed here is automatically applied to the cluster. Nothing runs in the cluster that isn't in this repo.
+ArgoCD watches this repo. Any change pushed here is applied. Nothing runs
+that is not in this repo.
 
-Three folders:
+Two folders:
 
-- **`infrastructure/`** — platform-level tools: ingress, TLS, storage, secrets, databases, observability, identity, image registry, policy engine.
-- **`applications/`** — what ArgoCD is told: one `app.yaml` per FCI product service.
-- **`charts/`** — what ArgoCD renders: application Helm charts. Empty until charts move here from service repos.
+- **`infrastructure/`** — platform tools: ingress, TLS, storage, secrets,
+  databases, observability, identity, image registry, policy engine.
+- **`applications/`** — FCI product services. Each folder is an ArgoCD
+  `app.yaml` plus the Helm chart it renders.
 
-`applications/` and `infrastructure/` each contain one sub-folder per app. Each app has an `app.yaml` — an ArgoCD `Application` manifest that tells ArgoCD where to find the app's Helm chart or raw manifests. Application charts themselves live under `charts/<service>/`, not next to `app.yaml`.
+`applications/` and `infrastructure/` each contain one sub-folder per app.
+Each app has an `app.yaml` — ArgoCD `Application` that tells ArgoCD where
+to find Helm chart or raw manifests. Application charts live next to
+`app.yaml` under `applications/<service>/`. No `charts/` directory.
 
 ## Why Need It
 
-Bare-metal cluster has no cloud provider. Every piece of infrastructure (load balancer, TLS, storage, secrets, observability) must be explicitly installed and configured.
+Bare-metal cluster has no cloud provider. Every infrastructure piece (load
+balancer, TLS, storage, secrets, observability) must be installed and
+configured here.
 
-Having everything in one Git repo means:
+One Git repo means:
 - Single place to change anything.
 - ArgoCD auto-syncs — no manual `kubectl apply`.
-- Accidental drift gets self-healed automatically.
+- Accidental drift is self-healed.
 - Full cluster state is recoverable from this repo alone.
 
 ## Prerequisites
 
-OpenBao is **not** deployed by this repo and must already be running, initialised, and unsealed
-before the first ArgoCD sync.
+OpenBao is **not** deployed by this repo and must already be running,
+initialised, and unsealed before first ArgoCD sync.
 
-- Its Service must resolve at `openbao-active.openbao.svc.cluster.local:8200` — this is hardcoded
-  in [infrastructure/external-secrets/cluster-store.yaml](infrastructure/external-secrets/cluster-store.yaml)
+- Service must resolve at
+  `openbao-active.openbao.svc.cluster.local:8200` — hardcoded in
+  [infrastructure/external-secrets/cluster-store.yaml](infrastructure/external-secrets/cluster-store.yaml)
   and must match whatever provisions OpenBao out of band.
-- The `openbao` namespace and a Kubernetes auth role/mount granting the `external-secrets-openbao`
-  ServiceAccount (namespace `external-secrets`) read access must exist in OpenBao — see
+- `openbao` namespace and a Kubernetes auth role/mount granting
+  `external-secrets-openbao` ServiceAccount (namespace `external-secrets`)
+  read access must exist in OpenBao — see
   [infrastructure/external-secrets/service-account.yaml](infrastructure/external-secrets/service-account.yaml)
   and [rbac.yaml](infrastructure/external-secrets/rbac.yaml).
-- Every `ExternalSecret` in this repo fails closed (`SecretSyncedError`, indefinitely, with no other
-  signal) without it, and every pod mounting a Secret then fails to start. See
-  [ARCHITECTURE.md § Secret Flow](ARCHITECTURE.md) for the full key inventory to seed.
+- Every `ExternalSecret` in this repo fails closed (`SecretSyncedError`,
+  indefinitely, with no other signal) without it, and every pod mounting a
+  Secret then fails to start. See
+  [ARCHITECTURE.md § Secret Flow](ARCHITECTURE.md) for the key inventory
+  to seed.
 
 ## How Start
 
-This repo is not applied manually. The `ansible-automation` playbook bootstraps ArgoCD, which then picks up this repo automatically.
+This repo is not applied manually. `ansible-automation` playbook bootstraps
+ArgoCD, which then picks up this repo.
 
-**Step 1 — Run the ansible-automation playbook.**
+**Step 1 — Run ansible-automation playbook.**
 
-The `argocd-bootstrap` role (called from `playbook.yml`) does three things:
-1. Waits for the ArgoCD `Application` CRD to be ready.
-2. Renders `root-app.yaml` from the `root-app.yaml.j2` template.
-3. Applies `root-app.yaml` to the cluster.
+`argocd-bootstrap` role (from `playbook.yml`) does three things:
+1. Waits for ArgoCD `Application` CRD to be ready.
+2. Renders `root-app.yaml` from `root-app.yaml.j2`.
+3. Applies `root-app.yaml` to cluster.
 
 ```bash
 # From ansible-automation repo root
@@ -58,43 +71,25 @@ ansible-playbook playbook.yml --ask-vault-pass
 
 **Step 2 — ArgoCD takes over.**
 
-The `root-app` Application points ArgoCD at this repo:
+`root-app` Application points ArgoCD at this repo:
 
-- Source repo: `https://github.com/freecloudinitiative/k3s-manifests.git` (configured in `argocd-bootstrap/defaults/main.yml`)
-- Watches two paths: `infrastructure/` (matches `*/app*.yaml` + `namespaces/*.yaml`) and `applications/` (matches `*/app*.yaml`)
+- Source repo: `https://github.com/freecloudinitiative/k3s-manifests.git`
+  (configured in `argocd-bootstrap/defaults/main.yml`)
+- Watches two paths: `infrastructure/` (matches `*/app*.yaml` +
+  `namespaces/*.yaml`) and `applications/` (matches `*/app*.yaml`)
 - Sync: automated, prune, selfHeal
 
-From this point, any push to this repo is applied to the cluster automatically.
+From this point, any push to this repo is applied automatically.
 
-**To add a new app after bootstrap:**
+**To add a new FCI service after bootstrap:**
 
 ```bash
-# 1. Create a folder under applications/ or infrastructure/
+# 1. Create folder under applications/
 mkdir applications/my-service
 
-# 2. Create app.yaml
-cat > applications/my-service/app.yaml <<'EOF'
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: my-service
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: 'https://github.com/freecloudinitiative/my-service.git'
-    targetRevision: HEAD
-    path: deploy
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: backend
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-EOF
+# 2. Add Helm chart (Chart.yaml, values.yaml, templates/) and app.yaml
+#    pointing at this repo, path applications/my-service.
+#    See applications/api-gateway/app.yaml for the shape.
 
 # 3. Push — ArgoCD picks it up within seconds
 git add . && git commit -m "add my-service" && git push
@@ -102,7 +97,7 @@ git add . && git commit -m "add my-service" && git push
 
 **To validate charts and manifests locally:**
 
-Install Helm, yamllint, kubeconform, and the helm-unittest plugin, then:
+Install Helm, yamllint, kubeconform, and helm-unittest plugin, then:
 
 ```bash
 helm plugin install https://github.com/helm-unittest/helm-unittest.git --version v1.1.2
@@ -110,7 +105,11 @@ helm plugin install https://github.com/helm-unittest/helm-unittest.git --version
 make validate
 ```
 
-`make validate` lints YAML, lints and renders every Helm chart, schema-checks rendered output with kubeconform, and runs helm-unittest suites under `charts/`. This repo is YAML-only — no Go, no `go.mod`. See [CHARTS.md](CHARTS.md) for the chart-authoring contract.
+`make validate` lints YAML, lints and renders every Helm chart under
+`infrastructure/` and `applications/`, schema-checks rendered output with
+kubeconform, and runs helm-unittest suites if any `tests/` directory
+exists. This repo is YAML-only — no Go, no `go.mod`. See
+[CHARTS.md](CHARTS.md) for chart-authoring contract.
 
 **To add a new namespace:**
 
@@ -124,32 +123,36 @@ EOF
 git add . && git commit -m "add my-namespace namespace" && git push
 ```
 
+`backend` and `external-secrets` are created by `CreateNamespace=true` on
+their Applications, not by a file in `namespaces/`.
+
 ## Language
 
-YAML. Helm charts and values files. Jinja2 templates (in the `cloudflared` inline chart). Makefile shells out to yamllint, helm, kubeconform, and helm-unittest. No Go.
+YAML. Helm charts and values files. Makefile shells out to yamllint, helm,
+kubeconform, and helm-unittest. No Go.
 
 ## Folders
 
 ```
 Makefile              Local validation: lint, template, schema, unittest.
 CHARTS.md             Chart-authoring contract: where charts live, tests/, YAML-only rule.
-
-charts/               Application Helm charts. Destination for service charts; empty until they move here.
+caveman.md            Terse writing rules for these docs.
 
 infrastructure/
-  namespaces/         Namespace definitions. Applied first (sync-wave -1).
+  namespaces/         Namespace definitions. Sync-wave 0 on each object.
   metallb/            Bare-metal load balancer (L2 mode, IP pool 192.168.1.100-120).
   cert-manager/       TLS certificate lifecycle. 3 issuers: self-signed, private CA, Let's Encrypt.
   longhorn/           Distributed block storage. 2 StorageClasses.
-  traefik/            Ingress controller + routing rules for all UI paths.
+  traefik/            Ingress controller + routing rules for LAN UI paths.
   external-secrets/   Syncs secrets from OpenBao → Kubernetes Secrets.
+  cloudnative-pg/     CloudNativePG operator (chart 0.29.0).
   kyverno/            Policy admission controller.
-  kyverno-policies/   4 cluster policies enforcing image pinning, resource limits, non-root, registry.
-  platform-postgresql/ 3-instance CNPG Postgres cluster (shared by all platform services).
+  kyverno-policies/   5 cluster policies: 4 Audit + restrict-compute-service-rbac-writes Enforce.
+  platform-postgresql/ 3-instance CNPG Postgres cluster (local-path, shared by platform services).
   valkey/             Redis-compatible cache with TLS + ACL.
   garage/             S3-compatible object storage, 3-replica distributed.
   authentik/          OIDC identity provider.
-  cloudflared/        Cloudflare tunnel — exposes public endpoints without port forwarding.
+  cloudflared/        Cloudflare tunnel — public endpoints without port forwarding.
   zot-registry/       OCI container image registry backed by Garage S3.
   argocd/             ArgoCD self-configuration (ArgoCD manages itself).
   kube-prometheus-stack/ Prometheus + Grafana + Alertmanager.
@@ -159,12 +162,13 @@ infrastructure/
   alloy/              Grafana Alloy — cluster-wide log and metrics scraper.
 
 applications/
-  api-gateway/        Reverse proxy + auth gateway for all FCI backend services.
-  compute-service/    VM lifecycle management service.
-  database-service/   CNPG-backed database management service.
-  iam-service/        Identity and access management service.
-  storage-service/    Garage S3-backed object storage service.
-  terminal-gateway/   WebSocket-to-Kubernetes exec terminal proxy.
+  api-gateway/        Reverse proxy + auth gateway. Chart in this folder.
+  compute-service/    VM lifecycle management. Chart in this folder. Auto-sync off.
+  database-service/   CNPG-backed database management. Chart in this folder.
+  iam-service/        Identity and access management. Chart in this folder. Auto-sync off.
+  storage-service/    Garage S3-backed object storage service. Chart in this folder.
+  terminal-gateway/   WebSocket-to-Kubernetes exec terminal proxy. Chart in this folder.
+  frontend/           React SPA + nginx. Chart in this folder. Namespace frontend.
 ```
 
 ## Read More

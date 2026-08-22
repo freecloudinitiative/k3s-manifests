@@ -7,78 +7,93 @@
           │
           ▼
        ArgoCD
-  (watches this repo)
+    (watches this repo)
           │
           ├─── infrastructure/ ──► installs platform tools
           │                           (in wave order)
           │
           └─── applications/ ───► installs FCI services
-                                      (from their own repos)
+                                      (charts in this repo)
 ```
 
-ArgoCD syncs every 3 minutes and on any Git push. Any drift from declared state is self-healed. Nothing can run in the cluster unless it is declared in this repo or in one of the application repos.
+ArgoCD syncs every 3 minutes and on any Git push. Drift from declared state is self-healed. Nothing runs in cluster unless declared in this repo.
 
 ---
 
 ## Application Image Promotion
 
 Application images are promoted with static ArgoCD Helm parameters in each
-`applications/<name>/app.yaml`. The parameter is part of Git history, so a
-deployment and its rollback are ordinary reviewed commits to this repository.
-A human operator updates it after the corresponding image build succeeds; CI
-may automate that commit later, but ArgoCD Image Updater is not deployed.
+`applications/<name>/app.yaml`. Parameter is part of Git history, so deploy
+and rollback are ordinary reviewed commits.
 
-Builds use tags in the form `sha-<first 12 characters of the source commit SHA>`.
-Tags must never be `latest`. A chart receives `image.tag` explicitly and must
-fail rendering when neither `image.tag` nor `image.digest` is set. Digests are
-preferred when the publishing workflow records them, but this repository uses
-the published tags currently recorded in Git rather than inventing digest
-values that cannot be checked.
+Builds use tags `sha-<first 12 characters of source commit SHA>`.
+Tags must never be `latest`. Chart must `fail` when neither `image.tag` nor
+`image.digest` is set. database-service is the exception: it falls back to
+`Chart.appVersion` (`0.1.0`) if both are empty.
 
-`registry.freecloudinitiative.com` is protected by Traefik basic authentication.
-External Secrets Operator materializes `zot-registry-pull-credentials` in the
-`backend` namespace from the out-of-band OpenBao properties
-`zot-registry/pull-username` and `zot-registry/pull-password`. Backend
-Applications pass that Secret as `imagePullSecrets[0].name` through the same
-Helm parameter block as the image tag. The pull user must also be present in
-the `zot-registry/htpasswd` value enforced by Traefik.
+This repo records published tags in Git. Digests preferred when publish
+workflow records them; do not invent digest values.
 
-Publishing must succeed before the tag is promoted. The reusable image-build
-workflow and its LAN-accessible runner are owned outside this repository; a
-placeholder `sha-xxxxxxxxxxxx` deliberately leaves an Application unsyncable
+`registry.freecloudinitiative.com` is behind Traefik basic authentication.
+External Secrets Operator materializes `zot-registry-pull-credentials` in
+`backend` and `frontend` from OpenBao `zot-registry/pull-username` and
+`zot-registry/pull-password`. Applications pass that Secret as
+`imagePullSecrets[0].name`. Pull user must also be in `zot-registry/htpasswd`
+enforced by Traefik.
+
+Publish must succeed before tag is promoted. Image-build workflow lives
+outside this repo. Placeholder `sha-xxxxxxxxxxxx` plus automated sync **off**
+on compute-service and iam-service leaves those Applications unsyncable
 until a real image exists.
 
 ---
 
 ## Startup Order (ArgoCD Sync Waves)
 
-Sync waves control order. Lower wave number runs first. Apps with no annotation run in wave `0` or after dependencies are healthy.
+Lower wave runs first. Application-level waves on `app.yaml` / `app-config.yaml`:
 
 ```
-Wave -1  namespaces/          ← all namespaces created first
+Wave  0  namespaces/*.yaml     ← Namespace objects (no Application)
 
-Wave  0  metallb               ← LB needed before any LoadBalancer Service
-         cert-manager          ← TLS needed before any cert
-         longhorn              ← storage needed before any PVC
-         kyverno               ← policies in before workloads
+Wave  1  cert-manager
+         kyverno
+         external-secrets      ← operator + ClusterSecretStore
 
-Wave  1  cert-manager issuers  ← self-signed CA issuer
-         cluster-issuer-ca     ← private CA issuer (depends on root cert)
-         external-secrets      ← secrets operator in before secrets needed
-         metallb config        ← IP pool + L2 advertisement
+Wave  2  longhorn
+         loki
+         kyverno-policies
+         cloudnative-pg        ← operator before Cluster CRs
 
-Wave  3+ traefik               ← ingress after storage and TLS ready
-         platform-postgresql   ← DB after storage ready
-         valkey                ← cache after namespaces ready
-         garage                ← S3 after storage ready
+Wave  3  garage
+         cert-manager-configs  ← issuers + CA cert
 
-Wave  5+ authentik             ← OIDC after Postgres, TLS, and secrets ready
-         cloudflared           ← tunnel after secrets ready
-         zot-registry          ← registry after Garage ready
-         monitoring stack      ← observability after all platform up
+Wave  4  metallb
+         platform-postgresql
+         valkey
+         zot-registry
 
-applications/*                 ← FCI services after all infrastructure up
+Wave  5  authentik
+         metallb-config        ← IP pool + L2Advertisement
+         opentelemetry
+
+Wave  6  alloy
+
+Wave  8  tempo
+
+Wave  9  traefik
+         kube-prometheus-stack
+         cloudflared
+
+Wave 10  argocd app-config
+
+applications/*                 ← no Application-level wave (default 0).
+                                 CreateNamespace=true for backend / frontend.
+                                 ExternalSecrets for those pods use resource
+                                 wave -2 inside external-secrets Application.
 ```
+
+Resource waves inside an Application (e.g. ExternalSecret `-2`, DatabaseRole `1`)
+only order objects within that Application. They do not reorder Applications.
 
 ---
 
@@ -103,16 +118,14 @@ Cloudflare (DNS + CDN)
                                              {iam, compute, database, storage, terminal-gateway}
 ```
 
-api-gateway and terminal-gateway have no Ingress of their own, by design — api-gateway's chart
-asserts this with `TestChart_NoIngress`, and both NetworkPolicies admit ingress only from specific
-in-cluster namespaces (`frontend` for api-gateway, `backend` for terminal-gateway). frontend nginx
-proxies `/api/` and `/ws/` same-origin to api-gateway, which in turn proxies `/ws/terminal/` on to
-terminal-gateway — so the frontend host is the platform's only public entry point, and reaching
-either gateway directly from outside the cluster is not possible.
+api-gateway and terminal-gateway have no Ingress. NetworkPolicies admit ingress
+only from `frontend` (api-gateway) and `backend` (terminal-gateway). frontend
+nginx proxies `/api/` and `/ws/` same-origin to api-gateway; api-gateway
+proxies `/ws/terminal/` to terminal-gateway. frontend host is only public
+entry for the product. Neither gateway is reachable from outside the cluster.
 
-Adding `frontend.freecloudinitiative.com` as a public hostname in the Cloudflare Tunnel config
-(dashboard/Terraform, outside this repo) is a prerequisite for both the HTTP-01 ACME challenge and
-real traffic to reach this Ingress — it is not something `k3s-manifests` can configure on its own.
+`frontend.freecloudinitiative.com` must exist in Cloudflare Tunnel config
+(dashboard / Terraform, outside this repo) for HTTP-01 ACME and real traffic.
 
 ### Internal HTTP (cluster LAN access)
 
@@ -129,15 +142,16 @@ Traefik (DaemonSet on master node, hostPort 80/443)
    └── /traefik-dashboard ► Traefik internal API
 ```
 
-OpenBao is not routed through this repo's Traefik — it is an out-of-band prerequisite (see
-[README.md § Prerequisites](README.md)), and this repo never creates its namespace or Service.
+OpenBao is not routed through this repo's Traefik. Out-of-band prerequisite
+(see [README.md § Prerequisites](README.md)). This repo never creates its
+namespace or Service.
 
 ### API Traffic (authenticated)
 
 ```
 User browser / API client
    ▼
-Cloudflare Tunnel → Traefik → api-gateway (namespace: backend)
+Cloudflare Tunnel → Traefik → frontend nginx → api-gateway (namespace: backend)
    │
    ├── validates OIDC token (Authentik JWKS)
    ├── mints internal JWT
@@ -168,57 +182,58 @@ Kubernetes Secret (in the target namespace)
 Pod mounts or references Secret via env/volume
 ```
 
-`ClusterSecretStore` authenticates to OpenBao using a Kubernetes ServiceAccount token. OpenBao has a Kubernetes auth role that grants access only to the `external-secrets-openbao` service account.
+`ClusterSecretStore` authenticates to OpenBao using a Kubernetes ServiceAccount
+token. OpenBao Kubernetes auth role grants access only to
+`external-secrets-openbao` ServiceAccount (namespace `external-secrets`).
+
+Store allow-list: `authentik`, `backend`, `frontend`, `zot-registry`,
+`monitoring`, `platform-database`, `valkey`. `cloudflared` is not listed;
+`cloudflared-tunnel-token` ExternalSecret in `cloudflared` cannot sync until
+that namespace is added.
 
 ### Required OpenBao paths (KV v2, mount `secret`)
 
-The following paths must be seeded **out of band** before the corresponding `ExternalSecret` objects can reach `SecretSynced`. An `ExternalSecret` pointing at a missing key stays `SecretSyncedError` forever with no other signal.
+Seed these out of band before matching `ExternalSecret` can reach
+`SecretSynced`. Missing key stays `SecretSyncedError` forever with no other signal.
 
 | OpenBao path | Property | Consumed by | Target Kubernetes Secret |
 |---|---|---|---|
-| `secret/data/storage` | `postgresql-password` | `storage-role` DatabaseRole | `storage-postgresql-credentials` (platform-database) |
-| `secret/data/iam` | `postgresql-password` | `iam-role` DatabaseRole | `iam-postgresql-credentials` (platform-database) |
-| `secret/data/compute` | `postgresql-password` | `compute-role` DatabaseRole | `compute-postgresql-credentials` (platform-database) |
-| `secret/data/database` | `postgresql-password` | `database-role` DatabaseRole | `database-postgresql-credentials` (platform-database) |
-| `secret/data/platform-postgresql` | `ca-cert` | TLS verification | service CA bundles (backend) |
-| `secret/data/database` | `postgresql-password` | database-service pod DATABASE_URL | `database-service-config` (backend) |
-| `secret/data/api-gateway` | `internal-public-key` | database-service token verification | `internal-token-public-key` (backend) |
-| `secret/data/iam` | `postgresql-password` | iam-service pod DATABASE_URL | `iam-service-postgresql-credentials` (backend) |
-| `secret/data/compute` | `postgresql-password` | compute-service pod DATABASE_URL | `compute-service-postgresql-credentials` (backend) |
-| `secret/data/platform-postgresql` | `ca-cert` | iam-service and compute-service Postgres TLS verification | `iam-service-postgresql-ca-cert`, `compute-service-postgresql-ca-cert` (backend) |
-| `secret/data/api-gateway` | `internal-public-key` | iam-service and compute-service gateway-token verification | `iam-service-internal-public-key`, `compute-service-internal-public-key` (backend) |
-| `secret/data/terminal-gateway` | `internal-public-key` | iam-service and compute-service terminal-token verification | `terminal-gateway-public-key` (backend, shared) |
-| `secret/data/valkey` | `password` | compute-service Valkey authentication | `compute-service-valkey-password` (backend) |
-| `secret/data/valkey` | `ca-cert` | compute-service Valkey TLS verification | `compute-service-valkey-ca-cert` (backend) |
-| `secret/data/zot-registry` | `pull-username`, `pull-password` | Authenticated backend image pulls | `zot-registry-pull-credentials` (backend) |
-| `secret/data/authentik` | `postgresql-password` | authentik pod DB config | `authentik-config` (authentik) |
-| `secret/data/authentik` | `secret-key` | authentik pod signing key | `authentik-config` (authentik) |
-| `secret/data/authentik` | `bootstrap-email` | authentik first-run bootstrap | `authentik-bootstrap` (authentik) |
-| `secret/data/authentik` | `bootstrap-password` | authentik first-run bootstrap | `authentik-bootstrap` (authentik) |
-| `secret/data/authentik` | `postgresql-password` | authentik `DatabaseRole` credential | `authentik-postgresql-credentials` (platform-database) |
-| `secret/data/platform-postgresql` | `password` | shared `platform` role credential | `platform-postgresql-credentials` (platform-database) |
-| `secret/data/grafana` | `admin-user`, `admin-password` | Grafana admin login | `grafana-secrets` (monitoring) |
-| `secret/data/cloudflared` | `tunnel-token` | cloudflared tunnel authentication | `cloudflared-tunnel-token` (cloudflared) |
-| `secret/data/zot-registry` | `s3-access-key-id`, `s3-secret-access-key` | zot-registry Garage S3 backend | `zot-s3-credentials` (zot-registry) |
-| `secret/data/zot-registry` | `htpasswd` | zot-registry basic-auth users | `zot-registry-auth` (zot-registry) |
-| `secret/data/api-gateway` | `internal-signing-key` | api-gateway token issuance (private half) | `api-gateway-signing-key` (backend) |
-| `secret/data/terminal-gateway` | `internal-signing-key` | terminal-gateway token issuance (private half) | `terminal-gateway-signing-key` (backend) |
-| `secret/data/garage` | `storage-service-access-key`, `storage-service-secret-key` | storage-service Garage S3 client | `storage-service-objectstore-credentials` (backend) |
-| `secret/data/garage` | `ca-cert` | storage-service Garage TLS verification | `storage-service-objectstore-credentials` (backend) |
+| `secret/data/storage` | `postgresql-password` | `storage-role` + storage-service `DATABASE_URL` | `storage-postgresql-credentials` (platform-database), `storage-service-postgresql-credentials` (backend) |
+| `secret/data/iam` | `postgresql-password` | `iam-role` + iam-service `DATABASE_URL` | `iam-postgresql-credentials` (platform-database), `iam-service-postgresql-credentials` (backend) |
+| `secret/data/compute` | `postgresql-password` | `compute-role` + compute-service `DATABASE_URL` | `compute-postgresql-credentials` (platform-database), `compute-service-postgresql-credentials` (backend) |
+| `secret/data/database` | `postgresql-password` | `database-role` + database-service `DATABASE_URL` | `database-postgresql-credentials` (platform-database), `database-service-config` (backend) |
+| `secret/data/platform-postgresql` | `ca-cert` | Postgres TLS verify | `*-postgresql-ca-cert` / `platform-postgresql-ca-bundle` (backend) |
+| `secret/data/platform-postgresql` | `password` | shared `platform` role | `platform-postgresql-credentials` (platform-database) |
+| `secret/data/api-gateway` | `internal-public-key` | verifier services | `*-internal-public-key`, `internal-token-public-key` (backend) |
+| `secret/data/api-gateway` | `internal-signing-key` | api-gateway token issuance | `api-gateway-signing-key` (backend) |
+| `secret/data/terminal-gateway` | `internal-public-key` | iam + compute terminal-token verify | `terminal-gateway-public-key` (backend, shared) |
+| `secret/data/terminal-gateway` | `internal-signing-key` | terminal-gateway token issuance | `terminal-gateway-signing-key` (backend) |
+| `secret/data/valkey` | `password` | Valkey ACL + every backend client | `valkey-auth` (valkey); `valkey-password` / `*-valkey-password` (backend) |
+| `secret/data/valkey` | `ca-cert` | Valkey TLS verify | `valkey-ca-cert` / `*-valkey-ca-cert` (backend) |
+| `secret/data/zot-registry` | `pull-username`, `pull-password` | image pulls | `zot-registry-pull-credentials` (backend, frontend) |
+| `secret/data/zot-registry` | `s3-access-key-id`, `s3-secret-access-key` | Zot Garage backend | `zot-s3-credentials` (zot-registry) |
+| `secret/data/zot-registry` | `htpasswd` | Traefik registry basic-auth | `zot-registry-auth` (zot-registry) |
+| `secret/data/authentik` | `postgresql-password` | authentik pod + `DatabaseRole` | `authentik-config` (authentik), `authentik-postgresql-credentials` (platform-database) |
+| `secret/data/authentik` | `secret-key` | authentik signing key | `authentik-config` (authentik) |
+| `secret/data/authentik` | `bootstrap-email` | first-run bootstrap | `authentik-bootstrap` (authentik) |
+| `secret/data/authentik` | `bootstrap-password` | first-run bootstrap | `authentik-bootstrap` (authentik) |
+| `secret/data/grafana` | `admin-user`, `admin-password` | Grafana admin | `grafana-secrets` (monitoring) |
+| `secret/data/cloudflared` | `tunnel-token` | cloudflared tunnel | `cloudflared-tunnel-token` (cloudflared) |
+| `secret/data/garage` | `storage-service-access-key`, `storage-service-secret-key` | storage-service S3 client | `storage-service-objectstore-credentials` (backend) |
+| `secret/data/garage` | `ca-cert` | storage-service Garage TLS (mounted; unused while Garage is HTTP) | `storage-service-objectstore-credentials` (backend) |
 
-Note: `secret/data/database / postgresql-password` is shared between the `database-role` DatabaseRole
-(platform-database, PR-02) and the `database-service-config` ExternalSecret (backend, PR-03). Both
-read the same OpenBao key; the DatabaseRole copy feeds CNPG role creation, the backend copy feeds the
-pod's `DATABASE_URL` environment variable.
-
-Likewise, the iam and compute Postgres password paths each feed both a `DatabaseRole` credential in
-`platform-database` and a chart-facing connection string in `backend`. The terminal-gateway public
-key is intentionally represented by one shared Kubernetes Secret for both verifier services.
+`secret/data/database` / `postgresql-password` is shared: `DatabaseRole` copy in
+`platform-database` and `database-service-config` in `backend`. Same pattern for
+iam, compute, storage. `terminal-gateway-public-key` is one shared Secret for
+both verifier services. `valkey-password` / `valkey-ca-cert` are shared by
+api-gateway and database-service.
 
 ### CNPG same-namespace resolution rule
 
-`DatabaseRole.spec.passwordSecret` is resolved as a **same-namespace** reference in the namespace where the `DatabaseRole` CR reconciles — the `platform-postgresql` Argo Application's destination, `platform-database`. A credential `ExternalSecret` placed in `backend` is invisible to CNPG and the role's password silently never updates. All `*-postgresql-credentials` Secrets that feed a `DatabaseRole` must therefore live in `platform-database`. Backend-namespace copies that service pods actually mount are separate `ExternalSecret` objects (PR-03, PR-04).
-
+`DatabaseRole.spec.passwordSecret` is a same-namespace reference in
+`platform-database`. Credential `ExternalSecret` in `backend` is invisible to
+CNPG. All `*-postgresql-credentials` that feed a `DatabaseRole` live in
+`platform-database`. Backend copies that pods mount are separate objects.
 
 ---
 
@@ -233,12 +248,12 @@ key is intentionally represented by one shared Kubernetes Secret for both verifi
                   │                                                          │
                   │  Used by:                                                │
                   │  ├─ zot-registry (bucket: zot-registry)                │
-                  │  └─ storage-service (customer buckets)                  │
+                  │  └─ storage-service (bucket: platform, customer data)   │
                   └──────────────────────────────────────────────────────────┘
 
                   ┌─── platform-postgresql (CNPG) ─────────────────────────┐
                   │  3 instances, one per node                              │
-                  │  Longhorn local-path PVC (20 Gi each)                  │
+                  │  k3s local-path PVC (20 Gi each) — not Longhorn        │
                   │  Used by:                                                │
                   │  ├─ authentik (database: authentik)                    │
                   │  ├─ iam-service                                         │
@@ -249,10 +264,14 @@ key is intentionally represented by one shared Kubernetes Secret for both verifi
 
                   ┌─── valkey ────────────────────────────────────────────┐
                   │  Single primary, no replicas, no persistence           │
-                  │  TLS, ACL, maxmemory 192mb (allkeys-lfu)              │
+                  │  TLS (cert-manager Certificate), ACL, maxmemory 192mb │
                   │  Used by:                                               │
                   │  ├─ api-gateway (rate limiting, JWKS cache)            │
-                  │  └─ terminal-gateway (session tickets)                 │
+                  │  ├─ terminal-gateway (session tickets)                 │
+                  │  ├─ compute-service                                    │
+                  │  ├─ iam-service                                        │
+                  │  ├─ storage-service                                    │
+                  │  └─ database-service                                   │
                   └──────────────────────────────────────────────────────────┘
 ```
 
@@ -274,6 +293,10 @@ FCI services (traces + logs) ──OTLP──► OpenTelemetry Collector
                                   (unified view at /grafana)
 ```
 
+Most backend charts set
+`opentelemetry-collector.monitoring.svc.cluster.local:4317`.
+database-service sets `otel-collector.monitoring.svc.cluster.local:4317`.
+
 Node-level logs and metrics flow through Alloy:
 
 ```
@@ -281,39 +304,57 @@ Node logs + pod stdout ──► Alloy (DaemonSet, one per node) ──► Loki
 Node metrics ──► Alloy ──► Prometheus (via ServiceMonitor)
 ```
 
-All services expose a `/metrics` endpoint. Prometheus scrapes any resource with a `ServiceMonitor` CR.
+Services expose `/metrics`. Prometheus scrapes any `ServiceMonitor`.
 
 ---
 
 ## Network Isolation
 
-Each namespace has NetworkPolicy rules. Traffic is deny-by-default. Only declared paths are allowed.
+Each namespace has NetworkPolicy rules. Traffic is deny-by-default. Only
+declared paths are allowed.
 
 Key rules:
-- Valkey: accepts only from `backend` namespace (port 6379) and `monitoring` (port 9121 exporter).
+- Valkey: `backend` namespace port 6379, `monitoring` port 9121 exporter.
 - Garage: cluster-internal only (no external ingress).
-- Authentik: cluster-internal + Cloudflare tunnel ingress for public endpoint.
-- platform-postgresql: CNPG manages NetworkPolicy. Only service accounts from the same cluster can connect.
+- Authentik: cluster-internal + Cloudflare tunnel for public host.
+- platform-postgresql: CNPG NetworkPolicy plus `networkpolicy.yaml`.
+- api-gateway: ingress from `frontend` only.
+- terminal-gateway: ingress from `backend` only.
 
 ---
 
 ## Why Built This Way
 
-**GitOps (not manual kubectl)**: Single source of truth. Reproducible. Auditable. No manual state drift.
+**GitOps (not manual kubectl)**: Single source of truth. Reproducible.
+Auditable. No manual state drift.
 
-**ArgoCD App of Apps**: One root Application (created by `ansible-automation`) points to this repo. Each sub-folder is its own Application. Adding an app = adding a folder + `app.yaml`. No root-level manifest editing.
+**ArgoCD App of Apps**: One root Application (created by `ansible-automation`)
+points at this repo. Each sub-folder is its own Application. Adding an app =
+folder + `app.yaml` (+ chart files for FCI services). No root-level manifest
+editing.
 
-**Sync waves**: Kubernetes resources must be created in dependency order. Waves enforce this without hard-coded `sleep` delays or complex scripting. ArgoCD waits for each wave to be healthy before starting the next.
+**Sync waves**: Resources must be created in dependency order. Waves enforce
+this without `sleep`. ArgoCD waits for each Application wave to be healthy
+before the next.
 
-**OpenBao for secrets**: Secrets never touch Git. ExternalSecret objects in Git declare _what_ to sync but not _the values_. Zero secret exposure from repo access.
+**OpenBao for secrets**: Secrets never touch Git. ExternalSecret objects
+declare _what_ to sync, not values.
 
-**MetalLB L2**: No cloud LB available. L2 mode works on any bare-metal LAN with no external controller needed. L2 means one node owns the IP and ARP-replies; traffic enters that node then routes internally.
+**MetalLB L2**: No cloud LB. L2 works on bare-metal LAN. One node owns IP
+and ARP-replies; traffic enters that node then routes internally.
 
-**Traefik DaemonSet on master (not Deployment)**: `hostPort` 80/443 can only bind on one pod per node. DaemonSet scoped to control-plane nodes means exactly one pod per master. Adding a second master automatically adds a second ingress point.
+**Traefik DaemonSet on master (not Deployment)**: `hostPort` 80/443 binds
+one pod per node. DaemonSet on control-plane nodes means one pod per master.
+Second master adds second ingress point.
 
-**Two Longhorn StorageClasses**: Self-replicating apps (Garage, Valkey) don't need Longhorn replication — they replicate data themselves. Using `longhorn-local` (1 replica) halves storage overhead. Platform databases use `longhorn-platform` (2 replicas) for safety.
+**Two Longhorn StorageClasses**: Self-replicating apps (Garage) do not need
+Longhorn replication. `longhorn-local` (1 replica) halves storage overhead.
+`longhorn-platform` (2 replicas) is for workloads that do not replicate
+themselves. platform-postgresql uses k3s `local-path`, not either Longhorn
+class.
 
-**Cloudflared (no port forwarding)**: Bare-metal nodes are behind NAT. Cloudflare Tunnel creates an outbound-only tunnel — no inbound firewall ports needed. The tunnel token is the only secret that enables public access.
+**Cloudflared (no port forwarding)**: Nodes sit behind NAT. Tunnel is
+outbound-only. Tunnel token is the only secret that enables public access.
 
 ---
 
@@ -322,6 +363,7 @@ Key rules:
 | App | Namespace | Node affinity |
 |---|---|---|
 | traefik | `traefik` | master nodes only (DaemonSet) |
+| cloudnative-pg | `cnpg-system` | any node |
 | platform-postgresql | `platform-database` | all nodes, one per node (anti-affinity) |
 | garage | `garage` | all nodes, one per node (anti-affinity) |
 | valkey | `valkey` | any node |

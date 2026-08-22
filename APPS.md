@@ -104,6 +104,7 @@ Public endpoints (Authentik, Zot Registry) route via Cloudflare + Let's Encrypt 
 | `iam-postgresql-credentials` | `platform-database` | CNPG `iam` role password (feeds `iam-role` DatabaseRole) |
 | `compute-postgresql-credentials` | `platform-database` | CNPG `compute` role password (feeds `compute-role` DatabaseRole) |
 | `database-postgresql-credentials` | `platform-database` | CNPG `database` role password (feeds `database-role` DatabaseRole) |
+| `zot-registry-pull-credentials` | `backend` | Docker registry credentials for FCI application image pulls |
 
 **Namespace rule**: CNPG resolves `DatabaseRole.spec.passwordSecret` in the namespace where the `DatabaseRole` reconciles (`platform-database`). Secrets that feed a `DatabaseRole` must live in `platform-database`, not `backend`. Backend-namespace copies for pod consumption are separate `ExternalSecret` objects (PR-03, PR-04).
 
@@ -303,6 +304,8 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 **Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 
+**Image**: `registry.freecloudinitiative.com/api-gateway:sha-0ac98efb497a`.
+
 ---
 
 ### compute-service
@@ -310,6 +313,8 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 **What**: VM lifecycle management service. Deployed from `compute-service` repo.
 
 **Namespace**: `backend`. Same sync policy.
+
+**Image**: `registry.freecloudinitiative.com/compute-service:sha-xxxxxxxxxxxx` (placeholder; the Application will not sync until a real image is published).
 
 **Secrets contract (namespace `backend`)**:
 
@@ -335,6 +340,8 @@ pre-existing failure.
 
 **Namespace**: `backend`. Same sync policy.
 
+**Image**: `ghcr.io/freecloudinitiative/database-service:sha-f247d60ac4de`. The registry-coordinate correction is tracked separately in PR-15.
+
 **Secrets (namespace `backend`)**:
 
 | Secret | Key | Consumed as | Source |
@@ -357,6 +364,8 @@ pre-existing failure.
 
 **Namespace**: `backend`. Same sync policy.
 
+**Image**: `registry.freecloudinitiative.com/iam-service:sha-xxxxxxxxxxxx` (placeholder; the Application will not sync until a real image is published).
+
 **Secrets contract (namespace `backend`)**:
 
 | Secret | Key | Consumed as / required mount path | Source |
@@ -378,6 +387,8 @@ at exactly this path. Until that chart exists, this Application is expected to r
 
 **Namespace**: `backend`. Same sync policy.
 
+**Image**: `registry.freecloudinitiative.com/storage-service:sha-2f2daba0c43e`.
+
 ---
 
 ### terminal-gateway
@@ -386,6 +397,8 @@ at exactly this path. Until that chart exists, this Application is expected to r
 
 **Namespace**: `backend`. Same sync policy.
 
+**Image**: `registry.freecloudinitiative.com/terminal-gateway:sha-e3c09b7baefc`.
+
 ---
 
 ### frontend
@@ -393,6 +406,8 @@ at exactly this path. Until that chart exists, this Application is expected to r
 **What**: React single-page application and web console. Deployed from `applications/frontend` Helm chart, served via nginx.
 
 **Namespace**: `frontend`. Same sync policy.
+
+**Image**: `registry.freecloudinitiative.com/frontend:sha-7eefcc02593a`.
 
 ---
 

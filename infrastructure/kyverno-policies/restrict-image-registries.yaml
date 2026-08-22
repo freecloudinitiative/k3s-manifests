@@ -35,4 +35,5 @@ spec:
                       - "quay.io/*"
                       - "docker.io/*"
                       - "zot-registry.zot-registry.svc.cluster.local:*/*"
+                      - "registry.freecloudinitiative.com/*"
                       - "registry.k8s.io/*"

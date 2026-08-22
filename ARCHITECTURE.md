@@ -20,6 +20,36 @@ ArgoCD syncs every 3 minutes and on any Git push. Any drift from declared state 
 
 ---
 
+## Application Image Promotion
+
+Application images are promoted with static ArgoCD Helm parameters in each
+`applications/<name>/app.yaml`. The parameter is part of Git history, so a
+deployment and its rollback are ordinary reviewed commits to this repository.
+A human operator updates it after the corresponding image build succeeds; CI
+may automate that commit later, but ArgoCD Image Updater is not deployed.
+
+Builds use tags in the form `sha-<first 12 characters of the source commit SHA>`.
+Tags must never be `latest`. A chart receives `image.tag` explicitly and must
+fail rendering when neither `image.tag` nor `image.digest` is set. Digests are
+preferred when the publishing workflow records them, but this repository uses
+the published tags currently recorded in Git rather than inventing digest
+values that cannot be checked.
+
+`registry.freecloudinitiative.com` is protected by Traefik basic authentication.
+External Secrets Operator materializes `zot-registry-pull-credentials` in the
+`backend` namespace from the out-of-band OpenBao properties
+`zot-registry/pull-username` and `zot-registry/pull-password`. Backend
+Applications pass that Secret as `imagePullSecrets[0].name` through the same
+Helm parameter block as the image tag. The pull user must also be present in
+the `zot-registry/htpasswd` value enforced by Traefik.
+
+Publishing must succeed before the tag is promoted. The reusable image-build
+workflow and its LAN-accessible runner are owned outside this repository; a
+placeholder `sha-xxxxxxxxxxxx` deliberately leaves an Application unsyncable
+until a real image exists.
+
+---
+
 ## Startup Order (ArgoCD Sync Waves)
 
 Sync waves control order. Lower wave number runs first. Apps with no annotation run in wave `0` or after dependencies are healthy.
@@ -64,9 +94,25 @@ Cloudflare (DNS + CDN)
    │
    ├── auth.freecloudinitiative.com ──► Cloudflare Tunnel (cloudflared) ──► Authentik
    │
-   └── registry.freecloudinitiative.com ──► Cloudflare Tunnel ──► Zot Registry
-                                                                  (Traefik middleware: auth)
+   ├── registry.freecloudinitiative.com ──► Cloudflare Tunnel ──► Zot Registry
+   │                                                              (Traefik middleware: auth)
+   │
+   └── frontend.freecloudinitiative.com ──► Cloudflare Tunnel ──► Traefik (websecure, TLS via
+                                             letsencrypt-production) ──► frontend nginx (namespace:
+                                             frontend) ──► api-gateway (namespace: backend) ──►
+                                             {iam, compute, database, storage, terminal-gateway}
 ```
+
+api-gateway and terminal-gateway have no Ingress of their own, by design — api-gateway's chart
+asserts this with `TestChart_NoIngress`, and both NetworkPolicies admit ingress only from specific
+in-cluster namespaces (`frontend` for api-gateway, `backend` for terminal-gateway). frontend nginx
+proxies `/api/` and `/ws/` same-origin to api-gateway, which in turn proxies `/ws/terminal/` on to
+terminal-gateway — so the frontend host is the platform's only public entry point, and reaching
+either gateway directly from outside the cluster is not possible.
+
+Adding `frontend.freecloudinitiative.com` as a public hostname in the Cloudflare Tunnel config
+(dashboard/Terraform, outside this repo) is a prerequisite for both the HTTP-01 ACME challenge and
+real traffic to reach this Ingress — it is not something `k3s-manifests` can configure on its own.
 
 ### Internal HTTP (cluster LAN access)
 
@@ -76,7 +122,6 @@ Browser → master-node-IP:80
    ▼
 Traefik (DaemonSet on master node, hostPort 80/443)
    │
-   ├── /frontend       ──► frontend pod (namespace: frontend)
    ├── /grafana        ──► Grafana (namespace: monitoring)
    ├── /prometheus     ──► Prometheus (namespace: monitoring)
    ├── /alloy          ──► Alloy UI (namespace: monitoring)
@@ -136,11 +181,23 @@ The following paths must be seeded **out of band** before the corresponding `Ext
 | `secret/data/platform-postgresql` | `ca-cert` | TLS verification | service CA bundles (backend) |
 | `secret/data/database` | `postgresql-password` | database-service pod DATABASE_URL | `database-service-config` (backend) |
 | `secret/data/api-gateway` | `internal-public-key` | database-service token verification | `internal-token-public-key` (backend) |
+| `secret/data/iam` | `postgresql-password` | iam-service pod DATABASE_URL | `iam-service-postgresql-credentials` (backend) |
+| `secret/data/compute` | `postgresql-password` | compute-service pod DATABASE_URL | `compute-service-postgresql-credentials` (backend) |
+| `secret/data/platform-postgresql` | `ca-cert` | iam-service and compute-service Postgres TLS verification | `iam-service-postgresql-ca-cert`, `compute-service-postgresql-ca-cert` (backend) |
+| `secret/data/api-gateway` | `internal-public-key` | iam-service and compute-service gateway-token verification | `iam-service-internal-public-key`, `compute-service-internal-public-key` (backend) |
+| `secret/data/terminal-gateway` | `internal-public-key` | iam-service and compute-service terminal-token verification | `terminal-gateway-public-key` (backend, shared) |
+| `secret/data/valkey` | `password` | compute-service Valkey authentication | `compute-service-valkey-password` (backend) |
+| `secret/data/valkey` | `ca-cert` | compute-service Valkey TLS verification | `compute-service-valkey-ca-cert` (backend) |
+| `secret/data/zot-registry` | `pull-username`, `pull-password` | Authenticated backend image pulls | `zot-registry-pull-credentials` (backend) |
 
 Note: `secret/data/database / postgresql-password` is shared between the `database-role` DatabaseRole
 (platform-database, PR-02) and the `database-service-config` ExternalSecret (backend, PR-03). Both
 read the same OpenBao key; the DatabaseRole copy feeds CNPG role creation, the backend copy feeds the
 pod's `DATABASE_URL` environment variable.
+
+Likewise, the iam and compute Postgres password paths each feed both a `DatabaseRole` credential in
+`platform-database` and a chart-facing connection string in `backend`. The terminal-gateway public
+key is intentionally represented by one shared Kubernetes Secret for both verifier services.
 
 ### CNPG same-namespace resolution rule
 
@@ -266,3 +323,4 @@ Key rules:
 | iam-service | `backend` | any node |
 | storage-service | `backend` | any node |
 | terminal-gateway | `backend` | any node |
+| frontend | `frontend` | any node |

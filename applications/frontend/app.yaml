@@ -17,6 +17,8 @@ spec:
       parameters:
         - name: image.tag
           value: sha-7eefcc02593a
+        - name: imagePullSecrets[0].name
+          value: zot-registry-pull-credentials
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: frontend

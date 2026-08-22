@@ -14,6 +14,11 @@ spec:
     helm:
       valueFiles:
         - values.yaml
+      parameters:
+        - name: image.tag
+          value: "sha-f247d60ac4de"
+        - name: imagePullSecrets[0].name
+          value: zot-registry-pull-credentials
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: backend

@@ -8,7 +8,7 @@
 
 Creates all Kubernetes namespaces before any other app deploys. ArgoCD sync-wave `-1` ensures these exist first.
 
-Namespaces: `authentik`, `cert-manager`, `cloudflared`, `cnpg-system`, `garage`, `kyverno`, `longhorn-system`, `metallb-system`, `monitoring`, `platform-database`, `traefik`, `valkey`, `zot-registry`.
+Namespaces: `authentik`, `cert-manager`, `cloudflared`, `cnpg-system`, `frontend`, `garage`, `kyverno`, `longhorn-system`, `metallb-system`, `monitoring`, `platform-database`, `traefik`, `valkey`, `zot-registry`.
 
 ---
 
@@ -74,10 +74,11 @@ Both: `reclaimPolicy: Retain` (volumes survive pod deletion), `allowVolumeExpans
 | `/alloy` | Alloy UI (monitoring) |
 | `/argocd` | ArgoCD UI (argocd) |
 | `/traefik-dashboard` | Traefik dashboard (traefik) |
-| `/frontend` | FCI frontend (frontend) |
 | `/ui`, `/v1` | OpenBao UI + API (openbao) |
 
-Public endpoints (Authentik, Zot Registry) route via Cloudflare + Let's Encrypt TLS.
+Public endpoints (Authentik, Zot Registry, frontend) route via Cloudflare + Let's Encrypt TLS, each
+on its own host (`auth.`, `registry.`, `frontend.freecloudinitiative.com`) rather than a path prefix
+on this table.
 
 ---
 
@@ -87,7 +88,7 @@ Public endpoints (Authentik, Zot Registry) route via Cloudflare + Let's Encrypt 
 
 **Config**:
 - One `ClusterSecretStore` named `openbao-store`. Connects to `openbao-active.openbao.svc.cluster.local:8200` using Kubernetes service account auth.
-- Store restricted to allowed namespaces: `authentik`, `backend`, `zot-registry`, `monitoring`, `platform-database`, `valkey`.
+- Store restricted to allowed namespaces: `authentik`, `backend`, `frontend`, `zot-registry`, `monitoring`, `platform-database`, `valkey`.
 
 **ExternalSecrets managed**:
 
@@ -104,6 +105,8 @@ Public endpoints (Authentik, Zot Registry) route via Cloudflare + Let's Encrypt 
 | `iam-postgresql-credentials` | `platform-database` | CNPG `iam` role password (feeds `iam-role` DatabaseRole) |
 | `compute-postgresql-credentials` | `platform-database` | CNPG `compute` role password (feeds `compute-role` DatabaseRole) |
 | `database-postgresql-credentials` | `platform-database` | CNPG `database` role password (feeds `database-role` DatabaseRole) |
+| `zot-registry-pull-credentials` | `backend` | Docker registry credentials for FCI application image pulls |
+| `zot-registry-pull-credentials` | `frontend` | Docker registry credentials for the frontend image pull |
 
 **Namespace rule**: CNPG resolves `DatabaseRole.spec.passwordSecret` in the namespace where the `DatabaseRole` reconciles (`platform-database`). Secrets that feed a `DatabaseRole` must live in `platform-database`, not `backend`. Backend-namespace copies for pod consumption are separate `ExternalSecret` objects (PR-03, PR-04).
 
@@ -303,6 +306,8 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 **Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 
+**Image**: `registry.freecloudinitiative.com/api-gateway:sha-0ac98efb497a`.
+
 ---
 
 ### compute-service
@@ -311,6 +316,24 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 **Namespace**: `backend`. Same sync policy.
 
+**Image**: `registry.freecloudinitiative.com/compute-service:sha-xxxxxxxxxxxx` (placeholder; the Application will not sync until a real image is published).
+
+**Secrets contract (namespace `backend`)**:
+
+| Secret | Key | Consumed as / required mount path | Source |
+|---|---|---|---|
+| `compute-service-postgresql-credentials` | `url` | `DATABASE_URL` via `secretKeyRef`; URL requires CA at `/etc/compute-service/postgres/ca.crt` | OpenBao `compute/postgresql-password` |
+| `compute-service-postgresql-ca-cert` | `ca.crt` | volume at `/etc/compute-service/postgres/ca.crt` | OpenBao `platform-postgresql/ca-cert` |
+| `compute-service-valkey-password` | `password` | `VALKEY_PASSWORD` via `secretKeyRef` | OpenBao `valkey/password` |
+| `compute-service-valkey-ca-cert` | `ca.crt` | volume at `/etc/compute-service/valkey/ca.crt` | OpenBao `valkey/ca-cert` |
+| `compute-service-internal-public-key` | `internal-public.pem` | volume at `/etc/fci/keys/internal-token-public.pem` | OpenBao `api-gateway/internal-public-key` |
+| `terminal-gateway-public-key` (shared) | `internal-public.pem` | volume at `/etc/fci/keys/terminal-gateway-public.pem` | OpenBao `terminal-gateway/internal-public-key`; defined once in `external-secret-terminal.yaml` |
+
+The Postgres and Valkey CA paths are part of the chart contract: the future compute-service chart
+must mount the corresponding keys at exactly these paths. Until that chart exists, this Application
+is expected to remain in `ComparisonError`; staging these inert ExternalSecrets does not cause that
+pre-existing failure.
+
 ---
 
 ### database-service
@@ -318,6 +341,8 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 **What**: Database cluster (CNPG) management service. Deployed from `applications/database-service` Helm chart.
 
 **Namespace**: `backend`. Same sync policy.
+
+**Image**: `ghcr.io/freecloudinitiative/database-service:sha-f247d60ac4de`. The registry-coordinate correction is tracked separately in PR-15.
 
 **Secrets (namespace `backend`)**:
 
@@ -341,6 +366,21 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 **Namespace**: `backend`. Same sync policy.
 
+**Image**: `registry.freecloudinitiative.com/iam-service:sha-xxxxxxxxxxxx` (placeholder; the Application will not sync until a real image is published).
+
+**Secrets contract (namespace `backend`)**:
+
+| Secret | Key | Consumed as / required mount path | Source |
+|---|---|---|---|
+| `iam-service-postgresql-credentials` | `url` | `DATABASE_URL` via `secretKeyRef`; URL requires CA at `/etc/iam-service/postgres/ca.crt` | OpenBao `iam/postgresql-password` |
+| `iam-service-postgresql-ca-cert` | `ca.crt` | volume at `/etc/iam-service/postgres/ca.crt` | OpenBao `platform-postgresql/ca-cert` |
+| `iam-service-internal-public-key` | `internal-public.pem` | volume at `/etc/fci/keys/internal-token-public.pem` | OpenBao `api-gateway/internal-public-key` |
+| `terminal-gateway-public-key` (shared) | `internal-public.pem` | volume at `/etc/fci/keys/terminal-gateway-public.pem` | OpenBao `terminal-gateway/internal-public-key`; defined once in `external-secret-terminal.yaml` |
+
+The Postgres CA path is part of the chart contract: the future iam-service chart must mount `ca.crt`
+at exactly this path. Until that chart exists, this Application is expected to remain in
+`ComparisonError`; staging these inert ExternalSecrets does not cause that pre-existing failure.
+
 ---
 
 ### storage-service
@@ -348,6 +388,8 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 **What**: Object storage management service. Deployed from `applications/storage-service` Helm chart, uses Garage as S3 backend.
 
 **Namespace**: `backend`. Same sync policy.
+
+**Image**: `registry.freecloudinitiative.com/storage-service:sha-2f2daba0c43e`.
 
 ---
 
@@ -357,6 +399,8 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 
 **Namespace**: `backend`. Same sync policy.
 
+**Image**: `registry.freecloudinitiative.com/terminal-gateway:sha-e3c09b7baefc`.
+
 ---
 
 ### frontend
@@ -364,6 +408,8 @@ Per-service limit arithmetic: `DB_MAX_CONNS` (5) × 1 replica = **5**.
 **What**: React single-page application and web console. Deployed from `applications/frontend` Helm chart, served via nginx.
 
 **Namespace**: `frontend`. Same sync policy.
+
+**Image**: `registry.freecloudinitiative.com/frontend:sha-7eefcc02593a`.
 
 ---
 

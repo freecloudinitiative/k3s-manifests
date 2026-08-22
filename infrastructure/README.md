@@ -14,18 +14,17 @@ Argo CD:    http://MASTER_IP/argocd/      -> also freecloudinitiative.com/argocd
 Grafana:    http://MASTER_IP/grafana/     -> also freecloudinitiative.com/grafana
 Prometheus: http://MASTER_IP/prometheus/  -> also freecloudinitiative.com/prometheus
 Authentik:  https://auth.freecloudinitiative.com/
+Registry:   https://registry.freecloudinitiative.com/
+Frontend:   https://frontend.freecloudinitiative.com/
 ```
 
-Most services are reached by **path** on the root domain (`/argocd`,
-`/grafana`, ...) via plain `Ingress` resources in `infrastructure/traefik`.
-Authentik is the one exception: it gets its own **subdomain**
-(`auth.freecloudinitiative.com`) with a cert-manager/Let's Encrypt
-certificate on Traefik's `websecure` entrypoint, because running an identity
-provider behind a path prefix breaks its cookies and OIDC redirect URIs.
-Follow that same pattern (dedicated subdomain, not a path) for anything else
-that can't tolerate being under a shared root domain - the `target` override
-in `terraform-cloudflare-infra`'s `services` variable exists for exactly this
-case.
+LAN UIs use **path** on root domain (`/argocd`, `/grafana`, ...) via
+`Ingress` in `infrastructure/traefik`. Authentik, Zot, and frontend use
+dedicated **subdomains** with cert-manager/Let's Encrypt on Traefik
+`websecure`. Identity provider behind a path prefix breaks cookies and OIDC
+redirect URIs. Same pattern for anything that cannot sit under a shared
+root - `target` override in `terraform-cloudflare-infra` `services` exists
+for that.
 
 OpenBao itself is not deployed by this repo and is not routed through this
 cluster's Traefik — it's an out-of-band prerequisite (see the top-level
@@ -53,16 +52,15 @@ out-of-band deployment provides.
 - `kube-prometheus-stack`, `alloy`, `loki`, `tempo`, `opentelemetry`: private observability stack.
 - `metallb`: bare-metal address allocation where an explicit public LoadBalancer is required.
 - `traefik`: public HTTPS ingress controller.
-- `kyverno`, `kyverno-policies`: policy-as-code admission controller and its
-  cluster policies (resource requests/limits, no `:latest` tags, non-root,
-  image registry allowlist). All policies currently run in `Audit` mode —
-  they report violations via `PolicyReport`/`ClusterPolicyReport` but do not
-  block anything. Promote individual policies to `Enforce` once existing
-  workloads are compliant.
-- `cloudflared`: Cloudflare Tunnel connector. Forwards the root domain (and
-  Authentik's subdomain) to Traefik's ClusterIP Service; Traefik does the
-  actual routing - by path for most services, by hostname for Authentik -
-  via the `Ingress` resources in `infrastructure/traefik` and `authentik`.
+- `kyverno`, `kyverno-policies`: admission controller and five cluster
+  policies. Four run `Audit` (requests/limits, no `:latest`, non-root,
+  registry allowlist) — report via `PolicyReport`/`ClusterPolicyReport`,
+  do not block. `restrict-compute-service-rbac-writes` is `Enforce`.
+- `cloudflared`: Cloudflare Tunnel connector. Forwards root domain and
+  public hosts (`auth.`, `registry.`, `frontend.`) to Traefik ClusterIP.
+  Traefik routes by path for LAN UIs and by hostname for Authentik, Zot,
+  frontend. Ingress lives in `infrastructure/traefik`, `authentik`,
+  `zot-registry`, and `applications/frontend`.
   The tunnel itself (and its DNS records) is created by the separate
   [terraform-cloudflare-infra](https://github.com/freecloudinitiative/terraform-cloudflare-infra)
   repo; this chart only runs the connector. Its `TUNNEL_TOKEN` comes from
@@ -73,15 +71,20 @@ out-of-band deployment provides.
 
 Secrets are never stored in plaintext in this repository. OpenBao recovery
 material and bootstrap credentials must remain outside both Git and Kubernetes.
-The OpenBao `ClusterSecretStore` is explicitly restricted to trusted platform
-namespaces; customer namespaces must never be allowed to reference it.
+`ClusterSecretStore` allow-list is `authentik`, `backend`, `frontend`,
+`zot-registry`, `monitoring`, `platform-database`, `valkey`. Customer
+namespaces must never be added. `cloudflared` is not on that list —
+`cloudflared-tunnel-token` ExternalSecret cannot sync until it is.
 
 ## Identity and data bootstrap
 
-The App-of-Apps sync waves install dependencies in this order: namespaces and
-cert-manager/External Secrets, CloudNativePG, PostgreSQL and Valkey, then
-Authentik. Before the secret bootstrap role can seed OpenBao, export strong,
-unique values for:
+App-of-Apps waves: namespaces (0), cert-manager / kyverno / external-secrets
+(1), longhorn / loki / kyverno-policies / cloudnative-pg (2), garage +
+issuers (3), metallb / platform-postgresql / valkey / zot-registry (4),
+authentik (5). Full table in [ARCHITECTURE.md](../ARCHITECTURE.md).
+
+Before secret bootstrap role can seed OpenBao, export strong unique values
+for:
 
 ```sh
 export AUTHENTIK_SECRET_KEY='at-least-50-random-characters'

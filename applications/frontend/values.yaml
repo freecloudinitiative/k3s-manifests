@@ -1,7 +1,7 @@
 # image -- OCI image settings.
 # Exactly one of tag or digest must be set; the chart fails if both are empty.
 image:
-  repository: registry.freecloudinitiative.com/frontend
+  repository: ghcr.io/freecloudinitiative/frontend
   # tag is used when digest is empty.
   tag: ""
   # digest takes precedence over tag when set (e.g. "sha256:abc123…").
@@ -10,7 +10,7 @@ image:
 # replicaCount -- number of pods.
 replicaCount: 2
 
-# imagePullSecrets -- pull credentials for registry.freecloudinitiative.com, which sits
+# imagePullSecrets -- pull credentials for ghcr.io/freecloudinitiative, which sits
 # behind Traefik basicAuth (infrastructure/zot-registry/middleware.yaml). Set via the
 # app.yaml helm parameter to zot-registry-pull-credentials.
 imagePullSecrets: []

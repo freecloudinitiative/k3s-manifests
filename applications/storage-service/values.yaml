@@ -7,24 +7,24 @@ replicaCount: 2
 revisionHistoryLimit: 3
 
 image:
-  # CI pushes to registry.freecloudinitiative.com/<name>:sha-<12> (see
+  # CI pushes to ghcr.io/freecloudinitiative/<name>:sha-<12> (see
   # platform-common/.github/workflows/build-arm64-image.yml, step "Derive
   # image tags").  The tag or digest MUST be supplied by the caller (e.g.
   # ArgoCD Application helm.parameters) — an empty tag is a hard error in
   # deploy/templates/_helpers.tpl.  Never falls back to Chart.appVersion.
-  repository: registry.freecloudinitiative.com/storage-service
+  repository: ghcr.io/freecloudinitiative/storage-service
   tag: ""
   digest: ""
   pullPolicy: IfNotPresent
 
-# imagePullSecrets is required: registry.freecloudinitiative.com sits behind
+# imagePullSecrets is required: ghcr.io/freecloudinitiative sits behind
 # Traefik's basicAuth middleware (zot-registry-registry-auth@kubernetescrd,
 # k3s-manifests/infrastructure/zot-registry/middleware.yaml).  The zot
 # config.json carries no auth block of its own, so auth is enforced at the
 # ingress layer only; pods cannot bypass it by hitting the ClusterIP Service
 # because the container runtime resolves the external hostname and goes
 # through HTTPS + basicAuth.  Create a Secret of type kubernetes.io/dockerconfigjson
-# with credentials for registry.freecloudinitiative.com and reference it here.
+# with credentials for ghcr.io/freecloudinitiative and reference it here.
 imagePullSecrets: []
 
 nameOverride: ""

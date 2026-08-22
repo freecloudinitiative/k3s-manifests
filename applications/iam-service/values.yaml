@@ -10,17 +10,17 @@ replicaCount: 2
 revisionHistoryLimit: 3
 
 image:
-  # CI pushes to registry.freecloudinitiative.com/<name>:sha-<12> (see
+  # CI pushes to ghcr.io/freecloudinitiative/<name>:sha-<12> (see
   # platform-common/.github/workflows/build-arm64-image.yml, step "Derive
   # image tags").  The tag or digest MUST be supplied by the caller (e.g.
   # ArgoCD Application helm.parameters) — an empty tag is a hard error in
   # deploy/templates/_helpers.tpl.  Never falls back to Chart.appVersion.
-  repository: registry.freecloudinitiative.com/iam-service
+  repository: ghcr.io/freecloudinitiative/iam-service
   tag: ""
   digest: ""
   pullPolicy: IfNotPresent
 
-# imagePullSecrets is required: registry.freecloudinitiative.com sits behind
+# imagePullSecrets is required: ghcr.io/freecloudinitiative sits behind
 # Traefik's basicAuth middleware. Create a Secret of type
 # kubernetes.io/dockerconfigjson with credentials for the registry and
 # reference it here.

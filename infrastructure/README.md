@@ -13,7 +13,6 @@ today:
 Argo CD:    http://MASTER_IP/argocd/      -> also freecloudinitiative.com/argocd
 Grafana:    http://MASTER_IP/grafana/     -> also freecloudinitiative.com/grafana
 Prometheus: http://MASTER_IP/prometheus/  -> also freecloudinitiative.com/prometheus
-OpenBao:    http://MASTER_IP/ui/
 Authentik:  https://auth.freecloudinitiative.com/
 ```
 
@@ -28,10 +27,13 @@ that can't tolerate being under a shared root domain - the `target` override
 in `terraform-cloudflare-infra`'s `services` variable exists for exactly this
 case.
 
-OpenBao traffic inside the cluster remains TLS-encrypted, and External
-Secrets authenticates with a short-lived Kubernetes ServiceAccount token
-rather than an administrative OpenBao token. OpenBao's `/ui/` path itself is
-LAN-only for now, not tunneled.
+OpenBao itself is not deployed by this repo and is not routed through this
+cluster's Traefik — it's an out-of-band prerequisite (see the top-level
+[README.md § Prerequisites](../README.md)). OpenBao traffic inside the
+cluster remains TLS-encrypted, and External Secrets authenticates with a
+short-lived Kubernetes ServiceAccount token rather than an administrative
+OpenBao token. Reach OpenBao's own UI/API through whatever access path the
+out-of-band deployment provides.
 
 ## Components
 

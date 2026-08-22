@@ -213,11 +213,4 @@ applications/frontend/
   Chart.yaml                                  Chart descriptor.
   values.yaml                                 Default values.
   templates/                                  8 Kubernetes templates.
-
-applications/random-logger/
-  app.yaml                                    ArgoCD Application for inline random-logger Helm chart.
-  Chart.yaml                                  Inline Helm chart descriptor.
-  values.yaml                                 Random logger config: image, replica count.
-  templates/
-    deployment.yaml                           Random logger Deployment template.
 ```

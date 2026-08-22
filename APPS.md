@@ -74,7 +74,6 @@ Both: `reclaimPolicy: Retain` (volumes survive pod deletion), `allowVolumeExpans
 | `/alloy` | Alloy UI (monitoring) |
 | `/argocd` | ArgoCD UI (argocd) |
 | `/traefik-dashboard` | Traefik dashboard (traefik) |
-| `/ui`, `/v1` | OpenBao UI + API (openbao) |
 
 Public endpoints (Authentik, Zot Registry, frontend) route via Cloudflare + Let's Encrypt TLS, each
 on its own host (`auth.`, `registry.`, `frontend.freecloudinitiative.com`) rather than a path prefix
@@ -413,8 +412,12 @@ at exactly this path. Until that chart exists, this Application is expected to r
 
 ---
 
-### random-logger
+## External Prerequisites
 
-**What**: Test application. Deploys a single pod that emits random structured JSON log lines on stdout. Used to verify that the log pipeline (Alloy → OTel → Loki → Grafana) works end to end.
+### OpenBao
 
-**Config**: Inline Helm chart (no external repo). `Deployment`, 1 replica.
+**What**: Secret store that every `ExternalSecret` in this repo reads from. Not a managed
+application — no `Application`, namespace, or chart for it exists in this repo. It must be running,
+initialised, and unsealed out of band before the first ArgoCD sync. See
+[README.md § Prerequisites](README.md) for what it must expose and
+[ARCHITECTURE.md § Secret Flow](ARCHITECTURE.md) for the full key inventory.

@@ -172,3 +172,18 @@ data:
         attrs:
           name: Alloy
           provider: !KeyOf alloy-proxy
+
+      - model: authentik_providers_proxy.proxyprovider
+        id: longhorn-proxy
+        identifiers:
+          name: longhorn
+        attrs:
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          external_host: https://longhorn.freecloudinitiative.com
+          mode: forward_single
+      - model: authentik_core.application
+        identifiers:
+          slug: longhorn
+        attrs:
+          name: Longhorn
+          provider: !KeyOf longhorn-proxy

@@ -341,6 +341,8 @@ Chart Service name expected by most backends: `opentelemetry-collector.monitorin
 
 All seven Applications source `https://github.com/freecloudinitiative/k3s-manifests.git` at `applications/<name>`. Charts live next to `app.yaml`. Helm parameters set `image.tag` and `imagePullSecrets[0].name=zot-registry-pull-credentials`.
 
+**Note on Image Registries:** For non-prod/testing, applications pull from `ghcr.io`. For production, they will pull from `registry.freecloudinitiative.com` (Zot). The `values.yaml` for each application contains a commented-out Zot repository line (`# uncomment when deploying to prod`) to make this transition easy. The `zot-registry-pull-credentials` Secret contains authentication for both registries.
+
 ---
 
 ### api-gateway

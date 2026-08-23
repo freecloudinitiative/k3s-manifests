@@ -12,6 +12,7 @@ image:
   # image tags").  The tag or digest MUST be supplied by the caller (e.g.
   # ArgoCD Application helm.parameters) — an empty tag is a hard error in
   # deploy/templates/_helpers.tpl.  Never falls back to Chart.appVersion.
+  # repository: registry.freecloudinitiative.com/freecloudinitiative/storage-service # uncomment when deploying to prod
   repository: ghcr.io/freecloudinitiative/storage-service
   tag: ""
   digest: ""

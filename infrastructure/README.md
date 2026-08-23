@@ -14,7 +14,7 @@ Argo CD:    http://MASTER_IP/argocd/      -> also freecloudinitiative.com/argocd
 Grafana:    http://MASTER_IP/grafana/     -> also freecloudinitiative.com/grafana
 Prometheus: http://MASTER_IP/prometheus/  -> also freecloudinitiative.com/prometheus
 Authentik:  https://auth.freecloudinitiative.com/
-Registry:   https://registry.freecloudinitiative.com/
+Registry:   https://ghcr.io/freecloudinitiative/
 Frontend:   https://frontend.freecloudinitiative.com/
 ```
 

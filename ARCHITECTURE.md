@@ -34,7 +34,7 @@ Tags must never be `latest`. Chart must `fail` when neither `image.tag` nor
 This repo records published tags in Git. Digests preferred when publish
 workflow records them; do not invent digest values.
 
-`registry.freecloudinitiative.com` is behind Traefik basic authentication.
+`ghcr.io/freecloudinitiative` is behind Traefik basic authentication.
 External Secrets Operator materializes `zot-registry-pull-credentials` in
 `backend` and `frontend` from OpenBao `zot-registry/pull-username` and
 `zot-registry/pull-password`. Applications pass that Secret as
@@ -109,7 +109,7 @@ Cloudflare (DNS + CDN)
    │
    ├── auth.freecloudinitiative.com ──► Cloudflare Tunnel (cloudflared) ──► Authentik
    │
-   ├── registry.freecloudinitiative.com ──► Cloudflare Tunnel ──► Zot Registry
+   ├── ghcr.io/freecloudinitiative ──► Cloudflare Tunnel ──► Zot Registry
    │                                                              (Traefik middleware: auth)
    │
    └── frontend.freecloudinitiative.com ──► Cloudflare Tunnel ──► Traefik (websecure, TLS via

@@ -268,7 +268,7 @@ Role comments still say `DB_MAX_CONNS` (5) × 1 replica = 5. Charts now set `rep
 - Single replica.
 - Backend: Garage S3 (`garage.garage.svc.cluster.local:3900`, bucket `zot-registry`, region `fci-local`).
 - S3 credentials from ExternalSecret `zot-s3-credentials`.
-- Public endpoint: `https://registry.freecloudinitiative.com` — Let's Encrypt.
+- Public endpoint: `https://ghcr.io/freecloudinitiative` — Let's Encrypt.
 - Auth via Traefik middleware `zot-registry-registry-auth`.
 - GC enabled, 24h delay.
 - Prometheus metrics at `/metrics`.
@@ -352,7 +352,7 @@ All seven Applications source `https://github.com/freecloudinitiative/k3s-manife
 
 **Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 
-**Image**: `registry.freecloudinitiative.com/api-gateway:sha-0ac98efb497a`. `replicaCount: 2`.
+**Image**: `ghcr.io/freecloudinitiative/api-gateway:sha-0ac98efb497a`. `replicaCount: 2`.
 
 **Secrets (namespace `backend`)**:
 
@@ -372,7 +372,7 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **Namespace**: `backend`. **Sync**: automated **off**. Placeholder tag would ImagePullBackOff if auto-sync ran.
 
-**Image**: `registry.freecloudinitiative.com/compute-service:sha-xxxxxxxxxxxx`. Re-enable `syncPolicy.automated` when real tag exists. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
+**Image**: `ghcr.io/freecloudinitiative/compute-service:sha-xxxxxxxxxxxx`. Re-enable `syncPolicy.automated` when real tag exists. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
 
 **Secrets (namespace `backend`)**:
 
@@ -393,7 +393,7 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 
-**Image**: `ghcr.io/freecloudinitiative/database-service:sha-f247d60ac4de`. Other services use `registry.freecloudinitiative.com`. Chart falls back to `Chart.appVersion` (`0.1.0`) if `image.tag` and `image.digest` are both empty — siblings `fail` instead. `replicaCount: 2`. `config.databaseMaxConnections: 10`.
+**Image**: `ghcr.io/freecloudinitiative/database-service:sha-f247d60ac4de`. Other services use `ghcr.io/freecloudinitiative`. Chart falls back to `Chart.appVersion` (`0.1.0`) if `image.tag` and `image.digest` are both empty — siblings `fail` instead. `replicaCount: 2`. `config.databaseMaxConnections: 10`.
 
 **Secrets (namespace `backend`)**:
 
@@ -421,7 +421,7 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **Namespace**: `backend`. **Sync**: automated **off**. Same placeholder rule as compute-service.
 
-**Image**: `registry.freecloudinitiative.com/iam-service:sha-xxxxxxxxxxxx`. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
+**Image**: `ghcr.io/freecloudinitiative/iam-service:sha-xxxxxxxxxxxx`. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
 
 **Secrets (namespace `backend`)**:
 
@@ -442,7 +442,7 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 
-**Image**: `registry.freecloudinitiative.com/storage-service:sha-2f2daba0c43e`. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
+**Image**: `ghcr.io/freecloudinitiative/storage-service:sha-2f2daba0c43e`. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
 
 **Secrets (namespace `backend`)**:
 
@@ -463,7 +463,7 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 
-**Image**: `registry.freecloudinitiative.com/terminal-gateway:sha-e3c09b7baefc`. `replicaCount: 2`.
+**Image**: `ghcr.io/freecloudinitiative/terminal-gateway:sha-e3c09b7baefc`. `replicaCount: 2`.
 
 **Secrets (namespace `backend`)**:
 
@@ -483,7 +483,7 @@ No Ingress. NetworkPolicy admits `backend` only. frontend nginx proxies `/ws/` �
 
 **Namespace**: `frontend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 
-**Image**: `registry.freecloudinitiative.com/frontend:sha-7eefcc02593a`. `replicaCount: 2`.
+**Image**: `ghcr.io/freecloudinitiative/frontend:sha-7eefcc02593a`. `replicaCount: 2`.
 
 **Ingress**: `https://frontend.freecloudinitiative.com` — Let's Encrypt (`frontend-public-tls`), Traefik `websecure` + `traefik-security-headers`. nginx proxies `/api/` and `/ws/` to `http://api-gateway.backend.svc.cluster.local:80`.
 

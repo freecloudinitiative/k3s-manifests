@@ -1,6 +1,7 @@
 replicaCount: 2
 
 image:
+  # repository: registry.freecloudinitiative.com/freecloudinitiative/database-service # uncomment when deploying to prod
   repository: ghcr.io/freecloudinitiative/database-service
   pullPolicy: IfNotPresent
   tag: ""

@@ -1,6 +1,7 @@
 replicaCount: 2
 
 image:
+  # repository: registry.freecloudinitiative.com/freecloudinitiative/terminal-gateway # uncomment when deploying to prod
   repository: ghcr.io/freecloudinitiative/terminal-gateway
   pullPolicy: IfNotPresent
   tag: ""

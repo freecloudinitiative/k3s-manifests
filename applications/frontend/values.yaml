@@ -1,6 +1,7 @@
 # image -- OCI image settings.
 # Exactly one of tag or digest must be set; the chart fails if both are empty.
 image:
+  # repository: registry.freecloudinitiative.com/freecloudinitiative/frontend # uncomment when deploying to prod
   repository: ghcr.io/freecloudinitiative/frontend
   # tag is used when digest is empty.
   tag: ""

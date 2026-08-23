@@ -60,8 +60,9 @@ Precedence:
   3. neither         → fail (no silent fallback to .Chart.AppVersion)
 
 The tag or digest must be supplied by the ArgoCD Application's helm.parameters
-(image.tag=sha-<12> or image.digest=sha256:<...>). A missing value fails loudly
-at render time rather than producing an ImagePullBackOff in the cluster.
+(image.digest=sha256:<...> is preferred; image.tag=sha-<40-hex> if a tag is used).
+A missing value fails loudly at render time rather than producing an
+ImagePullBackOff in the cluster.
 */}}
 {{- define "api-gateway.image" -}}
 {{- if .Values.image.digest -}}
@@ -69,6 +70,6 @@ at render time rather than producing an ImagePullBackOff in the cluster.
 {{- else if .Values.image.tag -}}
 {{- printf "%s:%s" .Values.image.repository (.Values.image.tag | toString) -}}
 {{- else -}}
-{{- fail "image.tag or image.digest must be set — supply it via the ArgoCD Application's helm.parameters (image.tag=sha-<12>)" -}}
+{{- fail "image.tag or image.digest must be set — supply it via the ArgoCD Application's helm.parameters (image.digest is preferred)" -}}
 {{- end -}}
 {{- end -}}

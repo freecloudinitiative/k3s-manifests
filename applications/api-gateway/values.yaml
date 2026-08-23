@@ -6,9 +6,10 @@ image:
   # repository: registry.freecloudinitiative.com/freecloudinitiative/api-gateway # uncomment when deploying to prod
   repository: ghcr.io/freecloudinitiative/api-gateway
   pullPolicy: IfNotPresent
-  # tag is injected by the ArgoCD Application via helm.parameters (image.tag=sha-<12>).
-  # Leave empty here so that a missing parameter causes an explicit helm template failure
-  # rather than a silent fallback. See deploy/templates/_helpers.tpl: api-gateway.image.
+  # tag or digest is injected by the ArgoCD Application via helm.parameters
+  # (image.digest is preferred). Leave empty here so that a missing parameter
+  # causes an explicit helm template failure rather than a silent fallback.
+  # See applications/api-gateway/templates/_helpers.tpl: api-gateway.image.
   tag: ""
   # digest pins a release immutably; when set it overrides tag.
   # Example: sha256:abc123...
@@ -101,7 +102,7 @@ config:
   valkeyURL: "valkey.valkey.svc.cluster.local:6379"
   # Path to the Valkey TLS CA certificate inside the container.
   # Must equal the valkey-ca-cert volumeMount's mountPath joined with the Secret
-  # item's path (deploy/templates/deployment.yaml: mountPath=/etc/fci/tls, path=ca.crt).
+  # item's path (applications/api-gateway/templates/deployment.yaml: mountPath=/etc/fci/tls, path=ca.crt).
   valkeyCACertPath: "/etc/fci/tls/ca.crt"
   # Authentik OIDC — JWKS and issuer URL.
   # Source: authentik/values.yaml:94 (host = auth.freecloudinitiative.com) +

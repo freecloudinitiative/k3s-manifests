@@ -7,11 +7,12 @@ replicaCount: 2
 revisionHistoryLimit: 3
 
 image:
-  # CI pushes to ghcr.io/freecloudinitiative/<name>:sha-<12> (see
-  # platform-common/.github/workflows/build-arm64-image.yml, step "Derive
+  # CI pushes to ghcr.io/freecloudinitiative/<name>:sha-<40-hex> (see
+  # storage-service/.github/workflows/build-and-push.yml, step "Derive
   # image tags").  The tag or digest MUST be supplied by the caller (e.g.
-  # ArgoCD Application helm.parameters) — an empty tag is a hard error in
-  # deploy/templates/_helpers.tpl.  Never falls back to Chart.appVersion.
+  # ArgoCD Application helm.parameters, which prefers image.digest) — an
+  # empty tag is a hard error in
+  # applications/storage-service/templates/_helpers.tpl.  Never falls back to Chart.appVersion.
   # repository: registry.freecloudinitiative.com/freecloudinitiative/storage-service # uncomment when deploying to prod
   repository: ghcr.io/freecloudinitiative/storage-service
   tag: ""
@@ -80,7 +81,7 @@ kubernetes:
   burst: 30
   timeoutSeconds: 30
 
-# networkPolicy.enabled gates deploy/templates/networkpolicy.yaml, which
+# networkPolicy.enabled gates applications/storage-service/templates/networkpolicy.yaml, which
 # applies a NetworkPolicy to storage-service's OWN pod in .Release.Namespace
 # (the backend namespace). It has nothing to do with customer namespaces.
 # Customer-namespace NetworkPolicy projection is runtime behaviour gated

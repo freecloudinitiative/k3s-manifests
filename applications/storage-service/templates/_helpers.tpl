@@ -49,12 +49,12 @@ Precedence:
   2. tag   set   →  {repository}:{tag}
   3. neither     →  hard error; never falls back to .Chart.AppVersion
 
-CI produces tags of the form sha-<first 12 of GITHUB_SHA> (see
-platform-common/.github/workflows/build-arm64-image.yml, step "Derive
+CI produces tags of the form sha-<full 40-char GITHUB_SHA> (see
+storage-service/.github/workflows/build-and-push.yml, step "Derive
 image tags").  Supply the value via the ArgoCD Application's
-helm.parameters, e.g.:
-  - name: image.tag
-    value: sha-abc123def456
+helm.parameters — image.digest is preferred, e.g.:
+  - name: image.digest
+    value: sha256:abc123...
 */}}
 {{- define "storage-service.image" -}}
 {{- if .Values.image.digest -}}

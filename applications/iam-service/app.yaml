@@ -15,21 +15,18 @@ spec:
       valueFiles:
         - values.yaml
       parameters:
-        # Placeholder: iam-service has no build pipeline yet (no
-        # build-arm64-image.yml workflow in that repo), so there is no real
-        # tag to put here. automated sync is deliberately OFF below —
-        # ArgoCD would otherwise apply this placeholder immediately and
-        # spin up a Deployment stuck in ImagePullBackOff. Once a real image
-        # is published, set image.tag to the real sha AND re-enable
-        # syncPolicy.automated in the same change.
-        - name: image.tag
-          value: "sha-xxxxxxxxxxxx"
+        - name: image.digest
+          value: "sha256:3f527bfea92ae428b30788e953ed94d324349b9d636337ad7d1e29f280b0259b"
         - name: imagePullSecrets[0].name
           value: zot-registry-pull-credentials
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: backend
   syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: true
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true

@@ -76,7 +76,7 @@ data:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
           client_type: confidential
           client_id: grafana-oidc
-          client_secret: "?env GRAFANA_OIDC_SECRET"
+          client_secret: !Env GRAFANA_OIDC_SECRET
           redirect_uris:
             - matching_mode: strict
               url: https://grafana.freecloudinitiative.com/grafana/login/generic_oauth
@@ -101,7 +101,7 @@ data:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
           client_type: confidential
           client_id: argocd-oidc
-          client_secret: "?env ARGOCD_OIDC_SECRET"
+          client_secret: !Env ARGOCD_OIDC_SECRET
           redirect_uris:
             - matching_mode: strict
               url: https://argocd.freecloudinitiative.com/api/dex/callback
@@ -126,7 +126,7 @@ data:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
           client_type: confidential
           client_id: zot-oidc
-          client_secret: "?env ZOT_OIDC_SECRET"
+          client_secret: !Env ZOT_OIDC_SECRET
           redirect_uris:
             - matching_mode: strict
               url: https://registry.freecloudinitiative.com/auth/oidc/callback

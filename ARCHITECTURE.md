@@ -30,12 +30,11 @@ In test environments where the cluster is still bootstrapping or lacks public tu
 **2. Production Environment (Planned)**
 When moving to production, we will switch back to our self-hosted, air-gapped registry: **`registry.freecloudinitiative.com`** (powered by Zot and backed by Garage S3). 
 
-`registry.freecloudinitiative.com` is behind Traefik basic authentication.
+`registry.freecloudinitiative.com` is behind Authentik SSO (ForwardAuth).
 External Secrets Operator materializes `zot-registry-pull-credentials` in
 `backend` and `frontend` from OpenBao `zot-registry/pull-username` and
 `zot-registry/pull-password`. Applications pass that Secret as
-`imagePullSecrets[0].name`. Pull user must also be in `zot-registry/htpasswd`
-enforced by Traefik.
+`imagePullSecrets[0].name`.
 
 Application images are promoted with static ArgoCD Helm parameters in each
 `applications/<name>/app.yaml`. Parameter is part of Git history, so deploy
@@ -110,7 +109,7 @@ Cloudflare (DNS + CDN)
    ├── auth.freecloudinitiative.com ──► Cloudflare Tunnel (cloudflared) ──► Authentik
    │
    ├── registry.freecloudinitiative.com ──► Cloudflare Tunnel ──► Zot Registry (Production)
-   │                                                              (Traefik middleware: auth)
+   │                                                              (Traefik middleware: Authentik ForwardAuth)
    │
    └── frontend.freecloudinitiative.com ──► Cloudflare Tunnel ──► Traefik (websecure, TLS via
                                              letsencrypt-production) ──► frontend nginx (namespace:
@@ -130,16 +129,19 @@ entry for the product. Neither gateway is reachable from outside the cluster.
 ### Internal HTTP (cluster LAN access)
 
 ```
-Browser → master-node-IP:80
+Browser → Hostname via DNS
    │
    ▼
 Traefik (DaemonSet on master node, hostPort 80/443)
    │
-   ├── /grafana        ──► Grafana (namespace: monitoring)
-   ├── /prometheus     ──► Prometheus (namespace: monitoring)
-   ├── /alloy          ──► Alloy UI (namespace: monitoring)
-   ├── /argocd         ──► ArgoCD server (namespace: argocd)
+   ├── grafana.freecloudinitiative.com ──► Grafana (namespace: monitoring)
+   ├── prometheus.freecloudinitiative.com ──► Prometheus (namespace: monitoring)
+   ├── alloy.freecloudinitiative.com ──► Alloy UI (namespace: monitoring)
+   ├── argocd.freecloudinitiative.com ──► ArgoCD server (namespace: argocd)
+   ├── longhorn.freecloudinitiative.com ──► Longhorn UI (namespace: longhorn-system)
    └── /traefik-dashboard ► Traefik internal API
+
+UIs use subdomains on `websecure` (HTTPS) protected by Authentik ForwardAuth SSO.
 ```
 
 OpenBao is not routed through this repo's Traefik. Out-of-band prerequisite
@@ -212,7 +214,7 @@ Seed these out of band before matching `ExternalSecret` can reach
 | `secret/data/valkey` | `ca-cert` | Valkey TLS verify | `valkey-ca-cert` / `*-valkey-ca-cert` (backend) |
 | `secret/data/zot-registry` | `pull-username`, `pull-password` | image pulls | `zot-registry-pull-credentials` (backend, frontend) |
 | `secret/data/zot-registry` | `s3-access-key-id`, `s3-secret-access-key` | Zot Garage backend | `zot-s3-credentials` (zot-registry) |
-| `secret/data/zot-registry` | `htpasswd` | Traefik registry basic-auth | `zot-registry-auth` (zot-registry) |
+| `secret/data/authentik` | `zot-oidc-secret` | Traefik registry SSO | `zot-oidc-secret` (zot-registry) |
 | `secret/data/authentik` | `postgresql-password` | authentik pod + `DatabaseRole` | `authentik-config` (authentik), `authentik-postgresql-credentials` (platform-database) |
 | `secret/data/authentik` | `secret-key` | authentik signing key | `authentik-config` (authentik) |
 | `secret/data/authentik` | `bootstrap-email` | first-run bootstrap | `authentik-bootstrap` (authentik) |

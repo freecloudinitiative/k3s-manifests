@@ -18,3 +18,4 @@ db.lock
 *.local.yaml
 *.local.yml
 kubeconfig
+plans/

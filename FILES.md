@@ -64,7 +64,7 @@ infrastructure/longhorn/
 infrastructure/traefik/
   app.yaml                                    ArgoCD Application for Traefik Helm chart.
   values.yaml                                 Traefik config: DaemonSet, hostPort 80/443, control-plane nodeSelector.
-  ingress-routes.yaml                         Ingress + IngressRoute for LAN paths (Grafana, ArgoCD, Alloy, etc.).
+  ingress-routes.yaml                         Ingress + IngressRoute for UI subdomains (Grafana, ArgoCD, Alloy, etc.).
   middleware-chain.yaml                       Middleware chain: security-headers → rate-limit.
   middleware-ratelimit.yaml                   Rate-limit middleware config.
   middleware-transform.yaml                   Header transformation middleware.
@@ -91,6 +91,7 @@ infrastructure/external-secrets/
   external-secret-database.yaml               database-service DatabaseRole + chart-facing secrets.
   external-secret-registry.yaml               zot-registry-pull-credentials (backend).
   external-secret-registry-frontend.yaml      zot-registry-pull-credentials (frontend).
+  external-secret-argocd.yaml                 ArgoCD OIDC credentials.
 
 infrastructure/kyverno/
   app.yaml                                    ArgoCD Application for Kyverno Helm chart.
@@ -150,6 +151,7 @@ infrastructure/argocd/
   app-config.yaml                             ArgoCD Application to manage ArgoCD's own config (self-management).
   argocd-cm.yaml                              ArgoCD ConfigMap: resource health checks, exclusions.
   argocd-cmd-params-cm.yaml                   ArgoCD server command flags.
+  argocd-rbac-cm.yaml                         ArgoCD RBAC ConfigMap.
 
 infrastructure/kube-prometheus-stack/
   app.yaml                                    ArgoCD Application for kube-prometheus-stack Helm chart.

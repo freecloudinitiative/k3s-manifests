@@ -20,7 +20,7 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.middlewares: zot-registry-registry-auth@kubernetescrd,traefik-security-headers@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-security-headers@kubernetescrd
   hosts:
     - host: registry.freecloudinitiative.com
       paths:
@@ -56,12 +56,26 @@ configFiles:
         "port": "5000",
         "externalUrl": "https://registry.freecloudinitiative.com",
         "readTimeout": "15m",
-        "writeTimeout": "15m"
+        "writeTimeout": "15m",
+        "auth": {
+          "openid": {
+            "providers": {
+              "authentik": {
+                "issuer": "https://auth.freecloudinitiative.com/application/o/zot-registry/",
+                "clientid": "zot-oidc",
+                "scopes": ["openid", "profile", "email"]
+              }
+            }
+          }
+        }
       },
       "log": {
         "level": "info"
       },
       "extensions": {
+        "ui": {
+          "enable": true
+        },
         "metrics": {
           "enable": true,
           "prometheus": {
@@ -82,6 +96,11 @@ env:
       secretKeyRef:
         name: zot-s3-credentials
         key: secret-access-key
+  - name: ZOT_HTTP_AUTH_OPENID_PROVIDERS_AUTHENTIK_CLIENTSECRET
+    valueFrom:
+      secretKeyRef:
+        name: zot-oidc-secret
+        key: ZOT_OIDC_SECRET
 
 persistence: false
 

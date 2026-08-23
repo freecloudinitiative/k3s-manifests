@@ -10,21 +10,19 @@ applied, using the master-node IP or `freecloudinitiative.com` interchangeably
 today:
 
 ```text
-Argo CD:    http://MASTER_IP/argocd/      -> also freecloudinitiative.com/argocd
-Grafana:    http://MASTER_IP/grafana/     -> also freecloudinitiative.com/grafana
-Prometheus: http://MASTER_IP/prometheus/  -> also freecloudinitiative.com/prometheus
-Authentik:  https://auth.freecloudinitiative.com/
-Registry:   https://ghcr.io/freecloudinitiative/
-Frontend:   https://frontend.freecloudinitiative.com/
+Argo CD:    https://argocd.freecloudinitiative.com
+Grafana:    https://grafana.freecloudinitiative.com
+Prometheus: https://prometheus.freecloudinitiative.com
+Alloy:      https://alloy.freecloudinitiative.com
+Longhorn:   https://longhorn.freecloudinitiative.com
+Authentik:  https://auth.freecloudinitiative.com
+Registry:   https://registry.freecloudinitiative.com
+Frontend:   https://frontend.freecloudinitiative.com
 ```
 
-LAN UIs use **path** on root domain (`/argocd`, `/grafana`, ...) via
-`Ingress` in `infrastructure/traefik`. Authentik, Zot, and frontend use
-dedicated **subdomains** with cert-manager/Let's Encrypt on Traefik
-`websecure`. Identity provider behind a path prefix breaks cookies and OIDC
-redirect URIs. Same pattern for anything that cannot sit under a shared
-root - `target` override in `terraform-cloudflare-infra` `services` exists
-for that.
+All UIs use dedicated subdomains via `Ingress` in `infrastructure/traefik`.
+Authentik ForwardAuth protects ArgoCD, Grafana, Prometheus, Alloy, Longhorn, Zot with SSO.
+Identity provider behind a path prefix breaks cookies and OIDC redirect URIs.
 
 OpenBao itself is not deployed by this repo and is not routed through this
 cluster's Traefik — it's an out-of-band prerequisite (see the top-level
@@ -57,10 +55,9 @@ out-of-band deployment provides.
   registry allowlist) — report via `PolicyReport`/`ClusterPolicyReport`,
   do not block. `restrict-compute-service-rbac-writes` is `Enforce`.
 - `cloudflared`: Cloudflare Tunnel connector. Forwards root domain and
-  public hosts (`auth.`, `registry.`, `frontend.`) to Traefik ClusterIP.
-  Traefik routes by path for LAN UIs and by hostname for Authentik, Zot,
-  frontend. Ingress lives in `infrastructure/traefik`, `authentik`,
-  `zot-registry`, and `applications/frontend`.
+  public hosts to Traefik ClusterIP. Traefik routes by hostname for all UIs.
+  Ingress lives in `infrastructure/traefik`, `authentik`, `zot-registry`,
+  and `applications/frontend`.
   The tunnel itself (and its DNS records) is created by the separate
   [terraform-cloudflare-infra](https://github.com/freecloudinitiative/terraform-cloudflare-infra)
   repo; this chart only runs the connector. Its `TUNNEL_TOKEN` comes from
@@ -71,7 +68,7 @@ out-of-band deployment provides.
 
 Secrets are never stored in plaintext in this repository. OpenBao recovery
 material and bootstrap credentials must remain outside both Git and Kubernetes.
-`ClusterSecretStore` allow-list is `authentik`, `backend`, `frontend`,
+`ClusterSecretStore` allow-list is `authentik`, `argocd`, `backend`, `frontend`,
 `zot-registry`, `monitoring`, `platform-database`, `valkey`. Customer
 namespaces must never be added. `cloudflared` is not on that list —
 `cloudflared-tunnel-token` ExternalSecret cannot sync until it is.

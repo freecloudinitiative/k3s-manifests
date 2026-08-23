@@ -71,13 +71,9 @@ Both: `reclaimPolicy: Retain`, `allowVolumeExpansion: true`.
 
 | Path | Destination |
 |---|---|
-| `/grafana` | Grafana (monitoring) |
-| `/prometheus` | Prometheus (monitoring) |
-| `/alloy` | Alloy UI (monitoring) |
-| `/argocd` | ArgoCD UI (argocd) |
 | `/traefik-dashboard` | Traefik dashboard (traefik) |
 
-Public hosts use Cloudflare + Let's Encrypt TLS, not a path prefix: `auth.`, `registry.`, `frontend.freecloudinitiative.com`.
+Public hosts use Cloudflare + Let's Encrypt TLS: `auth.`, `registry.`, `frontend.`, `argocd.`, `grafana.`, `prometheus.`, `alloy.`, `longhorn.freecloudinitiative.com`. UIs are protected by Authentik ForwardAuth.
 
 ---
 
@@ -98,7 +94,7 @@ Public hosts use Cloudflare + Let's Encrypt TLS, not a path prefix: `auth.`, `re
 
 **Config**:
 - One `ClusterSecretStore` named `openbao-store`. Server `https://openbao-active.openbao.svc.cluster.local:8200`. Kubernetes SA auth, role `external-secrets`.
-- Store `conditions.namespaces`: `authentik`, `backend`, `frontend`, `zot-registry`, `monitoring`, `platform-database`, `valkey`.
+- Store `conditions.namespaces`: `authentik`, `argocd`, `backend`, `frontend`, `zot-registry`, `monitoring`, `platform-database`, `valkey`.
 - `cloudflared` is not on that list. `cloudflared-tunnel-token` ExternalSecret still lives in `cloudflared` — store will refuse it until `cloudflared` is added.
 
 **ExternalSecrets** (Kubernetes Secret name = target unless noted):
@@ -242,7 +238,7 @@ Role comments still say `DB_MAX_CONNS` (5) × 1 replica = 5. Charts now set `rep
 - 2 server replicas, 2 worker replicas. Hard pod anti-affinity.
 - Backed by `platform-postgresql` (`authentik` database). TLS `verify-full`, CA mount.
 - Secrets from OpenBao via ExternalSecret.
-- Public endpoint: `https://auth.freecloudinitiative.com` — Let's Encrypt via cert-manager.
+- Public endpoint: `https://auth.freecloudinitiative.com` — Let's Encrypt via cert-manager. Provides ForwardAuth SSO for ArgoCD, Grafana, Prometheus, Alloy, Zot, Longhorn.
 - Ingress on Traefik `websecure` + security-headers middleware.
 - Outpost discovery disabled. Built-in Postgres disabled.
 - `blueprint.yaml` ConfigMap exists. `values.yaml` sets `blueprints.configMaps: []` — Authentik does not load it.
@@ -269,7 +265,7 @@ Role comments still say `DB_MAX_CONNS` (5) × 1 replica = 5. Charts now set `rep
 - Backend: Garage S3 (`garage.garage.svc.cluster.local:3900`, bucket `zot-registry`, region `fci-local`).
 - S3 credentials from ExternalSecret `zot-s3-credentials`.
 - Public endpoint: `https://ghcr.io/freecloudinitiative` — Let's Encrypt.
-- Auth via Traefik middleware `zot-registry-registry-auth`.
+- Auth via Authentik SSO (ForwardAuth).
 - GC enabled, 24h delay.
 - Prometheus metrics at `/metrics`.
 
@@ -280,9 +276,10 @@ Role comments still say `DB_MAX_CONNS` (5) × 1 replica = 5. Charts now set `rep
 **What**: ArgoCD self-configuration. ArgoCD manages own ConfigMaps through GitOps.
 
 **Config**:
-- `argocd-cm.yaml`: resource health checks, custom resource exclusions.
+- `argocd-cm.yaml`: resource health checks, custom resource exclusions, OIDC client config.
 - `argocd-cmd-params-cm.yaml`: server flags.
 - `app-config.yaml`: ArgoCD `AppProject` settings. Sync-wave `10`.
+- Exposed via `argocd.freecloudinitiative.com` behind Authentik SSO.
 
 ---
 
@@ -293,7 +290,7 @@ Role comments still say `DB_MAX_CONNS` (5) × 1 replica = 5. Charts now set `rep
 **Config**:
 - Prometheus: 14-day retention, 10 Gi PVC (`local-path`). Scrapes all ServiceMonitors.
 - Grafana: admin credentials from OpenBao ExternalSecret. Four datasources: Prometheus, Loki, Tempo, Alloy.
-- Exposed via Traefik at `/grafana` and `/prometheus`.
+- Exposed via Traefik at `grafana.` and `prometheus.` subdomains behind Authentik SSO.
 
 ---
 

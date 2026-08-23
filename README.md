@@ -170,9 +170,9 @@ infrastructure/
 
 applications/
   api-gateway/        Reverse proxy + auth gateway. Chart in this folder.
-  compute-service/    VM lifecycle management. Chart in this folder. Auto-sync off.
+  compute-service/    VM lifecycle management. Chart in this folder.
   database-service/   CNPG-backed database management. Chart in this folder.
-  iam-service/        Identity and access management. Chart in this folder. Auto-sync off.
+  iam-service/        Identity and access management. Chart in this folder.
   storage-service/    Garage S3-backed object storage service. Chart in this folder.
   terminal-gateway/   WebSocket-to-Kubernetes exec terminal proxy. Chart in this folder.
   frontend/           React SPA + nginx. Chart in this folder. Namespace frontend.

@@ -7,9 +7,9 @@ service GitHub repo.
 ## Applications
 
 - **api-gateway**: HTTP reverse proxy + auth gateway. Auto-sync on.
-- **compute-service**: VM lifecycle. Auto-sync off until a real image tag exists.
+- **compute-service**: VM lifecycle. Auto-sync on.
 - **database-service**: Customer CNPG management. Auto-sync on. Image still `ghcr.io`.
-- **iam-service**: Identity and access management. Auto-sync off until a real image tag exists.
+- **iam-service**: Identity and access management. Auto-sync on.
 - **storage-service**: Garage S3-backed object storage management. Auto-sync on.
 - **terminal-gateway**: WebSocket-to-Kubernetes exec proxy. Auto-sync on.
 - **frontend**: React SPA + nginx. Namespace `frontend`. Auto-sync on.

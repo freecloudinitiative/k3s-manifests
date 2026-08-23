@@ -86,7 +86,8 @@ spec:
             - name: OIDC_CLIENT_ID
               value: {{ .Values.config.authentikClientID | quote }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: {{ printf "http://%s" .Values.config.otelEndpoint | quote }}
+              # bare host:port, no scheme — platform-common rejects a URL scheme for OTLP gRPC
+              value: {{ .Values.config.otelEndpoint | quote }}
             # Downward API for OTel resource attributes.
             - name: POD_NAME
               valueFrom:

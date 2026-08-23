@@ -57,6 +57,8 @@ spec:
               value: {{ .Values.service.metricsPort | quote }}
             - name: SHUTDOWN_GRACE
               value: "25s"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.otelEndpoint | quote }}
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:

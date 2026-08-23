@@ -8,6 +8,7 @@ spec:
   conditions:
     - namespaces:
         - authentik
+        - argocd
         - backend
         - frontend
         - zot-registry

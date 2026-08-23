@@ -68,7 +68,7 @@ out-of-band deployment provides.
 
 Secrets are never stored in plaintext in this repository. OpenBao recovery
 material and bootstrap credentials must remain outside both Git and Kubernetes.
-`ClusterSecretStore` allow-list is `authentik`, `backend`, `frontend`,
+`ClusterSecretStore` allow-list is `authentik`, `argocd`, `backend`, `frontend`,
 `zot-registry`, `monitoring`, `platform-database`, `valkey`. Customer
 namespaces must never be added. `cloudflared` is not on that list —
 `cloudflared-tunnel-token` ExternalSecret cannot sync until it is.

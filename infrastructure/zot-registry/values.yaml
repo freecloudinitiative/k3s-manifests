@@ -63,7 +63,6 @@ configFiles:
               "authentik": {
                 "issuer": "https://auth.freecloudinitiative.com/application/o/zot-registry/",
                 "clientid": "zot-oidc",
-                "clientsecret": "$ZOT_OIDC_SECRET",
                 "scopes": ["openid", "profile", "email"]
               }
             }
@@ -97,7 +96,7 @@ env:
       secretKeyRef:
         name: zot-s3-credentials
         key: secret-access-key
-  - name: ZOT_OIDC_SECRET
+  - name: ZOT_HTTP_AUTH_OPENID_PROVIDERS_AUTHENTIK_CLIENTSECRET
     valueFrom:
       secretKeyRef:
         name: zot-oidc-secret

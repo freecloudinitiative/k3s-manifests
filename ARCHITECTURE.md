@@ -188,7 +188,7 @@ Pod mounts or references Secret via env/volume
 token. OpenBao Kubernetes auth role grants access only to
 `external-secrets-openbao` ServiceAccount (namespace `external-secrets`).
 
-Store allow-list: `authentik`, `backend`, `frontend`, `zot-registry`,
+Store allow-list: `authentik`, `argocd`, `backend`, `frontend`, `zot-registry`,
 `monitoring`, `platform-database`, `valkey`. `cloudflared` is not listed;
 `cloudflared-tunnel-token` ExternalSecret in `cloudflared` cannot sync until
 that namespace is added.

@@ -369,9 +369,9 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **What**: VM lifecycle management. Chart at `applications/compute-service`.
 
-**Namespace**: `backend`. **Sync**: automated **off**. Placeholder tag would ImagePullBackOff if auto-sync ran.
+**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 
-**Image**: `ghcr.io/freecloudinitiative/compute-service:sha-xxxxxxxxxxxx`. Re-enable `syncPolicy.automated` when real tag exists. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
+**Image**: `ghcr.io/freecloudinitiative/compute-service` pinned by `image.digest`. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
 
 **Secrets (namespace `backend`)**:
 
@@ -418,9 +418,9 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **What**: Identity and access management. Chart at `applications/iam-service`.
 
-**Namespace**: `backend`. **Sync**: automated **off**. Same placeholder rule as compute-service.
+**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 
-**Image**: `ghcr.io/freecloudinitiative/iam-service:sha-xxxxxxxxxxxx`. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
+**Image**: `ghcr.io/freecloudinitiative/iam-service` pinned by `image.digest`. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
 
 **Secrets (namespace `backend`)**:
 

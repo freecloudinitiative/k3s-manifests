@@ -32,6 +32,13 @@ One Git repo means:
 - Accidental drift is self-healed.
 - Full cluster state is recoverable from this repo alone.
 
+## Container Registry Strategy
+
+We employ a dual-registry strategy depending on the environment:
+
+- **Pre-prod / Test Environment:** Uses **GitHub Container Registry (GHCR)** (`ghcr.io/freecloudinitiative`). This is the current default in these manifests. It prevents the chicken-and-egg problem where an empty cluster cannot start the internal registry without pulling images first.
+- **Production Environment (Planned):** Will use our self-hosted, air-gapped registry **`registry.freecloudinitiative.com`** (powered by Zot and backed by Garage S3) for strict security and data sovereignty.
+
 ## Prerequisites
 
 OpenBao is **not** deployed by this repo and must already be running,

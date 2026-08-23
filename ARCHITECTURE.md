@@ -20,26 +20,26 @@ ArgoCD syncs every 3 minutes and on any Git push. Drift from declared state is s
 
 ---
 
-## Application Image Promotion
+## Application Image Promotion (Environment Strategy)
 
-Application images are promoted with static ArgoCD Helm parameters in each
-`applications/<name>/app.yaml`. Parameter is part of Git history, so deploy
-and rollback are ordinary reviewed commits.
+We employ a dual-registry strategy depending on the environment:
 
-Builds use tags `sha-<first 12 characters of source commit SHA>`.
-Tags must never be `latest`. Chart must `fail` when neither `image.tag` nor
-`image.digest` is set. database-service is the exception: it falls back to
-`Chart.appVersion` (`0.1.0`) if both are empty.
+**1. Test / Pre-prod Environment (Current)**
+In test environments where the cluster is still bootstrapping or lacks public tunneling, we use **GitHub Container Registry (GHCR)** (`ghcr.io/freecloudinitiative`). This avoids the chicken-and-egg problem where the cluster cannot pull images to start the registry that hosts those images.
 
-This repo records published tags in Git. Digests preferred when publish
-workflow records them; do not invent digest values.
+**2. Production Environment (Planned)**
+When moving to production, we will switch back to our self-hosted, air-gapped registry: **`registry.freecloudinitiative.com`** (powered by Zot and backed by Garage S3). 
 
-`ghcr.io/freecloudinitiative` is behind Traefik basic authentication.
+`registry.freecloudinitiative.com` is behind Traefik basic authentication.
 External Secrets Operator materializes `zot-registry-pull-credentials` in
 `backend` and `frontend` from OpenBao `zot-registry/pull-username` and
 `zot-registry/pull-password`. Applications pass that Secret as
 `imagePullSecrets[0].name`. Pull user must also be in `zot-registry/htpasswd`
 enforced by Traefik.
+
+Application images are promoted with static ArgoCD Helm parameters in each
+`applications/<name>/app.yaml`. Parameter is part of Git history, so deploy
+and rollback are ordinary reviewed commits. Builds use tags `sha-<commit SHA>`.
 
 Publish must succeed before tag is promoted. Image-build workflow lives
 outside this repo. Placeholder `sha-xxxxxxxxxxxx` plus automated sync **off**
@@ -109,7 +109,7 @@ Cloudflare (DNS + CDN)
    │
    ├── auth.freecloudinitiative.com ──► Cloudflare Tunnel (cloudflared) ──► Authentik
    │
-   ├── ghcr.io/freecloudinitiative ──► Cloudflare Tunnel ──► Zot Registry
+   ├── registry.freecloudinitiative.com ──► Cloudflare Tunnel ──► Zot Registry (Production)
    │                                                              (Traefik middleware: auth)
    │
    └── frontend.freecloudinitiative.com ──► Cloudflare Tunnel ──► Traefik (websecure, TLS via

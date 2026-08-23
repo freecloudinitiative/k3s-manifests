@@ -46,8 +46,9 @@ authentik:
     secretName: authentik-config
 
 blueprints:
-  # Enable the frontend OIDC blueprint when stable public URLs are available.
-  configMaps: []
+  # Enable the frontend OIDC blueprint and new SSO integrations.
+  configMaps:
+    - authentik-blueprints
 
 server:
   replicas: 2

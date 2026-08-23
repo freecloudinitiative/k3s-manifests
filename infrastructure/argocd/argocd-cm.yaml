@@ -7,6 +7,13 @@ metadata:
     app.kubernetes.io/name: argocd-cm
     app.kubernetes.io/part-of: argocd
 data:
+  url: https://argocd.freecloudinitiative.com
+  oidc.config: |
+    name: Authentik
+    issuer: https://auth.freecloudinitiative.com/application/o/argocd/
+    clientID: argocd-oidc
+    clientSecret: argocd-oidc-secret-123
+    requestedScopes: ["openid", "profile", "email"]
   resource.customizations.health.networking.k8s.io_Ingress: |
     hs = {}
     hs.status = "Healthy"

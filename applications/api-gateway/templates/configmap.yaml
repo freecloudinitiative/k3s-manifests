@@ -23,5 +23,6 @@ data:
   OIDC_ISSUER: {{ .Values.config.authentikIssuer | quote }}
   OIDC_CLIENT_ID: {{ .Values.config.authentikClientID | quote }}
   ALLOWED_ORIGINS: {{ .Values.config.allowedOrigins | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.config.otelEndpoint | quote }}
   # The signing key is mounted as a file; this variable points to the mount path.
   INTERNAL_SIGNING_KEY_PATH: "/etc/fci/keys/internal-signing.key"

@@ -75,4 +75,12 @@ spec:
           port: 8080
         - protocol: TCP
           port: 8443
+    # OTLP trace/metric export to the OpenTelemetry collector in monitoring.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 4317
 {{- end }}

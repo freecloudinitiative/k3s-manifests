@@ -94,7 +94,8 @@ config:
   databaseMaxConnections: 10
   iamServiceURL: http://iam-service.backend.svc.cluster.local
   valkeyURL: valkey.valkey.svc.cluster.local:6379
-  otelEndpoint: otel-collector.monitoring.svc.cluster.local:4317
+  # bare host:port, no scheme — platform-common rejects a URL scheme for OTLP gRPC
+  otelEndpoint: opentelemetry-collector.monitoring.svc.cluster.local:4317
   shutdownGrace: 75s
 
 secrets:

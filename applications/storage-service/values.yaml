@@ -32,6 +32,9 @@ fullnameOverride: ""
 
 logLevel: info
 
+# bare host:port, no scheme — platform-common rejects a URL scheme for OTLP gRPC
+otelEndpoint: opentelemetry-collector.monitoring.svc.cluster.local:4317
+
 service:
   httpPort: 80
   containerPort: 8080

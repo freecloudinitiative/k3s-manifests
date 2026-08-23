@@ -12,7 +12,7 @@ data:
     name: Authentik
     issuer: https://auth.freecloudinitiative.com/application/o/argocd/
     clientID: argocd-oidc
-    clientSecret: argocd-oidc-secret-123
+    clientSecret: $argocd-oidc-secret:clientSecret
     requestedScopes: ["openid", "profile", "email"]
   resource.customizations.health.networking.k8s.io_Ingress: |
     hs = {}

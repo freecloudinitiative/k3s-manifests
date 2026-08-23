@@ -36,6 +36,7 @@ grafana:
     enabled: true
     storageClassName: local-path
     size: 5Gi
+  envFromSecret: "grafana-secrets"
   additionalDataSources:
     - name: Loki
       type: loki
@@ -92,7 +93,7 @@ grafana:
       name: Authentik
       icon: signin
       client_id: grafana-oidc
-      client_secret: grafana-oidc-secret-123
+      client_secret: "${OIDC_CLIENT_SECRET}"
       scopes: openid profile email
       empty_scopes: false
       auth_url: https://auth.freecloudinitiative.com/application/o/authorize/

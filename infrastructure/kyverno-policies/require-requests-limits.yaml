@@ -10,7 +10,11 @@ metadata:
       Every container must declare CPU/memory requests and limits so a
       single misbehaving workload can't starve a node.
 spec:
-  validationFailureAction: Audit
+  # spec.validationFailureAction has had no effect since Kyverno 1.11 (the
+  # chart pinned in infrastructure/kyverno/app.yaml is 3.8.1, well past
+  # that) — it's deprecated in favor of a per-rule failureAction under each
+  # rule's validate block, set below. Leaving only the top-level field would
+  # silently run this policy in Kyverno's default (non-enforcing) mode.
   background: true
   rules:
     - name: validate-resources
@@ -20,6 +24,7 @@ spec:
               kinds:
                 - Pod
       validate:
+        failureAction: Audit
         message: "CPU and memory requests/limits are required on every container."
         foreach:
           - list: "request.object.spec.containers"

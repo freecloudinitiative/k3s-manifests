@@ -10,7 +10,11 @@ metadata:
       Images must be pinned to an explicit tag or digest so ArgoCD selfHeal
       can't silently redeploy a different image than the one that was tested.
 spec:
-  validationFailureAction: Audit
+  # spec.validationFailureAction has had no effect since Kyverno 1.11 (the
+  # chart pinned in infrastructure/kyverno/app.yaml is 3.8.1, well past
+  # that) — it's deprecated in favor of a per-rule failureAction under each
+  # rule's validate block, set below. Leaving only the top-level field would
+  # silently run this policy in Kyverno's default (non-enforcing) mode.
   background: true
   rules:
     - name: require-image-tag
@@ -20,6 +24,7 @@ spec:
               kinds:
                 - Pod
       validate:
+        failureAction: Audit
         message: "An image tag is required."
         foreach:
           - list: "request.object.spec.containers"
@@ -32,6 +37,7 @@ spec:
               kinds:
                 - Pod
       validate:
+        failureAction: Audit
         message: "Using a mutable image tag such as 'latest' is not allowed."
         foreach:
           - list: "request.object.spec.containers"

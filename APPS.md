@@ -139,8 +139,6 @@ Authentik ForwardAuth.
 | `iam-service-postgresql-credentials` | `backend` | iam-service `DATABASE_URL` (`url`) |
 | `iam-service-postgresql-ca-cert` | `backend` | Postgres CA |
 | `iam-service-internal-public-key` | `backend` | api-gateway public key |
-| `iam-service-valkey-password` | `backend` | iam-service Valkey password |
-| `iam-service-valkey-ca-cert` | `backend` | iam-service Valkey CA |
 | `compute-postgresql-credentials` | `platform-database` | CNPG `compute` role password |
 | `compute-service-postgresql-credentials` | `backend` | compute-service `DATABASE_URL` (`url`) |
 | `compute-service-postgresql-ca-cert` | `backend` | Postgres CA |

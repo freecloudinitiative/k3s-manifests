@@ -486,7 +486,7 @@ No Ingress. NetworkPolicy admits `backend` only. frontend nginx proxies `/ws/` �
 
 **Image**: `ghcr.io/freecloudinitiative/frontend:sha-7eefcc02593a`. `replicaCount: 2`.
 
-**Ingress**: `https://frontend.freecloudinitiative.com` — Let's Encrypt (`frontend-public-tls`), Traefik `websecure` + `traefik-security-headers`. nginx proxies `/api/` and `/ws/` to `http://api-gateway.backend.svc.cluster.local:80`.
+**Ingress**: `https://freecloudinitiative.com` — Let's Encrypt (`frontend-public-tls`), Traefik `websecure` + `traefik-security-headers`. nginx proxies `/api/` and `/ws/` to `http://api-gateway.backend.svc.cluster.local:80`.
 
 **Secrets**: `zot-registry-pull-credentials` only (image pull). No OpenBao app secret.
 

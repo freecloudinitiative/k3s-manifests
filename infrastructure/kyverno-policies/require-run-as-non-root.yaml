@@ -10,7 +10,7 @@ metadata:
       Containers must not run as root and must not allow privilege
       escalation.
 spec:
-  # spec.validationFailureAction has had no effect since Kyverno 1.11 (the
+  # spec.validationFailureAction has had no effect since Kyverno 1.13 (the
   # chart pinned in infrastructure/kyverno/app.yaml is 3.8.1, well past
   # that) — it's deprecated in favor of a per-rule failureAction under each
   # rule's validate block, set below. Leaving only the top-level field would

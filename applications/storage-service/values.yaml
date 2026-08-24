@@ -135,6 +135,10 @@ quota:
   iamTimeout: 5s
   iamServiceURL: http://iam-service.backend.svc.cluster.local
 
+# TTL for internal JWTs storage-service mints with its own signing key to
+# call iam-service's quota route.
+internalTokenTTL: 60s
+
 # automountServiceAccountToken is true here — unlike some sibling charts
 # (e.g. iam-service, which sets it false) — because this service is a real
 # Kubernetes API client: it lists/watches NetworkPolicy and Namespace

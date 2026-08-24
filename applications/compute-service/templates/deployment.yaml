@@ -65,6 +65,10 @@ spec:
               value: compute
             - name: DB_MAX_CONNS
               value: "10"
+            - name: INTERNAL_SIGNING_KEY_PATH
+              value: /etc/compute-service/signing/internal-signing.key
+            - name: INTERNAL_TOKEN_TTL
+              value: {{ .Values.internalTokenTTL | quote }}
             - name: INTERNAL_PUBLIC_KEY_PATH
               value: /etc/compute-service/internal/internal-public.pem
             - name: TERMINAL_GATEWAY_PUBLIC_KEY_PATH
@@ -154,6 +158,9 @@ spec:
             - name: postgresql-ca
               mountPath: /etc/compute-service/postgres
               readOnly: true
+            - name: signing-key
+              mountPath: /etc/compute-service/signing
+              readOnly: true
             - name: internal-public-key
               mountPath: /etc/compute-service/internal
               readOnly: true
@@ -181,6 +188,13 @@ spec:
         - name: postgresql-ca
           secret:
             secretName: {{ .Values.secrets.postgresqlCA.secretName }}
+        - name: signing-key
+          secret:
+            secretName: {{ .Values.secrets.signingKey.secretName }}
+            items:
+              - key: {{ .Values.secrets.signingKey.keyName }}
+                path: internal-signing.key
+            defaultMode: 0400
         - name: internal-public-key
           secret:
             secretName: {{ .Values.secrets.internalPublicKey.secretName }}

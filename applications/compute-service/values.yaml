@@ -109,6 +109,10 @@ quota:
   iamTimeout: 5s
   iamServiceURL: http://iam-service.backend.svc.cluster.local
 
+# TTL for internal JWTs compute-service mints with its own signing key to
+# call iam-service's quota route.
+internalTokenTTL: 60s
+
 # metrics.enabled enables the optional Prometheus query endpoint that
 # surfaces per-instance CPU/memory metrics. Requires prometheusURL to be set.
 metrics:
@@ -159,6 +163,11 @@ probes:
 
 # Secret references — names of Kubernetes Secrets created by ExternalSecret.
 secrets:
+  # compute-service's own Ed25519 private key, used to mint internal JWTs
+  # for calls to iam-service's quota route.
+  signingKey:
+    secretName: compute-service-signing-key
+    keyName: internal-signing.key
   # Ed25519 public key used to verify internal JWTs from api-gateway.
   internalPublicKey:
     secretName: compute-service-internal-public-key

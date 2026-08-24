@@ -104,6 +104,18 @@ secrets:
   terminalGatewayPublicKey:
     secretName: terminal-gateway-public-key
     keyName: internal-public.pem
+  # Ed25519 public keys for compute-service, database-service, and
+  # storage-service's own signing keys, so iam-service can verify the
+  # internal JWTs each mints for its quota route calls.
+  computeServicePublicKey:
+    secretName: compute-service-public-key
+    keyName: internal-public.pem
+  databaseServicePublicKey:
+    secretName: database-service-public-key
+    keyName: internal-public.pem
+  storageServicePublicKey:
+    secretName: storage-service-public-key
+    keyName: internal-public.pem
   # PostgreSQL TLS CA cert.
   postgresqlCA:
     secretName: iam-service-postgresql-ca-cert

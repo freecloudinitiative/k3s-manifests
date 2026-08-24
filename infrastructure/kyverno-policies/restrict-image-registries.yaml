@@ -8,11 +8,12 @@ metadata:
     policies.kyverno.io/severity: medium
     policies.kyverno.io/description: >-
       Flags images pulled from outside the approved registry allowlist.
-      Enforced: FCI workloads pull from ghcr.io (PR-04); registry.freecloudinitiative.com
-      (Zot) and the in-cluster zot-registry proxy are not yet used by any
-      workload and are excluded until that migration lands. docker.io,
-      quay.io, and registry.k8s.io remain allowed for upstream infrastructure
-      charts (Traefik, Longhorn, CNPG, Authentik, kube-prometheus-stack, ...).
+      Enforced: FCI workloads pull from ghcr.io (PR-04) and
+      registry.freecloudinitiative.com (the platform's own Zot registry —
+      source of customer compute-instance OS images and the target for the
+      backend image migration). docker.io, quay.io, and registry.k8s.io
+      remain allowed for upstream infrastructure charts (Traefik, Longhorn,
+      CNPG, Authentik, kube-prometheus-stack, ...).
 spec:
   # spec.validationFailureAction has had no effect since Kyverno 1.11 (the
   # chart pinned in infrastructure/kyverno/app.yaml is 3.8.1, well past
@@ -43,6 +44,10 @@ spec:
                       - "quay.io/*"
                       - "docker.io/*"
                       - "registry.k8s.io/*"
+                      # Platform's own Zot registry: source of customer
+                      # compute-instance OS images, and the eventual source
+                      # of all backend images.
+                      - "registry.freecloudinitiative.com/*"
           - list: "request.object.spec.initContainers"
             deny:
               conditions:

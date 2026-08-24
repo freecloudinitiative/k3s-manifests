@@ -76,7 +76,9 @@ spec:
             - name: postgres-ca-cert
               mountPath: /certs/platform-postgresql
               readOnly: true
-            # Only the verifier public key is mounted. This service cannot mint tokens.
+            - name: signing-key
+              mountPath: /etc/fci/signing
+              readOnly: true
             - name: internal-public-key
               mountPath: /etc/fci/internal-token
               readOnly: true
@@ -111,6 +113,13 @@ spec:
               - key: {{ .Values.secrets.postgresCACert.keyName }}
                 path: ca.crt
             defaultMode: 0444
+        - name: signing-key
+          secret:
+            secretName: {{ .Values.secrets.signingKey.secretName }}
+            items:
+              - key: {{ .Values.secrets.signingKey.keyName }}
+                path: internal-signing.key
+            defaultMode: 0400
         - name: internal-public-key
           secret:
             secretName: {{ .Values.secrets.internalPublicKey.secretName }}

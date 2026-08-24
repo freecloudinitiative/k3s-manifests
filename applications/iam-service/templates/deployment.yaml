@@ -70,6 +70,12 @@ spec:
               value: /etc/iam-service/internal/internal-public.pem
             - name: TERMINAL_GATEWAY_PUBLIC_KEY_PATH
               value: /etc/iam-service/terminal-gateway/terminal-gateway-public.pem
+            - name: COMPUTE_SERVICE_PUBLIC_KEY_PATH
+              value: /etc/iam-service/compute-service/internal-public.pem
+            - name: DATABASE_SERVICE_PUBLIC_KEY_PATH
+              value: /etc/iam-service/database-service/internal-public.pem
+            - name: STORAGE_SERVICE_PUBLIC_KEY_PATH
+              value: /etc/iam-service/storage-service/internal-public.pem
             - name: SERVICE_AUDIENCE
               value: iam-service
             - name: VALKEY_URL
@@ -113,6 +119,15 @@ spec:
             - name: terminal-gateway-public-key
               mountPath: /etc/iam-service/terminal-gateway
               readOnly: true
+            - name: compute-service-public-key
+              mountPath: /etc/iam-service/compute-service
+              readOnly: true
+            - name: database-service-public-key
+              mountPath: /etc/iam-service/database-service
+              readOnly: true
+            - name: storage-service-public-key
+              mountPath: /etc/iam-service/storage-service
+              readOnly: true
             - name: valkey-ca
               mountPath: /etc/iam-service/valkey
               readOnly: true
@@ -147,6 +162,27 @@ spec:
             items:
               - key: {{ .Values.secrets.terminalGatewayPublicKey.keyName }}
                 path: terminal-gateway-public.pem
+            defaultMode: 0444
+        - name: compute-service-public-key
+          secret:
+            secretName: {{ .Values.secrets.computeServicePublicKey.secretName }}
+            items:
+              - key: {{ .Values.secrets.computeServicePublicKey.keyName }}
+                path: internal-public.pem
+            defaultMode: 0444
+        - name: database-service-public-key
+          secret:
+            secretName: {{ .Values.secrets.databaseServicePublicKey.secretName }}
+            items:
+              - key: {{ .Values.secrets.databaseServicePublicKey.keyName }}
+                path: internal-public.pem
+            defaultMode: 0444
+        - name: storage-service-public-key
+          secret:
+            secretName: {{ .Values.secrets.storageServicePublicKey.secretName }}
+            items:
+              - key: {{ .Values.secrets.storageServicePublicKey.keyName }}
+                path: internal-public.pem
             defaultMode: 0444
         - name: valkey-ca
           secret:

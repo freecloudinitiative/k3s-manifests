@@ -53,6 +53,11 @@ resources:
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 65532
+  # Secret volume files are owned by root:root unless fsGroup is set; without
+  # it, a non-root container can't read the 0400 signing-key file it mounts
+  # to mint internal JWTs. Matches api-gateway's podSecurityContext, the
+  # other chart that mounts its own private signing key.
+  fsGroup: 65532
   seccompProfile:
     type: RuntimeDefault
 
@@ -134,6 +139,10 @@ quota:
   cacheTTL: 60s
   iamTimeout: 5s
   iamServiceURL: http://iam-service.backend.svc.cluster.local
+
+# TTL for internal JWTs storage-service mints with its own signing key to
+# call iam-service's quota route.
+internalTokenTTL: 60s
 
 # automountServiceAccountToken is true here — unlike some sibling charts
 # (e.g. iam-service, which sets it false) — because this service is a real

@@ -68,6 +68,10 @@ spec:
               value: storage
             - name: DB_MAX_CONNS
               value: "10"
+            - name: INTERNAL_SIGNING_KEY_PATH
+              value: /etc/storage-service/signing/internal-signing.key
+            - name: INTERNAL_TOKEN_TTL
+              value: {{ .Values.internalTokenTTL | quote }}
             - name: INTERNAL_PUBLIC_KEY_PATH
               value: /etc/storage-service/internal/internal-public.pem
             - name: SERVICE_AUDIENCE
@@ -186,6 +190,9 @@ spec:
             - name: valkey-ca
               mountPath: /etc/storage-service/valkey
               readOnly: true
+            - name: signing-key
+              mountPath: /etc/storage-service/signing
+              readOnly: true
             - name: internal-public-key
               mountPath: /etc/storage-service/internal
               readOnly: true
@@ -238,6 +245,13 @@ spec:
         - name: valkey-ca
           secret:
             secretName: {{ include "storage-service.fullname" . }}-valkey-ca-cert
+        - name: signing-key
+          secret:
+            secretName: {{ include "storage-service.fullname" . }}-signing-key
+            items:
+              - key: internal-signing.key
+                path: internal-signing.key
+            defaultMode: 0400
         - name: internal-public-key
           secret:
             secretName: {{ include "storage-service.fullname" . }}-internal-public-key

@@ -37,6 +37,11 @@ podSecurityContext:
   runAsNonRoot: true
   runAsUser: 65532
   runAsGroup: 65532
+  # Secret volume files are owned by root:root unless fsGroup is set; without
+  # it, a non-root container can't read the 0400 signing-key file it mounts
+  # to mint internal JWTs. Matches api-gateway's podSecurityContext, the
+  # other chart that mounts its own private signing key.
+  fsGroup: 65532
   seccompProfile:
     type: RuntimeDefault
 
@@ -99,6 +104,10 @@ config:
   otelEndpoint: opentelemetry-collector.monitoring.svc.cluster.local:4317
   shutdownGrace: 75s
 
+# TTL for internal JWTs database-service mints with its own signing key to
+# call iam-service's quota route.
+internalTokenTTL: 60s
+
 secrets:
   database:
     secretName: database-service-config
@@ -107,6 +116,11 @@ secrets:
     # Projected into backend by the k3s-manifests companion PR.
     secretName: platform-postgresql-ca-bundle
     keyName: ca.crt
+  # database-service's own Ed25519 private key, used to mint internal JWTs
+  # for calls to iam-service's quota route.
+  signingKey:
+    secretName: database-service-signing-key
+    keyName: internal-signing.key
   internalPublicKey:
     secretName: internal-token-public-key
     keyName: internal-public.pem

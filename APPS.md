@@ -361,6 +361,13 @@ All seven Applications source `https://github.com/freecloudinitiative/k3s-manife
 | `valkey-password` | `password` | `VALKEY_PASSWORD` | OpenBao `valkey/password` |
 | `valkey-ca-cert` | `ca.crt` | volume `/etc/fci/tls/ca.crt` | OpenBao `valkey/ca-cert` |
 
+**OIDC**: `OIDC_ISSUER` (`https://auth.freecloudinitiative.com/application/o/freecloudinitiative/`) is
+the public Authentik issuer URL, byte-compared against every token's `iss` claim — it must stay
+public and must not change. `OIDC_JWKS_URL` (`http://authentik-server.authentik.svc.cluster.local/application/o/freecloudinitiative/jwks/`)
+is a separate, in-cluster address used only to fetch the JWKS itself: api-gateway's NetworkPolicy has
+no port-443 egress, so it cannot reach the public host to fetch keys, and instead dials Authentik's
+in-cluster Service on pod port 9000 (see `networkpolicy.yaml` egress rule to namespace `authentik`).
+
 No Ingress. NetworkPolicy admits `frontend` only.
 
 ---

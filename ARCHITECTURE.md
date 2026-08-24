@@ -157,7 +157,9 @@ User browser / API client
    ▼
 Cloudflare Tunnel → Traefik → frontend nginx → api-gateway (namespace: backend)
    │
-   ├── validates OIDC token (Authentik JWKS)
+   ├── validates OIDC token (Authentik JWKS, fetched in-cluster over
+   │   authentik-server.authentik.svc.cluster.local:80 -> pod port 9000 —
+   │   never via the public tunnel, since api-gateway has no port-443 egress)
    ├── mints internal JWT
    └── proxies to: iam-service / compute-service / database-service
                    storage-service / terminal-gateway
@@ -322,7 +324,7 @@ Key rules:
 - Garage: cluster-internal only (no external ingress).
 - Authentik: cluster-internal + Cloudflare tunnel for public host.
 - platform-postgresql: CNPG NetworkPolicy plus `networkpolicy.yaml`.
-- api-gateway: ingress from `frontend` only.
+- api-gateway: ingress from `frontend` only; egress to `authentik` on pod port 9000 for JWKS.
 - terminal-gateway: ingress from `backend` only.
 
 ---

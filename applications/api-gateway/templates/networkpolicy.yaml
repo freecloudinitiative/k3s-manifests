@@ -47,7 +47,11 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
-    # Authentik JWKS / token endpoint — pod port 9000 (Authentik's internal HTTP API).
+    # Authentik JWKS / token endpoint — pod port 9000 (Authentik's internal HTTP
+    # API). This is what makes OIDC_JWKS_URL (configmap.yaml, values.yaml
+    # config.authentikJWKSURL) reachable; removing this rule breaks all OIDC
+    # authentication with a silent JWKS-refresh failure — not an obvious
+    # connection-refused error, since Authentik itself stays healthy.
     # k3s-manifests/infrastructure/authentik/networkpolicy.yaml must permit
     # ingress from namespace backend on pod port 9000.
     - to:

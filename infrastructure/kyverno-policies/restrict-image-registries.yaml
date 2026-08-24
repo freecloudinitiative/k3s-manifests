@@ -8,11 +8,13 @@ metadata:
     policies.kyverno.io/severity: medium
     policies.kyverno.io/description: >-
       Flags images pulled from outside the approved registry allowlist.
-      Audit-only for now: most workloads still reference public images
-      directly and haven't migrated to the private zot-registry yet. Once
-      that migration lands, tighten the allowlist and consider enforcing.
+      Enforced: FCI workloads pull from ghcr.io (PR-04); registry.freecloudinitiative.com
+      (Zot) and the in-cluster zot-registry proxy are not yet used by any
+      workload and are excluded until that migration lands. docker.io,
+      quay.io, and registry.k8s.io remain allowed for upstream infrastructure
+      charts (Traefik, Longhorn, CNPG, Authentik, kube-prometheus-stack, ...).
 spec:
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   background: true
   rules:
     - name: allowed-registries
@@ -30,10 +32,15 @@ spec:
                 all:
                   - key: "{{ element.image }}"
                     operator: AllNotIn
-                    value:
+                    value: &allowed-registries
                       - "ghcr.io/*"
                       - "quay.io/*"
                       - "docker.io/*"
-                      - "zot-registry.zot-registry.svc.cluster.local:*/*"
-                      - "registry.freecloudinitiative.com/*"
                       - "registry.k8s.io/*"
+          - list: "request.object.spec.initContainers"
+            deny:
+              conditions:
+                all:
+                  - key: "{{ element.image }}"
+                    operator: AllNotIn
+                    value: *allowed-registries

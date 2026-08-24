@@ -86,7 +86,10 @@ Wave  9  traefik
 Wave 10  argocd app-config
 
 applications/*                 ← no Application-level wave (default 0).
-                                 CreateNamespace=true for backend / frontend.
+                                 backend / frontend are pre-declared in
+                                 namespaces/*.yaml (wave 0); CreateNamespace=true
+                                 stays on each Application as a safety net, not
+                                 the actual creation path.
                                  ExternalSecrets for those pods use resource
                                  wave -2 inside external-secrets Application.
 ```

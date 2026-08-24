@@ -226,6 +226,7 @@ Seed these out of band before matching `ExternalSecret` can reach
 | `secret/data/authentik` | `secret-key` | authentik signing key | `authentik-config` (authentik) |
 | `secret/data/authentik` | `bootstrap-email` | first-run bootstrap | `authentik-bootstrap` (authentik) |
 | `secret/data/authentik` | `bootstrap-password` | first-run bootstrap | `authentik-bootstrap` (authentik) |
+| `secret/data/authentik` | `admin-token` | iam-service Authentik user/group sync | `iam-service-authentik-token` (backend) |
 | `secret/data/grafana` | `admin-user`, `admin-password` | Grafana admin | `grafana-secrets` (monitoring) |
 | `secret/data/cloudflared` | `tunnel-token` | cloudflared tunnel | `cloudflared-tunnel-token` (cloudflared) |
 | `secret/data/garage` | `storage-service-access-key`, `storage-service-secret-key` | storage-service S3 client | `storage-service-objectstore-credentials` (backend) |

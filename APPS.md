@@ -467,6 +467,19 @@ patch, or delete CNPG `Cluster` objects in that namespace.
 | `iam-service-valkey-password` | `password` | `VALKEY_PASSWORD` | OpenBao `valkey/password` |
 | `iam-service-valkey-ca-cert` | `ca.crt` | volume `/etc/iam-service/valkey/ca.crt` | OpenBao `valkey/ca-cert` |
 | `terminal-gateway-public-key` (shared) | `internal-public.pem` | `/etc/iam-service/terminal-gateway/terminal-gateway-public.pem` | OpenBao `terminal-gateway/internal-public-key`; owned by `external-secret-terminal.yaml` |
+| `iam-service-authentik-token` | `token` | `/etc/iam-service/authentik/token` (`AUTHENTIK_TOKEN_PATH`), `defaultMode: 0400` | OpenBao `authentik/admin-token` — seeded manually, no automated source (created in Authentik UI/API, not by `blueprint.yaml`) |
+
+**Authentik integration** (`AUTHENTIK_*` env vars): user/group sync on account writes plus a
+background drift reconciler, both optional and never fatal. `AUTHENTIK_URL` points at
+`authentik-server.authentik.svc.cluster.local:80` (Service port 80 → pod port 9000; NetworkPolicy
+egress matches the pod port, 9000). `AUTHENTIK_URL` and `AUTHENTIK_TOKEN_PATH` must both be set or
+both empty — set only one and the pod crash-loops (`Validate()` in `internal/config/config.go`). A
+disabled client (both empty, or Authentik unreachable) is nil-safe throughout — sync and
+reconciliation just no-op. `AUTHENTIK_GROUP_ADMIN/EDITOR/VIEWER/AUDITOR` ship empty: the
+`admin`/`editor`/`viewer`/`auditor` groups don't exist yet in `infrastructure/authentik/blueprint.yaml`
+(only `grafana-admins`, `argocd-admins`, `vault-admins`, `registry-admins` are defined there); an
+empty group ID skips assignment for that role, not fatal. Prometheus metrics `authentik_drift_total`
+and `authentik_reconcile_runs_total` are only populated once a real admin token is seeded.
 
 ---
 

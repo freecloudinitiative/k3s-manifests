@@ -130,6 +130,11 @@ secrets:
   valkeyCACert:
     secretName: iam-service-valkey-ca-cert
     keyName: ca.crt
+  # Authentik admin API token — optional; a disabled/empty client is nil-safe
+  # throughout iam-service (see internal/authentik/client.go).
+  authentikToken:
+    secretName: iam-service-authentik-token
+    keyName: token
 
 config:
   logLevel: info
@@ -141,6 +146,21 @@ config:
   # Format: https://<host>/application/o/<slug>/ (trailing slash is load-bearing).
   authentikIssuer: "https://auth.freecloudinitiative.com/application/o/freecloudinitiative/"
   authentikClientID: "freecloudinitiative-frontend"
+  # Authentik admin API — user/group sync and drift reconciliation. Service
+  # port is 80 (targetPort 9000); see infrastructure/authentik/networkpolicy.yaml
+  # for the corresponding pod-port-9000 ingress rule.
+  authentikUrl: "http://authentik-server.authentik.svc.cluster.local:80"
+  authentikTimeout: 10s
+  authentikReconcileEnabled: true
+  authentikReconcileInterval: 15m
+  authentikReconcileAdopt: true
+  # Authentik group UUIDs for admin/editor/viewer/auditor roles. Empty skips
+  # group assignment for that role — never fatal. These groups don't exist
+  # yet in infrastructure/authentik/blueprint.yaml; fill in after creation.
+  authentikGroupAdmin: ""
+  authentikGroupEditor: ""
+  authentikGroupViewer: ""
+  authentikGroupAuditor: ""
 
 serviceMonitor:
   enabled: true

@@ -66,4 +66,12 @@ spec:
       ports:
         - protocol: TCP
           port: 4317
+    # Authentik admin API — user/group sync and drift reconciliation.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: authentik
+      ports:
+        - protocol: TCP
+          port: 9000
 {{- end }}

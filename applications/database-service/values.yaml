@@ -141,11 +141,6 @@ probes:
     periodSeconds: 20
     failureThreshold: 3
 
-# Kubernetes cannot express a namespace-name prefix in RBAC. Namespace
-# provisioning owns these Role/RoleBinding objects in production. This list is
-# for bootstrap and tests, and rejects every name outside fci-cust-*.
-customerNamespaces: []
-
 nodeSelector: {}
 tolerations: []
 affinity: {}

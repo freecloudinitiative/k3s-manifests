@@ -421,6 +421,13 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **Follow-up**: `internal-token-public-key` does not follow `database-service-*` naming. Rename needs chart + ExternalSecret together.
 
+**Customer-namespace write access**: this chart does not bind its own RBAC in `fci-cust-*`
+namespaces. `role-template.yaml` emits only the ClusterRole `database-service-namespace-role`
+(namespace-template pattern, see `CHARTS.md`); compute-service creates a namespace-scoped
+RoleBinding referencing it by name whenever it provisions a customer namespace
+(`compute-service/internal/k8s/rbac.go`). Without that RoleBinding, database-service cannot create,
+patch, or delete CNPG `Cluster` objects in that namespace.
+
 ---
 
 ### iam-service

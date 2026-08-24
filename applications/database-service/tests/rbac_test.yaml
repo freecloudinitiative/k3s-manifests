@@ -1,0 +1,52 @@
+suite: database-service namespace-template RBAC contract
+templates:
+  - role-template.yaml
+  - clusterrolebinding.yaml
+release:
+  name: database-service
+set:
+  image:
+    tag: t
+tests:
+  - it: renders the namespace-role ClusterRole with the exact name compute-service and Kyverno bind by
+    template: role-template.yaml
+    documentIndex: 0
+    asserts:
+      # Security-critical contract: compute-service's DATABASE_NAMESPACE_CLUSTERROLE
+      # default and infrastructure/kyverno-policies/restrict-compute-service-rbac-writes.yaml
+      # both hard-code this literal string. A release-name change that alters
+      # `database-service.fullname` silently breaks both — RoleBinding to a
+      # nonexistent ClusterRole grants nothing, with no error.
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: database-service-namespace-role
+      - equal:
+          path: metadata.labels["fci.io/rbac-scope"]
+          value: namespace-template
+
+  - it: does not carry a ClusterRoleBinding for the namespace-role ClusterRole
+    template: role-template.yaml
+    asserts:
+      # role-template.yaml must emit the ClusterRole and nothing else. Binding
+      # it cluster-wide from this chart would grant CNPG/Secret write access
+      # in every namespace, including platform ones — the opposite of what
+      # the namespace-template pattern (CHARTS.md) exists to prevent.
+      - hasDocuments:
+          count: 1
+      - notEqual:
+          path: kind
+          value: ClusterRoleBinding
+
+  - it: the chart's only ClusterRoleBinding targets database-service-observer, not the namespace-role
+    template: clusterrolebinding.yaml
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: roleRef.name
+          value: database-service-observer
+      - notEqual:
+          path: roleRef.name
+          value: database-service-namespace-role

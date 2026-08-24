@@ -42,8 +42,10 @@ applications/<service>/
 Suites are YAML at `applications/<service>/tests/*_test.yaml`. Run with
 `helm unittest applications/<service>`.
 
-No `tests/` directory exists yet. `make unittest` finds none and skips.
-Add suites before claiming a chart is covered.
+`applications/database-service/tests/rbac_test.yaml` is the first suite in this repo — it locks the
+namespace-template ClusterRole's rendered name (see below) against the security-critical contract
+with compute-service and Kyverno. Other charts have no `tests/` directory yet; `make unittest` finds
+none and skips them. Add suites before claiming a chart is covered.
 
 ## Namespace-Template ClusterRoles
 

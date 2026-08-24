@@ -8,11 +8,18 @@ metadata:
     policies.kyverno.io/severity: medium
     policies.kyverno.io/description: >-
       Flags images pulled from outside the approved registry allowlist.
-      Audit-only for now: most workloads still reference public images
-      directly and haven't migrated to the private zot-registry yet. Once
-      that migration lands, tighten the allowlist and consider enforcing.
+      Enforced: FCI workloads pull from ghcr.io (PR-04); registry.freecloudinitiative.com
+      (Zot) and the in-cluster zot-registry proxy are not yet used by any
+      workload and are excluded until that migration lands. docker.io,
+      quay.io, and registry.k8s.io remain allowed for upstream infrastructure
+      charts (Traefik, Longhorn, CNPG, Authentik, kube-prometheus-stack, ...).
 spec:
-  validationFailureAction: Audit
+  # spec.validationFailureAction has had no effect since Kyverno 1.11 (the
+  # chart pinned in infrastructure/kyverno/app.yaml is 3.8.1, well past
+  # that) — it's deprecated in favor of a per-rule failureAction under the
+  # rule's validate block, set below. Leaving only the top-level field
+  # would silently run this policy in Kyverno's default (non-enforcing)
+  # mode instead of the Enforce this policy depends on.
   background: true
   rules:
     - name: allowed-registries
@@ -22,6 +29,7 @@ spec:
               kinds:
                 - Pod
       validate:
+        failureAction: Enforce
         message: "Image registry is not in the approved allowlist."
         foreach:
           - list: "request.object.spec.containers"
@@ -30,10 +38,15 @@ spec:
                 all:
                   - key: "{{ element.image }}"
                     operator: AllNotIn
-                    value:
+                    value: &allowed-registries
                       - "ghcr.io/*"
                       - "quay.io/*"
                       - "docker.io/*"
-                      - "zot-registry.zot-registry.svc.cluster.local:*/*"
-                      - "registry.freecloudinitiative.com/*"
                       - "registry.k8s.io/*"
+          - list: "request.object.spec.initContainers"
+            deny:
+              conditions:
+                all:
+                  - key: "{{ element.image }}"
+                    operator: AllNotIn
+                    value: *allowed-registries

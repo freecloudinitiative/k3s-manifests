@@ -14,7 +14,12 @@ metadata:
       quay.io, and registry.k8s.io remain allowed for upstream infrastructure
       charts (Traefik, Longhorn, CNPG, Authentik, kube-prometheus-stack, ...).
 spec:
-  validationFailureAction: Enforce
+  # spec.validationFailureAction has had no effect since Kyverno 1.11 (the
+  # chart pinned in infrastructure/kyverno/app.yaml is 3.8.1, well past
+  # that) — it's deprecated in favor of a per-rule failureAction under the
+  # rule's validate block, set below. Leaving only the top-level field
+  # would silently run this policy in Kyverno's default (non-enforcing)
+  # mode instead of the Enforce this policy depends on.
   background: true
   rules:
     - name: allowed-registries
@@ -24,6 +29,7 @@ spec:
               kinds:
                 - Pod
       validate:
+        failureAction: Enforce
         message: "Image registry is not in the approved allowlist."
         foreach:
           - list: "request.object.spec.containers"

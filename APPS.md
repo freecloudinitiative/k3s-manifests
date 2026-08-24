@@ -395,6 +395,8 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **Image**: `ghcr.io/freecloudinitiative/compute-service` pinned by `image.digest`. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
 
+**Metrics**: `metrics.enabled: true`, `PROMETHEUS_URL` set to `kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090`. This gates compute-service's own outbound Prometheus range queries that back the dashboard's per-engine Metrics tab (`GET /api/compute-engines/{id}/metrics`) — distinct from `/metrics` scraping, which `ServiceMonitor` already handles regardless of this flag. NetworkPolicy egress to `monitoring` includes TCP/9090 for these queries alongside TCP/4317 for OTLP export.
+
 **Secrets (namespace `backend`)**:
 
 | Secret | Key | Consumed as | Source |
@@ -417,6 +419,8 @@ No Ingress. NetworkPolicy admits `frontend` only.
 **Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 
 **Image**: `ghcr.io/freecloudinitiative/database-service:sha-f247d60ac4de`. Other services use `ghcr.io/freecloudinitiative`. Chart falls back to `Chart.appVersion` (`0.1.0`) if `image.tag` and `image.digest` are both empty — siblings `fail` instead. `replicaCount: 2`. `config.databaseMaxConnections: 10`. `config.computeServiceURL: http://compute-service.backend.svc.cluster.local`, `config.computeTimeout: 10s`.
+
+**Metrics**: `metrics.enabled: true`, `PROMETHEUS_URL` set to `kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090`. This gates database-service's own outbound Prometheus range queries that back the dashboard's per-database Metrics tab (`GET /api/databases/{id}/metrics`) — distinct from `/metrics` scraping, which `ServiceMonitor` already handles regardless of this flag. NetworkPolicy egress to `monitoring` already covered TCP/9090 and TCP/4317 before this change.
 
 **Namespace provisioning**: compute-service owns customer namespace creation, not this chart. database-service calls `POST /internal/accounts/{accountID}/namespace` on compute-service via `COMPUTE_SERVICE_URL` to ensure a customer's `fci-cust-*` namespace exists before creating a database. Without `COMPUTE_SERVICE_URL` set, database creation returns `412 namespace_missing` for any account that has never created a compute engine. Requires `INTERNAL_SIGNING_KEY_PATH` to also be set (it already is) — config validation fails closed at boot if only one of the pair is present.
 

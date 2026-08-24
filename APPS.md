@@ -401,7 +401,9 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 
-**Image**: `ghcr.io/freecloudinitiative/database-service:sha-f247d60ac4de`. Other services use `ghcr.io/freecloudinitiative`. Chart falls back to `Chart.appVersion` (`0.1.0`) if `image.tag` and `image.digest` are both empty — siblings `fail` instead. `replicaCount: 2`. `config.databaseMaxConnections: 10`.
+**Image**: `ghcr.io/freecloudinitiative/database-service:sha-f247d60ac4de`. Other services use `ghcr.io/freecloudinitiative`. Chart falls back to `Chart.appVersion` (`0.1.0`) if `image.tag` and `image.digest` are both empty — siblings `fail` instead. `replicaCount: 2`. `config.databaseMaxConnections: 10`. `config.computeServiceURL: http://compute-service.backend.svc.cluster.local`, `config.computeTimeout: 10s`.
+
+**Namespace provisioning**: compute-service owns customer namespace creation, not this chart. database-service calls `POST /internal/accounts/{accountID}/namespace` on compute-service via `COMPUTE_SERVICE_URL` to ensure a customer's `fci-cust-*` namespace exists before creating a database. Without `COMPUTE_SERVICE_URL` set, database creation returns `412 namespace_missing` for any account that has never created a compute engine. Requires `INTERNAL_SIGNING_KEY_PATH` to also be set (it already is) — config validation fails closed at boot if only one of the pair is present.
 
 **Secrets (namespace `backend`)**:
 

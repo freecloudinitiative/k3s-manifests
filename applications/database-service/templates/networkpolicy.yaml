@@ -61,7 +61,10 @@ spec:
       ports:
         - {protocol: TCP, port: 9090}
         - {protocol: TCP, port: 4317}
-    # iam-service validates authorization/audit context for internal calls.
+    # iam-service validates authorization/audit context for internal calls;
+    # compute-service (also namespace backend, port 8080) is the namespace
+    # provisioner this chart calls via COMPUTE_SERVICE_URL to ensure a
+    # customer's fci-cust-* namespace exists before creating a database.
     - to:
         - namespaceSelector:
             matchLabels:

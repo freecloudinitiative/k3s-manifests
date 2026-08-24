@@ -18,6 +18,8 @@ data:
   INTERNAL_PUBLIC_KEY_PATH: /etc/fci/internal-token/internal-public.pem
   SERVICE_AUDIENCE: database-service
   IAM_SERVICE_URL: {{ .Values.config.iamServiceURL | quote }}
+  COMPUTE_SERVICE_URL: {{ .Values.config.computeServiceURL | quote }}
+  COMPUTE_TIMEOUT: {{ .Values.config.computeTimeout | quote }}
   VALKEY_URL: {{ .Values.config.valkeyURL | quote }}
   VALKEY_CA_CERT_PATH: /etc/fci/valkey/ca.crt
   OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.config.otelEndpoint | quote }}

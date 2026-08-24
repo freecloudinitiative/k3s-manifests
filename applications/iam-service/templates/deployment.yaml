@@ -87,10 +87,26 @@ spec:
                   key: {{ .Values.secrets.valkey.keyName }}
             - name: VALKEY_CA_CERT_PATH
               value: /etc/iam-service/valkey/ca.crt
-            - name: AUTHENTIK_ISSUER
-              value: {{ .Values.config.authentikIssuer | quote }}
-            - name: OIDC_CLIENT_ID
-              value: {{ .Values.config.authentikClientID | quote }}
+            - name: AUTHENTIK_URL
+              value: {{ .Values.config.authentikUrl | quote }}
+            - name: AUTHENTIK_TOKEN_PATH
+              value: /etc/iam-service/authentik/token
+            - name: AUTHENTIK_TIMEOUT
+              value: {{ .Values.config.authentikTimeout | quote }}
+            - name: AUTHENTIK_GROUP_ADMIN
+              value: {{ .Values.config.authentikGroupAdmin | quote }}
+            - name: AUTHENTIK_GROUP_EDITOR
+              value: {{ .Values.config.authentikGroupEditor | quote }}
+            - name: AUTHENTIK_GROUP_VIEWER
+              value: {{ .Values.config.authentikGroupViewer | quote }}
+            - name: AUTHENTIK_GROUP_AUDITOR
+              value: {{ .Values.config.authentikGroupAuditor | quote }}
+            - name: AUTHENTIK_RECONCILE_ENABLED
+              value: {{ .Values.config.authentikReconcileEnabled | quote }}
+            - name: AUTHENTIK_RECONCILE_INTERVAL
+              value: {{ .Values.config.authentikReconcileInterval | quote }}
+            - name: AUTHENTIK_RECONCILE_ADOPT
+              value: {{ .Values.config.authentikReconcileAdopt | quote }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               # bare host:port, no scheme — platform-common rejects a URL scheme for OTLP gRPC
               value: {{ .Values.config.otelEndpoint | quote }}
@@ -130,6 +146,9 @@ spec:
               readOnly: true
             - name: valkey-ca
               mountPath: /etc/iam-service/valkey
+              readOnly: true
+            - name: authentik-token
+              mountPath: /etc/iam-service/authentik
               readOnly: true
           livenessProbe:
             httpGet:
@@ -191,6 +210,14 @@ spec:
               - key: {{ .Values.secrets.valkeyCACert.keyName }}
                 path: ca.crt
             defaultMode: 0444
+        - name: authentik-token
+          secret:
+            secretName: {{ .Values.secrets.authentikToken.secretName }}
+            optional: true
+            items:
+              - key: {{ .Values.secrets.authentikToken.keyName }}
+                path: token
+            defaultMode: 0400
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

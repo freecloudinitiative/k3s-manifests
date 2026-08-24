@@ -53,6 +53,14 @@ Some charts (`storage-service`, `database-service`) need write access inside `fc
 namespaces that don't exist at Helm install time — compute-service creates them at runtime. Such a
 chart cannot ship a namespaced `Role`, since it has no namespace name to put it in.
 
+This pattern applies to `storage-service` and `database-service` only. compute-service does not use
+it: compute-service is the service that provisions customer namespaces, so it defines its own
+namespace-scoped rule set directly in Go (`compute-service/internal/k8s/rbac.go`) rather than via a
+templated ClusterRole. An earlier `compute-service-namespace-role` ClusterRole existed here but was
+never bound by anything — `rbac.go` builds its own `compute-service-workloads` Role instead — and its
+rule set had drifted from `rbac.go`'s; it was removed rather than fixed, since keeping it accurate
+would have meant maintaining the same rule set in two places.
+
 The pattern: `role-template.yaml` emits a single `ClusterRole` named
 `{{ include "<chart>.fullname" . }}-namespace-role`, labeled `fci.io/rbac-scope: namespace-template`,
 and **no ClusterRoleBinding**. It defines the verb set a customer namespace's RoleBinding should

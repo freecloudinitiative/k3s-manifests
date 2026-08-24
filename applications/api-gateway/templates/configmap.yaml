@@ -21,6 +21,7 @@ data:
   # deploy/templates/deployment.yaml (valkey-ca-cert volume, mountPath /etc/fci/tls, path ca.crt).
   VALKEY_CA_CERT_PATH: {{ .Values.config.valkeyCACertPath | quote }}
   OIDC_ISSUER: {{ .Values.config.authentikIssuer | quote }}
+  OIDC_JWKS_URL: {{ .Values.config.authentikJWKSURL | quote }}
   OIDC_CLIENT_ID: {{ .Values.config.authentikClientID | quote }}
   ALLOWED_ORIGINS: {{ .Values.config.allowedOrigins | quote }}
   OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.config.otelEndpoint | quote }}

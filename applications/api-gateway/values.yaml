@@ -115,6 +115,16 @@ config:
   # was not reachable from the dev machine at the time this was written — confirm
   # against the live discovery doc when the cluster is accessible).
   authentikIssuer: "https://auth.freecloudinitiative.com/application/o/freecloudinitiative/"
+  # In-cluster JWKS fetch address. Deliberately in-cluster HTTP: this pod has no
+  # port-443 egress (see networkpolicy.yaml), so it cannot reach the public
+  # issuer hostname above. Host/port confirmed by rendering the authentik
+  # chart: Service authentik-server.authentik.svc.cluster.local, port 80 ->
+  # pod targetPort 9000 — the NetworkPolicy egress rule matches the pod port,
+  # not the Service port, so this URL dials the Service's normal HTTP port
+  # while the packet lands on the allowed pod port 9000. Path must stay
+  # authentikIssuer's path + "jwks/" — a mismatch 404s and only surfaces as a
+  # JWKS refresh warning in logs, not an obvious connection error.
+  authentikJWKSURL: "http://authentik-server.authentik.svc.cluster.local/application/o/freecloudinitiative/jwks/"
   # OIDC_CLIENT_ID is the Authentik application client_id (blueprint.yaml `client_id` field).
   # ⚠ This is NOT the internal JWT issuer. The internal JWT `iss` claim is "fci-gateway"
   # (iam-service/cmd/server/main.go:123) and is configured separately. Conflating the two

@@ -221,7 +221,7 @@ Role comments still say `DB_MAX_CONNS` (5) × 1 replica = 5. Charts now set `rep
 
 ### valkey
 
-**What**: Redis-compatible in-memory cache. Used by api-gateway, terminal-gateway, compute-service, iam-service, storage-service, database-service.
+**What**: Redis-compatible in-memory cache. Used by api-gateway, terminal-gateway, compute-service, storage-service, database-service.
 
 **Config**:
 - Single primary, no replicas (`replica.enabled: false`). Persistence off — cache only.
@@ -451,7 +451,7 @@ patch, or delete CNPG `Cluster` objects in that namespace.
 
 ### iam-service
 
-**What**: Identity and access management. Chart at `applications/iam-service`.
+**What**: Identity and access management. Chart at `applications/iam-service`. Postgres-only — holds no Valkey credential.
 
 **Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
 
@@ -464,8 +464,6 @@ patch, or delete CNPG `Cluster` objects in that namespace.
 | `iam-service-postgresql-credentials` | `url` | `DATABASE_URL`; URL CA path `/etc/iam-service/postgres/ca.crt` | OpenBao `iam/postgresql-password` |
 | `iam-service-postgresql-ca-cert` | `ca.crt` | volume `/etc/iam-service/postgres` | OpenBao `platform-postgresql/ca-cert` |
 | `iam-service-internal-public-key` | `internal-public.pem` | `/etc/iam-service/internal/internal-public.pem` | OpenBao `api-gateway/internal-public-key` |
-| `iam-service-valkey-password` | `password` | `VALKEY_PASSWORD` | OpenBao `valkey/password` |
-| `iam-service-valkey-ca-cert` | `ca.crt` | volume `/etc/iam-service/valkey/ca.crt` | OpenBao `valkey/ca-cert` |
 | `terminal-gateway-public-key` (shared) | `internal-public.pem` | `/etc/iam-service/terminal-gateway/terminal-gateway-public.pem` | OpenBao `terminal-gateway/internal-public-key`; owned by `external-secret-terminal.yaml` |
 | `iam-service-authentik-token` | `token` | `/etc/iam-service/authentik/token` (`AUTHENTIK_TOKEN_PATH`), `defaultMode: 0400`, volume `optional: true` | OpenBao `authentik/admin-token` — seeded manually, no automated source (created in Authentik UI/API, not by `blueprint.yaml`) |
 

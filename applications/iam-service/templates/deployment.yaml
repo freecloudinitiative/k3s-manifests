@@ -78,15 +78,6 @@ spec:
               value: /etc/iam-service/storage-service/internal-public.pem
             - name: SERVICE_AUDIENCE
               value: iam-service
-            - name: VALKEY_URL
-              value: {{ .Values.config.valkeyURL | quote }}
-            - name: VALKEY_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.secrets.valkey.secretName }}
-                  key: {{ .Values.secrets.valkey.keyName }}
-            - name: VALKEY_CA_CERT_PATH
-              value: /etc/iam-service/valkey/ca.crt
             - name: AUTHENTIK_URL
               value: {{ .Values.config.authentikUrl | quote }}
             - name: AUTHENTIK_TOKEN_PATH
@@ -144,9 +135,6 @@ spec:
             - name: storage-service-public-key
               mountPath: /etc/iam-service/storage-service
               readOnly: true
-            - name: valkey-ca
-              mountPath: /etc/iam-service/valkey
-              readOnly: true
             - name: authentik-token
               mountPath: /etc/iam-service/authentik
               readOnly: true
@@ -202,13 +190,6 @@ spec:
             items:
               - key: {{ .Values.secrets.storageServicePublicKey.keyName }}
                 path: internal-public.pem
-            defaultMode: 0444
-        - name: valkey-ca
-          secret:
-            secretName: {{ .Values.secrets.valkeyCACert.secretName }}
-            items:
-              - key: {{ .Values.secrets.valkeyCACert.keyName }}
-                path: ca.crt
             defaultMode: 0444
         - name: authentik-token
           secret:

@@ -130,8 +130,8 @@ EOF
 git add . && git commit -m "add my-namespace namespace" && git push
 ```
 
-`backend` and `external-secrets` are created by `CreateNamespace=true` on
-their Applications, not by a file in `namespaces/`.
+`external-secrets` is created by `CreateNamespace=true` on its Application,
+not by a file in `namespaces/`.
 
 ## Language
 

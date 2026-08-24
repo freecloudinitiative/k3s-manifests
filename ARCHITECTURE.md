@@ -87,9 +87,16 @@ Wave 10  argocd app-config
 
 applications/*                 ← no Application-level wave (default 0).
                                  backend / frontend are pre-declared in
-                                 namespaces/*.yaml (wave 0); CreateNamespace=true
-                                 stays on each Application as a safety net, not
-                                 the actual creation path.
+                                 namespaces/*.yaml, also wave 0. The root
+                                 Application and each backend service's
+                                 Application reconcile independently, so wave
+                                 equality is not a cross-Application ordering
+                                 guarantee — in practice Namespace-kind
+                                 resources apply before other kinds within a
+                                 wave (ArgoCD's built-in resource ordering).
+                                 CreateNamespace=true stays on each
+                                 Application as a real fallback for that race,
+                                 not a no-op.
                                  ExternalSecrets for those pods use resource
                                  wave -2 inside external-secrets Application.
 ```

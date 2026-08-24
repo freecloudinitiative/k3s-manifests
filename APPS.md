@@ -8,9 +8,9 @@
 
 Creates Kubernetes namespaces. Each YAML carries sync-wave `0`. Root app includes `namespaces/*.yaml`. No dedicated `Application`.
 
-Namespaces in this folder: `authentik`, `cert-manager`, `cloudflared`, `cnpg-system`, `frontend`, `garage`, `kyverno`, `longhorn-system`, `metallb-system`, `monitoring`, `platform-database`, `traefik`, `valkey`, `zot-registry`.
+Namespaces in this folder: `authentik`, `backend`, `cert-manager`, `cloudflared`, `cnpg-system`, `frontend`, `garage`, `kyverno`, `longhorn-system`, `metallb-system`, `monitoring`, `platform-database`, `traefik`, `valkey`, `zot-registry`.
 
-`backend` and `external-secrets` are not here. Those Applications set `CreateNamespace=true`. `argocd` and `openbao` come from bootstrap / out-of-band.
+`external-secrets` is not here. That Application sets `CreateNamespace=true`. `argocd` and `openbao` come from bootstrap / out-of-band.
 
 ---
 

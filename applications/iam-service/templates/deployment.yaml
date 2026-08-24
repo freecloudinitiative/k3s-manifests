@@ -213,6 +213,7 @@ spec:
         - name: authentik-token
           secret:
             secretName: {{ .Values.secrets.authentikToken.secretName }}
+            optional: true
             items:
               - key: {{ .Values.secrets.authentikToken.keyName }}
                 path: token

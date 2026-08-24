@@ -45,6 +45,29 @@ Suites are YAML at `applications/<service>/tests/*_test.yaml`. Run with
 No `tests/` directory exists yet. `make unittest` finds none and skips.
 Add suites before claiming a chart is covered.
 
+## Namespace-Template ClusterRoles
+
+Some charts (`storage-service`, `database-service`) need write access inside `fci-cust-*`
+namespaces that don't exist at Helm install time — compute-service creates them at runtime. Such a
+chart cannot ship a namespaced `Role`, since it has no namespace name to put it in.
+
+The pattern: `role-template.yaml` emits a single `ClusterRole` named
+`{{ include "<chart>.fullname" . }}-namespace-role`, labeled `fci.io/rbac-scope: namespace-template`,
+and **no ClusterRoleBinding**. It defines the verb set a customer namespace's RoleBinding should
+grant, nothing more — it only takes effect where compute-service's per-namespace RBAC provisioning
+(`compute-service/internal/k8s/rbac.go`) creates a namespace-scoped RoleBinding naming it. Binding it
+cluster-wide from within the owning chart would grant that write access in every namespace, including
+platform ones — exactly what this pattern exists to avoid.
+
+The ClusterRole's rendered *name* is a stable contract with compute-service's
+`internal/k8s/config.go` defaults (`STORAGE_NAMESPACE_CLUSTERROLE`, `DATABASE_NAMESPACE_CLUSTERROLE`).
+Changing a chart's release name changes `fullname` and silently breaks the binding — Kubernetes
+accepts a RoleBinding pointing at a nonexistent ClusterRole and grants nothing, with no error.
+Always verify the rendered name after any release-name or `fullnameOverride` change:
+```bash
+helm template <release> applications/<chart> --set image.tag=t | grep -A1 "kind: ClusterRole$"
+```
+
 ## What a Suite Must Assert
 
 Suites assert **security boundaries**, not style. `helm lint` and ArgoCD

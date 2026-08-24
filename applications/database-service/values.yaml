@@ -79,7 +79,7 @@ backup:
   retentionDays: 7
 
 metrics:
-  enabled: false
+  enabled: true
   prometheusURL: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
   cacheTTL: 15s
 

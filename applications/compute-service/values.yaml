@@ -121,8 +121,8 @@ internalTokenTTL: 60s
 # metrics.enabled enables the optional Prometheus query endpoint that
 # surfaces per-instance CPU/memory metrics. Requires prometheusURL to be set.
 metrics:
-  enabled: false
-  prometheusURL: ""
+  enabled: true
+  prometheusURL: "http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090"
   prometheusTimeout: 10s
   metricsCacheTTL: 15s
 

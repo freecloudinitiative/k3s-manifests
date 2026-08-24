@@ -57,6 +57,11 @@ podSecurityContext:
   runAsNonRoot: true
   runAsUser: 65532
   runAsGroup: 65532
+  # Secret volume files are owned by root:root unless fsGroup is set; without
+  # it, a non-root container can't read the 0400 authentik-token file it
+  # mounts. Matches database-service's podSecurityContext, the other chart
+  # that mounts its own 0400 secret file.
+  fsGroup: 65532
   seccompProfile:
     type: RuntimeDefault
 

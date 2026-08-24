@@ -124,6 +124,23 @@ instanceTypeCacheTTL: 5m
 events:
   enabled: false
 
+# Backups (BACKUP_ENABLED and friends in internal/config/config.go) are
+# deliberately off for v1 — not set here, so the service default
+# (BACKUP_ENABLED=false) applies. This is a decision, not an oversight;
+# see APPS.md's compute-service section.
+#
+# Enabling requires wiring, none of which exists in this repo yet:
+#   - BACKUP_JOB_IMAGE: a published, digest-pinned backup job image
+#   - BACKUP_ENDPOINT / BACKUP_REGION / BACKUP_ACCESS_KEY / BACKUP_SECRET_KEY:
+#     credentials for the storage-service backup bucket (its
+#     POST /internal/accounts/{accountID}/backup-bucket route is already
+#     deployed and reachable — only compute-service's side is missing)
+#   - kubernetes.enabled must stay true (already the case)
+#
+# Restore is a separate, unrelated v1 decision: it is intentionally never
+# exposed via HTTP regardless of this setting (see compute-service/README.md
+# and the TestRestore_NoRouteExposed guard test).
+
 serviceAccount:
   create: true
   # name is intentionally not configurable — see

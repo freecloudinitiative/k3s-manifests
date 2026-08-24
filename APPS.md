@@ -384,6 +384,8 @@ No Ingress. NetworkPolicy admits `frontend` only.
 | `compute-service-internal-public-key` | `internal-public.pem` | `/etc/compute-service/internal/internal-public.pem` | OpenBao `api-gateway/internal-public-key` |
 | `terminal-gateway-public-key` (shared) | `internal-public.pem` | `/etc/compute-service/terminal-gateway/terminal-gateway-public.pem` | OpenBao `terminal-gateway/internal-public-key`; owned by `external-secret-terminal.yaml` |
 
+**Follow-up**: nightly engine-disk backups (`BACKUP_ENABLED` in `internal/config/config.go`) are deliberately off for v1 — a decision, not an oversight. Enabling needs a published, digest-pinned `BACKUP_JOB_IMAGE` and backup-bucket credentials (`BACKUP_ENDPOINT`/`BACKUP_REGION`/`BACKUP_ACCESS_KEY`/`BACKUP_SECRET_KEY`), none of which exist in this repo. storage-service's `POST /internal/accounts/{accountID}/backup-bucket` route is already deployed and reachable — only compute-service's side is unwired. Restore stays unexposed via HTTP regardless (separate, unrelated v1 decision).
+
 ---
 
 ### database-service

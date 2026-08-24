@@ -202,7 +202,7 @@ applications/compute-service/
   app.yaml                                    ArgoCD Application. Tag sha-xxxxxxxxxxxx. Automated sync off.
   Chart.yaml                                  Chart descriptor.
   values.yaml                                 Default values.
-  templates/                                  10 Kubernetes templates + _helpers.tpl.
+  templates/                                  9 Kubernetes templates + _helpers.tpl.
 
 applications/database-service/
   app.yaml                                    ArgoCD Application. Tag sha-f247d60ac4de. Image repo ghcr.io.

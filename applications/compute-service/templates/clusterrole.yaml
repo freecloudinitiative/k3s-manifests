@@ -1,7 +1,11 @@
 # Cluster-scoped ClusterRole for compute-service.
 # compute-service must read Namespace objects to resolve account namespaces
 # and must manage workload resources (Pods, Deployments, RBAC) inside
-# fci-cust-* namespaces via per-namespace RoleBindings (see role-template.yaml).
+# fci-cust-* namespaces via per-namespace RoleBindings. Unlike storage-service
+# and database-service, compute-service does not use the namespace-template
+# ClusterRole pattern (see CHARTS.md) — it is the service that provisions
+# customer namespaces, so its rule set is defined in Go and applied directly;
+# see compute-service/internal/k8s/rbac.go for the source of truth.
 # Write access to cluster-scoped resources (Namespaces, ClusterRoles) is
 # intentionally NOT included — namespace creation is a separate provisioning
 # path controlled by RBAC at deploy time.

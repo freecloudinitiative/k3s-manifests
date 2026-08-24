@@ -17,10 +17,12 @@ Alloy:      https://alloy.freecloudinitiative.com
 Longhorn:   https://longhorn.freecloudinitiative.com
 Authentik:  https://auth.freecloudinitiative.com
 Registry:   https://registry.freecloudinitiative.com
-Frontend:   https://frontend.freecloudinitiative.com
+Frontend:   https://freecloudinitiative.com
 ```
 
-All UIs use dedicated subdomains via `Ingress` in `infrastructure/traefik`.
+Ops UIs use dedicated subdomains via `Ingress` in `infrastructure/traefik`.
+The frontend SPA is the exception — it's the product, so it sits on the
+apex (`applications/frontend`) rather than a subdomain.
 Authentik ForwardAuth protects ArgoCD, Grafana, Prometheus, Alloy, Longhorn, Zot with SSO.
 Identity provider behind a path prefix breaks cookies and OIDC redirect URIs.
 

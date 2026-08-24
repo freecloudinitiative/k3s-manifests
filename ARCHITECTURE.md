@@ -111,10 +111,10 @@ Cloudflare (DNS + CDN)
    ├── registry.freecloudinitiative.com ──► Cloudflare Tunnel ──► Zot Registry (Production)
    │                                                              (Traefik middleware: Authentik ForwardAuth)
    │
-   └── frontend.freecloudinitiative.com ──► Cloudflare Tunnel ──► Traefik (websecure, TLS via
-                                             letsencrypt-production) ──► frontend nginx (namespace:
-                                             frontend) ──► api-gateway (namespace: backend) ──►
-                                             {iam, compute, database, storage, terminal-gateway}
+   └── freecloudinitiative.com ──► Cloudflare Tunnel ──► Traefik (websecure, TLS via
+                                    letsencrypt-production) ──► frontend nginx (namespace:
+                                    frontend) ──► api-gateway (namespace: backend) ──►
+                                    {iam, compute, database, storage, terminal-gateway}
 ```
 
 api-gateway and terminal-gateway have no Ingress. NetworkPolicies admit ingress
@@ -123,8 +123,10 @@ nginx proxies `/api/` and `/ws/` same-origin to api-gateway; api-gateway
 proxies `/ws/terminal/` to terminal-gateway. frontend host is only public
 entry for the product. Neither gateway is reachable from outside the cluster.
 
-`frontend.freecloudinitiative.com` must exist in Cloudflare Tunnel config
-(dashboard / Terraform, outside this repo) for HTTP-01 ACME and real traffic.
+Apex DNS and the Cloudflare Tunnel ingress rule for `freecloudinitiative.com`
+already exist in `terraform-cloudflare-infra` (`cloudflare_record.root` name
+`@`, tunnel ingress `var.domain_name`) — this chart just needs to bind that
+host for HTTP-01 ACME and real traffic to work.
 
 ### Internal HTTP (cluster LAN access)
 

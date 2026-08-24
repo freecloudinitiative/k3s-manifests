@@ -121,7 +121,7 @@ config:
   # identities caused the defect this comment exists to prevent.
   authentikClientID: "freecloudinitiative-frontend"
   # Allowed CORS origins — must match the SPA's public origin (blueprint.yaml `redirect_uris`).
-  allowedOrigins: "https://frontend.freecloudinitiative.com"
+  allowedOrigins: "https://freecloudinitiative.com"
   # bare host:port, no scheme — platform-common rejects a URL scheme for OTLP gRPC
   otelEndpoint: "opentelemetry-collector.monitoring.svc.cluster.local:4317"
 

@@ -29,7 +29,7 @@ config:
   apiBaseUrl: ""
   oidcAuthority: "https://auth.freecloudinitiative.com/application/o/freecloudinitiative/"
   oidcClientId: "freecloudinitiative-frontend"
-  oidcRedirectUri: "https://frontend.freecloudinitiative.com/callback"
+  oidcRedirectUri: "https://freecloudinitiative.com/callback"
   enableRealTerminal: true
   # wsBaseUrl: empty string means same-origin; deriveSameOriginWsBase() handles it.
   wsBaseUrl: ""
@@ -42,7 +42,7 @@ apiBackendUrl: "http://api-gateway.backend.svc.cluster.local:80"
 # ingress -- Traefik Ingress settings.
 ingress:
   enabled: true
-  host: frontend.freecloudinitiative.com
+  host: freecloudinitiative.com
   tlsSecretName: frontend-public-tls
 
 # securityContext -- container-level security settings.

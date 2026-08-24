@@ -54,6 +54,11 @@ podSecurityContext:
   runAsNonRoot: true
   runAsUser: 65532
   runAsGroup: 65532
+  # Secret volume files are owned by root:root unless fsGroup is set; without
+  # it, a non-root container can't read the 0400 signing-key file it mounts
+  # to mint internal JWTs. Matches api-gateway's podSecurityContext, the
+  # other chart that mounts its own private signing key.
+  fsGroup: 65532
   seccompProfile:
     type: RuntimeDefault
 

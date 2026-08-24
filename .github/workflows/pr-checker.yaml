@@ -138,3 +138,13 @@ jobs:
             -Dsonar.organization=${{ github.repository_owner }} -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        if: env.SONAR_TOKEN != ''
+      - name: Report unavailable Sonar token
+        if: env.SONAR_TOKEN == ''
+        shell: bash
+        run: |
+          echo "::warning::SONAR_TOKEN is not available; skipping SonarQube analysis."
+          echo "## SonarQube analysis skipped" >> "$GITHUB_STEP_SUMMARY"
+          echo "Configure the SONAR_TOKEN Actions secret to enable analysis." >> "$GITHUB_STEP_SUMMARY"
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

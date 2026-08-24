@@ -7,11 +7,12 @@ replicaCount: 2
 revisionHistoryLimit: 3
 
 image:
-  # CI pushes to ghcr.io/freecloudinitiative/<name>:sha-<12> (see
-  # platform-common/.github/workflows/build-arm64-image.yml, step "Derive
+  # CI pushes to ghcr.io/freecloudinitiative/<name>:sha-<40-hex> (see
+  # compute-service/.github/workflows/build-and-push.yml, step "Derive
   # image tags").  The tag or digest MUST be supplied by the caller (e.g.
-  # ArgoCD Application helm.parameters) — an empty tag is a hard error in
-  # deploy/templates/_helpers.tpl.  Never falls back to Chart.appVersion.
+  # ArgoCD Application helm.parameters, which prefers image.digest) — an
+  # empty tag is a hard error in
+  # applications/compute-service/templates/_helpers.tpl.  Never falls back to Chart.appVersion.
   # repository: registry.freecloudinitiative.com/freecloudinitiative/compute-service # uncomment when deploying to prod
   repository: ghcr.io/freecloudinitiative/compute-service
   tag: ""

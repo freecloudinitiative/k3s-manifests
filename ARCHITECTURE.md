@@ -108,9 +108,6 @@ Cloudflare (DNS + CDN)
    │
    ├── auth.freecloudinitiative.com ──► Cloudflare Tunnel (cloudflared) ──► Authentik
    │
-   ├── registry.freecloudinitiative.com ──► Cloudflare Tunnel ──► Zot Registry (Production)
-   │                                                              (Traefik middleware: Authentik ForwardAuth)
-   │
    └── freecloudinitiative.com ──► Cloudflare Tunnel ──► Traefik (websecure, TLS via
                                     letsencrypt-production) ──► frontend nginx (namespace:
                                     frontend) ──► api-gateway (namespace: backend) ──►
@@ -139,6 +136,12 @@ Traefik (DaemonSet on master node, hostPort 80/443)
    ├── grafana.freecloudinitiative.com ──► Grafana (namespace: monitoring)
    ├── prometheus.freecloudinitiative.com ──► Prometheus (namespace: monitoring)
    ├── alloy.freecloudinitiative.com ──► Alloy UI (namespace: monitoring)
+   │
+   │   (internal_only in terraform-cloudflare-infra — unproxied RFC1918 A
+   │    record, TLS via ca-cluster-issuer since Let's Encrypt HTTP-01 can't
+   │    reach them; clients must trust the internal CA)
+   ├── registry.freecloudinitiative.com ──► Zot Registry (namespace: zot-registry)
+   │                                        (Traefik middleware: Authentik ForwardAuth)
    ├── argocd.freecloudinitiative.com ──► ArgoCD server (namespace: argocd)
    ├── longhorn.freecloudinitiative.com ──► Longhorn UI (namespace: longhorn-system)
    └── /traefik-dashboard ► Traefik internal API

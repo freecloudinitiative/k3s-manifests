@@ -35,10 +35,23 @@ Namespaces in this folder: `authentik`, `cert-manager`, `cloudflared`, `cnpg-sys
 | Issuer | Name | Used for |
 |---|---|---|
 | Self-signed (bootstrap) | `selfsigned-cluster-issuer` | Private CA root certificate |
-| Private CA | `ca-cluster-issuer` | Internal service certs (OpenBao, Valkey, Postgres) |
-| Let's Encrypt production | `letsencrypt-production` | Public certs (Authentik, Zot Registry, frontend) |
+| Private CA | `ca-cluster-issuer` | Internal service certs (OpenBao, Valkey, Postgres) and internal-only-DNS hosts (Zot Registry, ArgoCD, Longhorn, Traefik dashboard) |
+| Let's Encrypt production | `letsencrypt-production` | Public certs reachable over HTTP-01 (Authentik, frontend, Grafana, Prometheus, Alloy) |
 
 **Sync-wave**: `cert-manager` Application `1`. Issuer/CA YAMLs wave `1`. `cert-manager-configs` Application `3`.
+
+**Internal-only hosts and `ca-cluster-issuer`**: `registry`, `argocd`, `longhorn`, and `traefik`
+(dashboard) are marked `internal_only = true` in `terraform-cloudflare-infra` and get an unproxied
+RFC1918 A record — not reachable by the ACME server, so they cannot use HTTP-01 and must use the
+internal CA instead. Two consequences:
+- Any client that doesn't trust the internal CA sees a certificate warning for these four hosts.
+  Acceptable for internal dashboards (ArgoCD, Longhorn, Traefik) — import the CA in a browser to
+  clear it.
+- containerd on every k3s node must trust the internal CA to pull from
+  `registry.freecloudinitiative.com` without error (via `/etc/rancher/k3s/certs.d/` or
+  `registries.yaml` — not yet configured; tracked as an `ansible-automation` follow-up). **The
+  ghcr.io → internal-registry migration must not be considered complete until this node-level trust
+  is in place.**
 
 ---
 
@@ -73,7 +86,11 @@ Both: `reclaimPolicy: Retain`, `allowVolumeExpansion: true`.
 |---|---|
 | `/traefik-dashboard` | Traefik dashboard (traefik) |
 
-Public hosts use Cloudflare + Let's Encrypt TLS: `auth.`, `registry.`, `frontend.`, `argocd.`, `grafana.`, `prometheus.`, `alloy.`, `longhorn.freecloudinitiative.com`. UIs are protected by Authentik ForwardAuth.
+Public, tunnel-reachable hosts use Let's Encrypt TLS: `auth.`, `frontend.`, `grafana.`,
+`prometheus.`, `alloy.freecloudinitiative.com`. Internal-only hosts (unproxied RFC1918 A record, not
+reachable by the ACME server) use the internal CA instead: `registry.`, `argocd.`, `longhorn.`,
+`traefik.freecloudinitiative.com` — see [cert-manager](#cert-manager) above. UIs are protected by
+Authentik ForwardAuth.
 
 ---
 

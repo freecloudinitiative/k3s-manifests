@@ -18,7 +18,10 @@ ingress:
   className: traefik
   pathtype: Prefix
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-production
+    # registry.freecloudinitiative.com resolves to a private RFC1918 address
+    # (internal_only in terraform-cloudflare-infra), so Let's Encrypt HTTP-01
+    # can never reach it. The internal CA is the only issuer that can serve it.
+    cert-manager.io/cluster-issuer: ca-cluster-issuer
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.middlewares: traefik-security-headers@kubernetescrd
   hosts:

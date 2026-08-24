@@ -135,12 +135,20 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
         with:
           args: >-
-            -Dsonar.organization=${{ github.repository_owner }} -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.organization=${{ github.repository_owner }}
+            -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        if: env.SONAR_TOKEN != ''
+        if: >-
+          env.SONAR_TOKEN != '' &&
+          (github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository)
       - name: Report unavailable Sonar token
-        if: env.SONAR_TOKEN == ''
+        if: >-
+          env.SONAR_TOKEN == '' ||
+          (github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name != github.repository)
         shell: bash
         run: |
           echo "::warning::SONAR_TOKEN is not available; skipping SonarQube analysis."

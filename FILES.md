@@ -26,6 +26,7 @@ infrastructure/README.md                      Notes on infrastructure apps.
 
 infrastructure/namespaces/
   authentik.yaml                              Namespace: authentik
+  backend.yaml                                Namespace: backend (api-gateway, compute-service, database-service, iam-service, storage-service, terminal-gateway)
   cert-manager.yaml                           Namespace: cert-manager
   cloudflared.yaml                            Namespace: cloudflared
   cnpg-system.yaml                            Namespace: cnpg-system (CloudNativePG operator)

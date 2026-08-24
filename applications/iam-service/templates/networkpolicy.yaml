@@ -50,14 +50,6 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
-    # valkey
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: valkey
-      ports:
-        - protocol: TCP
-          port: 6379
     # OTLP trace/metric export to the OpenTelemetry collector in monitoring.
     - to:
         - namespaceSelector:

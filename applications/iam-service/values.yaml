@@ -73,7 +73,8 @@ securityContext:
       - ALL
 
 # iam-service never calls the Kubernetes API. Mounting a token here would
-# only create an extra credential that a compromise could pivot with.
+# only create an extra credential that a compromise could pivot with. Same
+# reasoning for Valkey: no cache client, no Valkey credential mounted.
 automountServiceAccountToken: false
 
 podDisruptionBudget:
@@ -127,14 +128,6 @@ secrets:
   # PostgreSQL credentials (DSN URL).
   postgresqlCredentials:
     secretName: iam-service-postgresql-credentials
-  # Valkey password.
-  valkey:
-    secretName: iam-service-valkey-password
-    keyName: password
-  # Valkey TLS CA cert.
-  valkeyCACert:
-    secretName: iam-service-valkey-ca-cert
-    keyName: ca.crt
   # Authentik admin API token — optional; a disabled/empty client is nil-safe
   # throughout iam-service (see internal/authentik/client.go).
   authentikToken:
@@ -144,7 +137,6 @@ secrets:
 config:
   logLevel: info
   environment: production
-  valkeyURL: valkey.valkey.svc.cluster.local:6379
   otelEndpoint: opentelemetry-collector.monitoring.svc.cluster.local:4317
   shutdownGrace: 25s
   # Authentik OIDC issuer — must match the iss claim in Authentik-minted tokens.

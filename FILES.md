@@ -105,6 +105,9 @@ infrastructure/kyverno-policies/
   require-run-as-non-root.yaml                Policy: all containers must run as non-root. Audit.
   restrict-image-registries.yaml              Policy: images must come from approved registries. Audit.
   restrict-compute-service-rbac-writes.yaml   Policy: compute-service RBAC/Namespace writes. Enforce.
+  deny-pods-on-restoring-pvcs.yaml            Policy: deny Pods mounting a PVC locked by fci.io/restore-id unless label matches. Enforce.
+  kyverno-tests/
+    deny-pods-on-restoring-pvcs/              Local apiCall-based test fixtures for the policy above (run.sh, resources.yaml, values.yaml).
 
 infrastructure/platform-postgresql/
   app.yaml                                    ArgoCD Application for CNPG Postgres cluster resources.

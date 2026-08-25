@@ -9,5 +9,5 @@ on:
 
 jobs:
   check:
-    uses: freecloudinitiative/.github/.github/workflows/k3s-pr-checker.yml@2816605944e9c3355e401d527f7f725b05b71ce5
+    uses: freecloudinitiative/.github/.github/workflows/k3s-pr-checker.yml@main
     secrets: inherit

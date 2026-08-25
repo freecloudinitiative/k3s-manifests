@@ -1,0 +1,83 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: deny-pods-on-restoring-pvcs
+  annotations:
+    policies.kyverno.io/title: Deny Pods on Restoring PVCs
+    policies.kyverno.io/category: Storage
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      compute-service's RestoreToPVC (internal/backup/restore.go) checks for
+      Pods already mounting the restore target PVC, then creates a restore
+      Job — but that check and the eventual Pod admission are not atomic. A
+      guest Pod can start mounting the same PVC in the window between the
+      check returning "no mount" and the restore Pod actually writing to it,
+      corrupting the restore or exposing partially-written data. compute-
+      service#PR-09 closes the write side of this race by annotating the
+      target PVC with fci.io/restore-id=<backup UUID> before creating the
+      restore Job, and labeling the restore Pod itself with the same
+      fci.io/restore-id. This policy closes the admission side: it denies
+      any new Pod, in a customer namespace, that mounts a PVC carrying a
+      fci.io/restore-id annotation, unless the Pod's own fci.io/restore-id
+      label matches that annotation exactly — i.e. unless it is the
+      authorized restore Pod for that specific backup. Until PR-09 starts
+      writing the PVC annotation, this policy is inert: no PVC will carry
+      fci.io/restore-id for it to match against. Enforced rather than
+      audited: there is no legitimate case where an ordinary customer Pod
+      needs to mount a PVC that is mid-restore, and audit-only would leave
+      the TOCTOU window this policy exists to close wide open.
+spec:
+  # spec.validationFailureAction has had no effect since Kyverno 1.13 (the
+  # chart pinned in infrastructure/kyverno/app.yaml is 3.8.1, well past
+  # that) — it's deprecated in favor of a per-rule failureAction under each
+  # rule's validate block, set below. Leaving only the top-level field would
+  # silently run this policy in Kyverno's default (non-enforcing) mode.
+  background: false
+  rules:
+    - name: deny-pod-mount-restoring-pvc
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              operations:
+                - CREATE
+              namespaceSelector:
+                matchLabels:
+                  fci.io/tier: customer
+      validate:
+        failureAction: Enforce
+        message: >-
+          Pod mounts a PersistentVolumeClaim that is mid-restore
+          (fci.io/restore-id is set on the PVC) but the Pod's own
+          fci.io/restore-id label does not match. Only the restore Pod for
+          that exact backup may mount this PVC while a restore is in
+          progress.
+        foreach:
+          # Iterate only volumes that mount a PVC — the JMESPath filter
+          # excludes EmptyDir/ConfigMap/Secret/etc. volumes up front, so
+          # this rule never evaluates a context.apiCall for a non-PVC
+          # volume. One PVC-backed volume per iteration keeps a Pod that
+          # mounts one unlocked and one locked PVC denied on the locked
+          # volume's iteration alone.
+          - list: "request.object.spec.volumes[?persistentVolumeClaim]"
+            context:
+              - name: pvc
+                apiCall:
+                  urlPath: "/api/v1/namespaces/{{request.namespace}}/persistentvolumeclaims/{{element.persistentVolumeClaim.claimName}}"
+                  # No `default:` on this apiCall. If the lookup fails (PVC
+                  # missing, API server error), Kyverno errors this rule's
+                  # evaluation instead of substituting a fallback value —
+                  # for an Enforce rule that fails the admission request
+                  # closed, matching this repo's other Enforce policy's
+                  # posture of failing closed on ambiguity rather than
+                  # silently permitting.
+            deny:
+              conditions:
+                all:
+                  - key: "{{ pvc.metadata.annotations.\"fci.io/restore-id\" || '' }}"
+                    operator: NotEquals
+                    value: ""
+                  - key: "{{ request.object.metadata.labels.\"fci.io/restore-id\" || '' }}"
+                    operator: NotEquals
+                    value: "{{ pvc.metadata.annotations.\"fci.io/restore-id\" }}"

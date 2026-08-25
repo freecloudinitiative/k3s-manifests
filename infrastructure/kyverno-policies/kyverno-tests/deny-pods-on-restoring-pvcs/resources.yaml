@@ -1,0 +1,269 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fci-cust-test
+  labels:
+    fci.io/tier: customer
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fci-platform-test
+  labels:
+    fci.io/tier: platform
+---
+# Case 1: unannotated PVC + guest Pod -> pass
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-unlocked
+  namespace: fci-cust-test
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-guest-unlocked
+  namespace: fci-cust-test
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: registry.internal/app:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: pvc-unlocked
+---
+# Case 2: annotated PVC + guest Pod (no restore label) -> fail
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-locked-a
+  namespace: fci-cust-test
+  annotations:
+    fci.io/restore-id: "11111111-1111-1111-1111-111111111111"
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-guest-locked-a
+  namespace: fci-cust-test
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: registry.internal/app:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: pvc-locked-a
+---
+# Case 3: annotated PVC + matching restore label -> pass
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-locked-b
+  namespace: fci-cust-test
+  annotations:
+    fci.io/restore-id: "22222222-2222-2222-2222-222222222222"
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-restore-b
+  namespace: fci-cust-test
+  labels:
+    fci.io/restore-id: "22222222-2222-2222-2222-222222222222"
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: restore
+      image: registry.internal/restore-worker:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
+  volumes:
+    - name: target
+      persistentVolumeClaim:
+        claimName: pvc-locked-b
+---
+# Case 4: annotated PVC + different restore label value -> fail
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-locked-c
+  namespace: fci-cust-test
+  annotations:
+    fci.io/restore-id: "33333333-3333-3333-3333-333333333333"
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-restore-wrong-id
+  namespace: fci-cust-test
+  labels:
+    fci.io/restore-id: "99999999-9999-9999-9999-999999999999"
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: restore
+      image: registry.internal/restore-worker:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
+  volumes:
+    - name: target
+      persistentVolumeClaim:
+        claimName: pvc-locked-c
+---
+# Case 5: Pod mounting one unlocked and one locked PVC -> fail
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-unlocked-2
+  namespace: fci-cust-test
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-locked-d
+  namespace: fci-cust-test
+  annotations:
+    fci.io/restore-id: "44444444-4444-4444-4444-444444444444"
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-mixed-mounts
+  namespace: fci-cust-test
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: registry.internal/app:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
+  volumes:
+    - name: unlocked
+      persistentVolumeClaim:
+        claimName: pvc-unlocked-2
+    - name: locked
+      persistentVolumeClaim:
+        claimName: pvc-locked-d
+---
+# Case 6: same annotated PVC pattern, but namespace is not fci.io/tier=customer -> skip
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-locked-e
+  namespace: fci-platform-test
+  annotations:
+    fci.io/restore-id: "55555555-5555-5555-5555-555555555555"
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-guest-noncustomer-ns
+  namespace: fci-platform-test
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: registry.internal/app:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: pvc-locked-e
+---
+# Case 7: PVC lookup failure (claimName does not resolve to any PVC in this
+# fixture set) -> fail closed
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-pvc-lookup-failure
+  namespace: fci-cust-test
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: registry.internal/app:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: pvc-does-not-exist

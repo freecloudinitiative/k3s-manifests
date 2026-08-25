@@ -52,10 +52,15 @@ out-of-band deployment provides.
 - `kube-prometheus-stack`, `alloy`, `loki`, `tempo`, `opentelemetry`: private observability stack.
 - `metallb`: bare-metal address allocation where an explicit public LoadBalancer is required.
 - `traefik`: public HTTPS ingress controller.
-- `kyverno`, `kyverno-policies`: admission controller and five cluster
+- `kyverno`, `kyverno-policies`: admission controller and six cluster
   policies. Four run `Audit` (requests/limits, no `:latest`, non-root,
   registry allowlist) — report via `PolicyReport`/`ClusterPolicyReport`,
-  do not block. `restrict-compute-service-rbac-writes` is `Enforce`.
+  do not block. `restrict-compute-service-rbac-writes` and
+  `deny-pods-on-restoring-pvcs` are `Enforce`. The latter denies any Pod
+  mounting a PVC annotated `fci.io/restore-id` unless the Pod's own label
+  matches exactly — closes the TOCTOU window in compute-service's PVC
+  restore path (see `compute-service#PR-09` for the annotation writer;
+  inert until that lands).
 - `cloudflared`: Cloudflare Tunnel connector. Forwards root domain and
   public hosts to Traefik ClusterIP. Traefik routes by hostname for all UIs.
   Ingress lives in `infrastructure/traefik`, `authentik`, `zot-registry`,

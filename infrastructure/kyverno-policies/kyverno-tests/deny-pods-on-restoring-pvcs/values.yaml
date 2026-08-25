@@ -1,0 +1,9 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Values
+namespaceSelector:
+  - name: fci-cust-test
+    labels:
+      fci.io/tier: customer
+  - name: fci-platform-test
+    labels:
+      fci.io/tier: platform

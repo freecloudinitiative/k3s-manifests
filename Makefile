@@ -1,4 +1,4 @@
-.PHONY: lint template schema unittest validate
+.PHONY: lint template schema unittest kyverno-test validate
 
 FIND_CHARTS = find infrastructure applications -type f -name Chart.yaml -exec dirname {} \;
 HELM_SET = --set image.tag=ci
@@ -35,4 +35,17 @@ unittest:
 		done; \
 	fi
 
-validate: lint template schema unittest
+kyverno-test:
+	@test_dirs=$$(find infrastructure applications -type d -name kyverno-tests 2>/dev/null); \
+	if [ -z "$$test_dirs" ]; then \
+		echo "No kyverno-tests found; skipping"; \
+	else \
+		for dir in $$test_dirs; do \
+			for run in $$dir/*/run.sh; do \
+				echo "$$run"; \
+				"$$run" || exit 1; \
+			done; \
+		done; \
+	fi
+
+validate: lint template schema unittest kyverno-test

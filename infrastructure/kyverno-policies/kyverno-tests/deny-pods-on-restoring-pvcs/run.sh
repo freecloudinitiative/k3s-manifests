@@ -41,10 +41,10 @@ for case in "${cases[@]}"; do
   want="${case##*:}"
   got=$(jq -r --arg name "$name" \
     '.results[] | select(.resources[0].name == $name) | .result' <<<"$report")
-  if [ -z "$got" ]; then
+  if [[ -z "$got" ]]; then
     echo "FAIL $name: expected $want, got no result (rule did not evaluate it)"
     fail=1
-  elif [ "$got" != "$want" ]; then
+  elif [[ "$got" != "$want" ]]; then
     echo "FAIL $name: expected $want, got $got"
     fail=1
   else
@@ -53,14 +53,14 @@ for case in "${cases[@]}"; do
 done
 
 excluded_got=$(jq -r '.results[] | select(.resources[0].name == "pod-guest-noncustomer-ns") | .result' <<<"$report")
-if [ -n "$excluded_got" ]; then
+if [[ -n "$excluded_got" ]]; then
   echo "FAIL pod-guest-noncustomer-ns: expected no result (namespaceSelector excludes it), got $excluded_got"
   fail=1
 else
   echo "ok   pod-guest-noncustomer-ns: excluded"
 fi
 
-if [ "$fail" -ne 0 ]; then
+if [[ "$fail" -ne 0 ]]; then
   echo "deny-pods-on-restoring-pvcs local test: FAILED"
   exit 1
 fi

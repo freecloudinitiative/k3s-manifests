@@ -30,9 +30,17 @@ metadata:
   name: pod-guest-unlocked
   namespace: fci-cust-test
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: app
       image: registry.internal/app:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
   volumes:
     - name: data
       persistentVolumeClaim:
@@ -58,9 +66,17 @@ metadata:
   name: pod-guest-locked-a
   namespace: fci-cust-test
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: app
       image: registry.internal/app:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
   volumes:
     - name: data
       persistentVolumeClaim:
@@ -88,9 +104,17 @@ metadata:
   labels:
     fci.io/restore-id: "22222222-2222-2222-2222-222222222222"
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: restore
       image: registry.internal/restore-worker:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
   volumes:
     - name: target
       persistentVolumeClaim:
@@ -118,9 +142,17 @@ metadata:
   labels:
     fci.io/restore-id: "99999999-9999-9999-9999-999999999999"
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: restore
       image: registry.internal/restore-worker:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
   volumes:
     - name: target
       persistentVolumeClaim:
@@ -157,9 +189,17 @@ metadata:
   name: pod-mixed-mounts
   namespace: fci-cust-test
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: app
       image: registry.internal/app:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
   volumes:
     - name: unlocked
       persistentVolumeClaim:
@@ -188,9 +228,17 @@ metadata:
   name: pod-guest-noncustomer-ns
   namespace: fci-platform-test
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: app
       image: registry.internal/app:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
   volumes:
     - name: data
       persistentVolumeClaim:
@@ -204,9 +252,17 @@ metadata:
   name: pod-pvc-lookup-failure
   namespace: fci-cust-test
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: app
       image: registry.internal/app:1.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
   volumes:
     - name: data
       persistentVolumeClaim:

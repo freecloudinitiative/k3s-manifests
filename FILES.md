@@ -8,11 +8,7 @@ APPS.md                                       What each app does and its key con
 ARCHITECTURE.md                               How apps connect. Traffic, secrets, storage, sync order.
 CHARTS.md                                     Chart-authoring contract: applications/<service>/, tests/, YAML-only rule.
 FILES.md                                      This file.
-caveman.md                                    Terse writing rules for these docs.
 Makefile                                      Local validation: yamllint, helm lint/template, kubeconform, helm unittest.
-.gitignore                                    Git ignore rules.
-.yamllint.yaml                                yamllint config (templates/ ignored).
-.vscode/settings.json                         YAML schema associations for editor autocomplete.
 ```
 
 ---
@@ -36,6 +32,7 @@ infrastructure/namespaces/
   longhorn-system.yaml                        Namespace: longhorn-system
   metallb-system.yaml                         Namespace: metallb-system
   monitoring.yaml                             Namespace: monitoring
+  openbao.yaml                                Namespace: openbao
   platform-database.yaml                      Namespace: platform-database (Postgres cluster)
   traefik.yaml                                Namespace: traefik
   valkey.yaml                                 Namespace: valkey
@@ -156,6 +153,12 @@ infrastructure/argocd/
   argocd-cm.yaml                              ArgoCD ConfigMap: resource health checks, exclusions.
   argocd-cmd-params-cm.yaml                   ArgoCD server command flags.
   argocd-rbac-cm.yaml                         ArgoCD RBAC ConfigMap.
+
+infrastructure/openbao/
+  app.yaml                                    ArgoCD Application for OpenBao Helm chart.
+  certificate.yaml                            cert-manager Certificate for OpenBao.
+  ingress.yaml                                Ingress for OpenBao.
+  values.yaml                                 OpenBao Helm values.
 
 infrastructure/kube-prometheus-stack/
   app.yaml                                    ArgoCD Application for kube-prometheus-stack Helm chart.

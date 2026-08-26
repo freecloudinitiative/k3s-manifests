@@ -8,9 +8,9 @@
 
 Creates Kubernetes namespaces. Each YAML carries sync-wave `0`. Root app includes `namespaces/*.yaml`. No dedicated `Application`.
 
-Namespaces in this folder: `authentik`, `backend`, `cert-manager`, `cloudflared`, `cnpg-system`, `frontend`, `garage`, `kyverno`, `longhorn-system`, `metallb-system`, `monitoring`, `platform-database`, `traefik`, `valkey`, `zot-registry`.
+Namespaces in this folder: `authentik`, `backend`, `cert-manager`, `cloudflared`, `cnpg-system`, `frontend`, `garage`, `kyverno`, `longhorn-system`, `metallb-system`, `monitoring`, `openbao`, `platform-database`, `traefik`, `valkey`, `zot-registry`.
 
-`external-secrets` is not here. That Application sets `CreateNamespace=true`. `argocd` and `openbao` come from bootstrap / out-of-band.
+`external-secrets` is not here. That Application sets `CreateNamespace=true`. `argocd` comes from bootstrap / out-of-band.
 
 ---
 
@@ -102,6 +102,16 @@ Authentik ForwardAuth.
 - Upstream chart `cloudnative-pg` `0.29.0`.
 - Namespace `cnpg-system`. Sync-wave `2`.
 - Must be healthy before `platform-postgresql` (wave `4`) can apply CRs.
+
+---
+
+### openbao
+
+**What**: Central secret management (Vault fork).
+
+**Config**:
+- Upstream chart `openbao` `0.28.6`.
+- Namespace `openbao`. Sync-wave `2`.
 
 ---
 

@@ -41,8 +41,8 @@ We employ a dual-registry strategy depending on the environment:
 
 ## Prerequisites
 
-OpenBao is **not** deployed by this repo and must already be running,
-initialised, and unsealed before first ArgoCD sync.
+OpenBao **is** deployed by this repo (via ArgoCD), but it must be manually
+initialised and unsealed after the first sync before `external-secrets` can connect.
 
 - Service must resolve at
   `openbao-active.openbao.svc.cluster.local:8200` — hardcoded in

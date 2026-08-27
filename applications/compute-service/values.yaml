@@ -181,6 +181,10 @@ secrets:
   terminalGatewayPublicKey:
     secretName: terminal-gateway-public-key
     keyName: internal-public.pem
+  # Ed25519 public key from database-service; trusted on the namespace-provisioning route only.
+  databaseServicePublicKey:
+    secretName: database-service-public-key
+    keyName: internal-public.pem
   # PostgreSQL TLS CA cert.
   postgresqlCA:
     secretName: compute-service-postgresql-ca-cert

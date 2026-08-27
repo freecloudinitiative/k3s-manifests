@@ -74,6 +74,8 @@ spec:
               value: {{ .Values.internalTokenTTL | quote }}
             - name: INTERNAL_PUBLIC_KEY_PATH
               value: /etc/storage-service/internal/internal-public.pem
+            - name: COMPUTE_SERVICE_PUBLIC_KEY_PATH
+              value: /etc/storage-service/compute-service/internal-public.pem
             - name: SERVICE_AUDIENCE
               value: storage-service
             - name: IAM_SERVICE_URL
@@ -196,6 +198,9 @@ spec:
             - name: internal-public-key
               mountPath: /etc/storage-service/internal
               readOnly: true
+            - name: compute-service-public-key
+              mountPath: /etc/storage-service/compute-service
+              readOnly: true
             {{- if .Values.proxyUpload.tmpDir }}
             # readOnlyRootFilesystem: true leaves no writable root
             # filesystem. PR-05 chose the proxy-upload path (option B) for
@@ -255,6 +260,14 @@ spec:
         - name: internal-public-key
           secret:
             secretName: {{ include "storage-service.fullname" . }}-internal-public-key
+        - name: compute-service-public-key
+          secret:
+            secretName: compute-service-public-key
+            optional: true
+            items:
+              - key: internal-public.pem
+                path: internal-public.pem
+            defaultMode: 0444
         {{- if .Values.proxyUpload.tmpDir }}
         - name: tmp
           emptyDir: {}

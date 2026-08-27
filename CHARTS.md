@@ -107,6 +107,20 @@ a tag to render. Validation passes `--set image.tag=ci`.
 |---|---|---|
 | `websocket.allowedOrigins` | Yes; must be non-empty | Comma-separated WebSocket origin allow-list. Must track `applications/frontend/values.yaml` `ingress.host`; use a bare host without a scheme or port. |
 
+## Direct-Call Public Keys
+
+Mounts the caller's public key into the callee so a direct backend-to-backend
+call (bypassing api-gateway) verifies against the caller's own signing key
+instead of only api-gateway's. Both are optional: the consuming config field
+(`COMPUTE_SERVICE_PUBLIC_KEY_PATH` / `DATABASE_SERVICE_PUBLIC_KEY_PATH`) is
+not required, so the pod still starts if the Secret is absent — that only
+disables direct-call verification for the one route it covers.
+
+| Chart | Value | Required | Contract |
+|---|---|---|---|
+| `storage-service` | *(none — Secret name is hardcoded, not chart-owned)* | No | Mounts the existing `compute-service-public-key` Secret (namespace `backend`, created by `infrastructure/external-secrets/external-secret-iam.yaml`) as `optional: true`, sets `COMPUTE_SERVICE_PUBLIC_KEY_PATH=/etc/storage-service/compute-service/internal-public.pem`. Enables verifying `compute-service`'s direct call to `POST /internal/accounts/{accountID}/backup-bucket`. |
+| `compute-service` | `secrets.databaseServicePublicKey` | No | Mounts the existing `database-service-public-key` Secret (namespace `backend`) as `optional: true`, sets `DATABASE_SERVICE_PUBLIC_KEY_PATH=/etc/compute-service/database-service/internal-public.pem`. Enables verifying `database-service`'s direct call to `POST /internal/accounts/{accountID}/namespace`. |
+
 ## How to Run Validation Locally
 
 Install Helm, yamllint, kubeconform, and helm-unittest plugin:

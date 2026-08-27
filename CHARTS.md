@@ -101,6 +101,12 @@ assertion because it is awkward in YAML.
 Charts that `fail` when `image.tag` and `image.digest` are both empty need
 a tag to render. Validation passes `--set image.tag=ci`.
 
+## Terminal Gateway Values
+
+| Value | Required | Contract |
+|---|---|---|
+| `websocket.allowedOrigins` | Yes; must be non-empty | Comma-separated WebSocket origin allow-list. Must track `applications/frontend/values.yaml` `ingress.host`; use a bare host without a scheme or port. |
+
 ## How to Run Validation Locally
 
 Install Helm, yamllint, kubeconform, and helm-unittest plugin:

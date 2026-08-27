@@ -79,7 +79,14 @@ websocket:
   pingInterval: 30s
   pongTimeout: 10s
   maxMessageSize: 32768
-  allowedOrigins: ""
+  # Comma-separated origin allow-list for the WebSocket handshake.
+  # MUST NOT be empty. An empty list means strict same-origin in
+  # coder/websocket, and api-gateway's ReverseProxy rewrites Host to
+  # terminal-gateway.backend.svc.cluster.local while leaving Origin as the
+  # browser's public host — so same-origin can never match and every
+  # handshake 403s. Keep in step with applications/frontend/values.yaml
+  # ingress.host.
+  allowedOrigins: "freecloudinitiative.com"
 
 config:
   logLevel: info

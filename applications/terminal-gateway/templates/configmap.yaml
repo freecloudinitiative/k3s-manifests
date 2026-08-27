@@ -33,5 +33,8 @@ data:
   PING_INTERVAL: {{ .Values.websocket.pingInterval | quote }}
   PONG_TIMEOUT: {{ .Values.websocket.pongTimeout | quote }}
   WS_MAX_MESSAGE_SIZE: {{ .Values.websocket.maxMessageSize | quote }}
+{{- if not .Values.websocket.allowedOrigins }}
+{{- fail "websocket.allowedOrigins must not be empty: an empty origin allow-list rejects every proxied WebSocket handshake (see plans/PR-01)" }}
+{{- end }}
   ALLOWED_ORIGINS: {{ .Values.websocket.allowedOrigins | quote }}
   KUBERNETES_ENABLED: {{ .Values.kubernetes.enabled | quote }}

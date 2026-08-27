@@ -73,6 +73,8 @@ spec:
               value: /etc/compute-service/internal/internal-public.pem
             - name: TERMINAL_GATEWAY_PUBLIC_KEY_PATH
               value: /etc/compute-service/terminal-gateway/terminal-gateway-public.pem
+            - name: DATABASE_SERVICE_PUBLIC_KEY_PATH
+              value: /etc/compute-service/database-service/internal-public.pem
             - name: SERVICE_AUDIENCE
               value: compute-service
             - name: IAM_SERVICE_URL
@@ -167,6 +169,9 @@ spec:
             - name: terminal-gateway-public-key
               mountPath: /etc/compute-service/terminal-gateway
               readOnly: true
+            - name: database-service-public-key
+              mountPath: /etc/compute-service/database-service
+              readOnly: true
             - name: valkey-ca
               mountPath: /etc/compute-service/valkey
               readOnly: true
@@ -208,6 +213,14 @@ spec:
             items:
               - key: {{ .Values.secrets.terminalGatewayPublicKey.keyName }}
                 path: terminal-gateway-public.pem
+            defaultMode: 0444
+        - name: database-service-public-key
+          secret:
+            secretName: {{ .Values.secrets.databaseServicePublicKey.secretName }}
+            optional: true
+            items:
+              - key: {{ .Values.secrets.databaseServicePublicKey.keyName }}
+                path: internal-public.pem
             defaultMode: 0444
         - name: valkey-ca
           secret:

@@ -121,6 +121,36 @@ disables direct-call verification for the one route it covers.
 | `storage-service` | *(none — Secret name is hardcoded, not chart-owned)* | No | Mounts the existing `compute-service-public-key` Secret (namespace `backend`, created by `infrastructure/external-secrets/external-secret-iam.yaml`) as `optional: true`, sets `COMPUTE_SERVICE_PUBLIC_KEY_PATH=/etc/storage-service/compute-service/internal-public.pem`. Enables verifying `compute-service`'s direct call to `POST /internal/accounts/{accountID}/backup-bucket`. |
 | `compute-service` | `secrets.databaseServicePublicKey` | No | Mounts the existing `database-service-public-key` Secret (namespace `backend`) as `optional: true`, sets `DATABASE_SERVICE_PUBLIC_KEY_PATH=/etc/compute-service/database-service/internal-public.pem`. Enables verifying `database-service`'s direct call to `POST /internal/accounts/{accountID}/namespace`. |
 
+## Compute Backups
+
+`applications/compute-service/values.yaml`'s `backup:` block wires the nightly
+compute-engine disk-backup scheduler (`internal/reconcile/backup.go` in
+`compute-service`). It defaults `enabled: false` — flipping it to `true`
+requires, in order:
+
+1. `compute-service` PR-01 (fixes the direct-call issuer so
+   `ResolveTarget` against storage-service doesn't 401 on every pass), and
+2. `compute-service` PR-04 (publishes the `compute-data-job` image this
+   chart's `backup.jobImage` must reference).
+
+Turning `backup.enabled=true` before both land produces a nightly cron of
+guaranteed failures.
+
+| Value | Required when enabled | Contract |
+|---|---|---|
+| `backup.enabled` | — | Gates `BACKUP_ENABLED` and every other `BACKUP_*` env var, the `backup-objectstore-credentials` volume/mount, and the `garage:3900` NetworkPolicy egress rule — all render only when `true`. |
+| `backup.jobImage` | Yes | Must be digest-pinned (`…@sha256:<64 hex>`); a `{{- fail }}` guard in `templates/deployment.yaml` mirrors `compute-service/internal/config/config.go`'s `Validate()` and rejects a tag at render time. |
+| `backup.schedule`, `backup.retentionDays`, `backup.concurrencyPerNode` | No (defaults match compute-service's own Go defaults) | Standard 5-field cron, retention window, and per-node concurrency cap. |
+| `backup.bucketEndpoint` | Yes | Rendered as `BACKUP_ENDPOINT` (not `BACKUP_BUCKET_ENDPOINT` — the values key and the env var name diverge here). storage-service's own base URL, used to resolve each account's backup bucket via `POST /internal/accounts/{accountID}/backup-bucket`. |
+| `backup.region` | No | Rendered as `BACKUP_REGION`; empty string is a valid default, matching compute-service's Go default. |
+| *(none — Secret name is hardcoded, not chart-owned)* | Yes | Mounts the existing `storage-service-objectstore-credentials` Secret (namespace `backend`, created by `infrastructure/external-secrets/external-secret-storage.yaml`) at `/etc/compute-service/backup-objectstore`, sets `BACKUP_ACCESS_KEY_FILE` / `BACKUP_SECRET_KEY_FILE`. Reuses storage-service's Garage credentials rather than provisioning a second copy — compute-service's own scheduler deletes expired backup objects directly from Garage during retention sweeps, bypassing storage-service. |
+
+RBAC needs no chart change: `compute-service/internal/k8s/rbac.go`'s
+`compute-service-workloads` Role (applied per-namespace by compute-service
+itself at runtime, not by this chart's static `clusterrole.yaml` — see
+"Namespace-Template ClusterRoles" above) already grants `batch/jobs`
+`create`/`get`/`list`/`watch`/`delete`.
+
 ## How to Run Validation Locally
 
 Install Helm, yamllint, kubeconform, and helm-unittest plugin:

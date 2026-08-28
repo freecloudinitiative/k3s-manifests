@@ -565,9 +565,12 @@ running.** Nothing merges or promotes automatically; a stale pin here is silent 
 checks.
 
 `scripts/check-image-digests.sh` (`make check-digests`) detects that drift: for each app, it
-compares the pinned `image.digest` against the digest currently published for
-`image.repository:<tag>` (default tag `latest`, override with `--tag`), and exits non-zero listing
-any service whose pin is stale. It requires `crane` and `yq` on `PATH`. Registry auth: set
+compares the pinned `image.digest` against the digest published for `sha-<commit SHA>`, where
+`<commit SHA>` is the tip of the default branch of the matching `github.com/<owner>/<svc>` source
+repo (there is no floating `latest` tag to compare against — CI tags images `sha-<commit SHA>` per
+commit, and `disallow-latest-tag` actively forbids `latest` in this cluster). `--tag <tag>`
+compares against an exact tag instead. It exits non-zero listing any service whose pin is stale,
+and requires `crane`, `yq`, and an authenticated `gh` (GitHub CLI) on `PATH`. Registry auth: set
 `GHCR_USERNAME`/`GHCR_TOKEN` (for `ghcr.io` repositories) and/or
 `REGISTRY_USERNAME`/`REGISTRY_PASSWORD` (for `registry.freecloudinitiative.com`, once charts switch
 to it) — these mirror the `ghcr-username`/`ghcr-token` and `pull-username`/`pull-password` keys

@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 # Reports whether each applications/<svc>/app.yaml's pinned image.digest
-# matches the digest currently published for image.repository:<tag>.
+# matches the digest published for the tip of the source repo's default
+# branch. CI tags images sha-<commit SHA> per commit (see
+# applications/*/values.yaml comments and ARCHITECTURE.md) — there is no
+# floating "latest" tag, and one is actively forbidden by the
+# disallow-latest-tag Kyverno policy, so the tag to check is derived per
+# service rather than assumed.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 APPLICATIONS_DIR="$REPO_ROOT/applications"
 
-TAG="latest"
+OVERRIDE_TAG=""
 QUIET=0
 ONLY_SERVICE=""
 
@@ -16,21 +21,25 @@ usage() {
 Usage: check-image-digests.sh [--service <name>] [--tag <tag>] [--quiet]
 
 For each applications/<svc>/app.yaml, compares the pinned image.digest
-(read from spec.source.helm.parameters) against the digest currently
-published for that chart's image.repository:<tag> (default tag: latest).
-Exits non-zero if any service's pinned digest is stale.
+(read from spec.source.helm.parameters) against the digest published for
+sha-<commit SHA>, where <commit SHA> is the tip of the default branch of
+the matching github.com/<owner>/<svc> source repo (derived from
+image.repository). Exits non-zero if any service's pinned digest is stale.
 
-Requires: crane (https://github.com/google/go-containerregistry)
+Requires: crane (https://github.com/google/go-containerregistry),
+gh (GitHub CLI, authenticated)
 
 Auth: if GHCR_USERNAME/GHCR_TOKEN and/or REGISTRY_USERNAME/REGISTRY_PASSWORD
 are set, this script runs `crane auth login` for the relevant registry
 host(s) (ghcr.io / registry.freecloudinitiative.com) before checking. If
 unset, it relies on crane's default docker-config auth — i.e. you already
-ran `docker login`/`crane auth login` yourself.
+ran `docker login`/`crane auth login` yourself. GitHub auth comes from `gh`'s
+own login state.
 
 Options:
   --service <name>   Check only applications/<name>.
-  --tag <tag>         Tag to compare pinned digests against (default: latest).
+  --tag <tag>         Compare against this exact tag instead of deriving
+                      sha-<commit SHA> from the source repo's default branch.
   --quiet             Suppress OK lines; print only STALE lines and errors.
   -h, --help          Show this help.
 EOF
@@ -43,7 +52,7 @@ while [ $# -gt 0 ]; do
       shift 2
       ;;
     --tag)
-      TAG="${2:?--tag requires a value}"
+      OVERRIDE_TAG="${2:?--tag requires a value}"
       shift 2
       ;;
     --quiet)
@@ -62,16 +71,12 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if ! command -v crane >/dev/null 2>&1; then
-  echo "check-image-digests.sh: crane is required but not found on PATH" >&2
-  echo "  https://github.com/google/go-containerregistry#installation" >&2
-  exit 2
-fi
-
-if ! command -v yq >/dev/null 2>&1; then
-  echo "check-image-digests.sh: yq is required but not found on PATH" >&2
-  exit 2
-fi
+for bin in crane yq gh; do
+  if ! command -v "$bin" >/dev/null 2>&1; then
+    echo "check-image-digests.sh: $bin is required but not found on PATH" >&2
+    exit 2
+  fi
+done
 
 LOGGED_IN_HOSTS=""
 
@@ -98,6 +103,9 @@ login_host_if_needed() {
     crane auth login "$host" -u "$user" -p "$pass" >/dev/null
   fi
 }
+
+ERR_FILE="$(mktemp)"
+trap 'rm -f "$ERR_FILE"' EXIT
 
 status=0
 matched=0
@@ -132,18 +140,29 @@ for app_yaml in "$APPLICATIONS_DIR"/*/app.yaml; do
   fi
 
   host="${repository%%/*}"
+  owner_repo="${repository#*/}"
+
+  if [ -n "$OVERRIDE_TAG" ]; then
+    tag="$OVERRIDE_TAG"
+  else
+    if ! commit_sha="$(gh api "repos/$owner_repo/commits" -q '.[0].sha' 2>"$ERR_FILE")"; then
+      echo "ERROR  $svc  failed to look up latest commit for github.com/$owner_repo: $(cat "$ERR_FILE")" >&2
+      status=1
+      continue
+    fi
+    tag="sha-$commit_sha"
+  fi
+
   login_host_if_needed "$host"
 
-  if ! published_digest="$(crane digest "$repository:$TAG" 2>/tmp/check-image-digests.$$.err)"; then
-    echo "ERROR  $svc  failed to resolve $repository:$TAG: $(cat /tmp/check-image-digests.$$.err)" >&2
-    rm -f "/tmp/check-image-digests.$$.err"
+  if ! published_digest="$(crane digest "$repository:$tag" 2>"$ERR_FILE")"; then
+    echo "ERROR  $svc  failed to resolve $repository:$tag: $(cat "$ERR_FILE")" >&2
     status=1
     continue
   fi
-  rm -f "/tmp/check-image-digests.$$.err"
 
   if [ "$pinned_digest" != "$published_digest" ]; then
-    printf 'STALE  %s  pinned %.16s…  published %.16s…\n' "$svc" "$pinned_digest" "$published_digest"
+    printf 'STALE  %s  pinned %.16s…  published %.16s… (%s)\n' "$svc" "$pinned_digest" "$published_digest" "$tag"
     status=1
   elif [ "$QUIET" -ne 1 ]; then
     printf 'OK     %s  %.16s…\n' "$svc" "$pinned_digest"

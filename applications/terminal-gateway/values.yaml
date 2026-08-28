@@ -88,6 +88,12 @@ websocket:
   # ingress.host.
   allowedOrigins: "freecloudinitiative.com"
 
+consoleTicket:
+  # Reject a handshake whose client IP does not match the IP the ticket was
+  # minted for. MUST equal applications/api-gateway/values.yaml
+  # config.consoleTicketBindIP.
+  bindIP: true
+
 config:
   logLevel: info
   environment: production

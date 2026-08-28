@@ -101,11 +101,18 @@ assertion because it is awkward in YAML.
 Charts that `fail` when `image.tag` and `image.digest` are both empty need
 a tag to render. Validation passes `--set image.tag=ci`.
 
+## API Gateway Values
+
+| Value | Required | Contract |
+|---|---|---|
+| `config.consoleTicketBindIP` | No; defaults to `true` | Binds minted console tickets to the client IP derived from the left-most `X-Forwarded-For` entry. Must equal terminal-gateway's `consoleTicket.bindIP`. The secure `true` default depends on api-gateway PR-30 preserving the inbound forwarding chain. |
+
 ## Terminal Gateway Values
 
 | Value | Required | Contract |
 |---|---|---|
 | `websocket.allowedOrigins` | Yes; must be non-empty | Comma-separated WebSocket origin allow-list. Must track `applications/frontend/values.yaml` `ingress.host`; use a bare host without a scheme or port. |
+| `consoleTicket.bindIP` | No; defaults to `true` | Rejects ticket redemption when the handshake client IP differs from the minting IP. Must equal api-gateway's `config.consoleTicketBindIP`; a mismatch either silently drops binding or makes every bound redemption fail. The secure `true` default depends on api-gateway PR-30. |
 
 ## Direct-Call Public Keys
 

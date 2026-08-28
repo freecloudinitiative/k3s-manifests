@@ -132,6 +132,13 @@ config:
   authentikClientID: "freecloudinitiative-frontend"
   # Allowed CORS origins — must match the SPA's public origin (blueprint.yaml `redirect_uris`).
   allowedOrigins: "https://freecloudinitiative.com"
+  # Bind each console ticket to the client IP that minted it, derived from the
+  # left-most X-Forwarded-For entry. MUST equal
+  # applications/terminal-gateway/values.yaml consoleTicket.bindIP — a ticket
+  # minted with binding on and redeemed with it off silently drops the check,
+  # and the reverse never matches. Requires api-gateway PR-30: without it the
+  # gateway rewrites X-Forwarded-For on the /ws/ hop and every redemption fails.
+  consoleTicketBindIP: true
   # bare host:port, no scheme — platform-common rejects a URL scheme for OTLP gRPC
   otelEndpoint: "opentelemetry-collector.monitoring.svc.cluster.local:4317"
 

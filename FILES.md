@@ -241,3 +241,14 @@ applications/frontend/
   values.yaml                                 Default values.
   templates/                                  7 Kubernetes templates + _helpers.tpl (includes Ingress).
 ```
+
+---
+
+## scripts/
+
+Repo-local checks. Not wired into CI; a workflow can call these directly.
+
+```
+check-image-digests.sh                        Reports app.yaml image.digest pins that lag the
+                                               published image (see APPS.md). make check-digests.
+```

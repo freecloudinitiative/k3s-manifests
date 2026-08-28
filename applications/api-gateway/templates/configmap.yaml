@@ -24,6 +24,10 @@ data:
   OIDC_JWKS_URL: {{ .Values.config.authentikJWKSURL | quote }}
   OIDC_CLIENT_ID: {{ .Values.config.authentikClientID | quote }}
   ALLOWED_ORIGINS: {{ .Values.config.allowedOrigins | quote }}
+{{- if not (kindIs "bool" .Values.config.consoleTicketBindIP) }}
+{{- fail "config.consoleTicketBindIP must be a boolean, and must equal terminal-gateway consoleTicket.bindIP: a mismatch between mint and redeem silently disables or permanently breaks console ticket IP binding" }}
+{{- end }}
+  CONSOLE_TICKET_BIND_IP: {{ .Values.config.consoleTicketBindIP | quote }}
   OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.config.otelEndpoint | quote }}
   # The signing key is mounted as a file; this variable points to the mount path.
   INTERNAL_SIGNING_KEY_PATH: "/etc/fci/keys/internal-signing.key"

@@ -37,4 +37,8 @@ data:
 {{- fail "websocket.allowedOrigins must not be empty: an empty origin allow-list rejects every proxied WebSocket handshake (see plans/PR-01)" }}
 {{- end }}
   ALLOWED_ORIGINS: {{ .Values.websocket.allowedOrigins | quote }}
+{{- if not (kindIs "bool" .Values.consoleTicket.bindIP) }}
+{{- fail "consoleTicket.bindIP must be a boolean, and must equal api-gateway config.consoleTicketBindIP: a mismatch between mint and redeem silently disables or permanently breaks console ticket IP binding" }}
+{{- end }}
+  TICKET_BIND_IP: {{ .Values.consoleTicket.bindIP | quote }}
   KUBERNETES_ENABLED: {{ .Values.kubernetes.enabled | quote }}

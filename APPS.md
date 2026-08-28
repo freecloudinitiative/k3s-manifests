@@ -555,6 +555,57 @@ No Ingress. NetworkPolicy admits `backend` only. frontend nginx proxies `/ws/` �
 
 ---
 
+## Image digest drift
+
+All seven `applications/*/app.yaml` pin `image.digest` by hand via `helm.parameters` — there is no
+in-cluster image updater (no Argo CD Image Updater, no Flux automation). A service release is not
+actually deployed until its digest is bumped here: **Argo CD reporting `Synced`/`Healthy` only
+means the pinned digest matches what's running — it does not mean the newest service build is
+running.** Nothing merges or promotes automatically; a stale pin here is silent until someone
+checks.
+
+`scripts/check-image-digests.sh` (`make check-digests`) detects that drift: for each app, it
+compares the pinned `image.digest` against the digest published for `sha-<commit SHA>`, where
+`<commit SHA>` is the newest commit on the default branch of the matching
+`github.com/<owner>/<svc>` source repo that actually has a published image (there is no floating
+`latest` tag to compare against — CI tags images `sha-<commit SHA>` per commit, and
+`disallow-latest-tag` actively forbids `latest` in this cluster). The image-build workflow runs
+asynchronously after a commit lands, so the script walks back through recent commits rather than
+assuming the branch tip is already published. `--tag <tag>` compares against an exact tag instead.
+It exits non-zero listing any service whose pin is stale,
+and requires `crane`, `yq`, and an authenticated `gh` (GitHub CLI) on `PATH`. Registry auth: set
+`GHCR_USERNAME`/`GHCR_TOKEN` (for `ghcr.io` repositories) and/or
+`REGISTRY_USERNAME`/`REGISTRY_PASSWORD` (for `registry.freecloudinitiative.com`, once charts switch
+to it) — these mirror the `ghcr-username`/`ghcr-token` and `pull-username`/`pull-password` keys
+already stored at OpenBao `secret/data/zot-registry` for `zot-registry-pull-credentials`. If unset,
+the script falls back to crane's default docker-config auth (i.e. a prior manual
+`docker login`/`crane auth login`).
+
+This script is not wired into a workflow (`.github/` is out of scope here) — it's a check CI can
+call later. See `k3s-manifests/plans/PR-06-automate-image-digest-updates.md` for the full
+rationale, including why an automatic image updater is a separate, deliberately deferred decision.
+
+---
+
+## Not provisioned
+
+### Kata Containers node pool
+
+`compute-service`'s API declares `instanceType: dedicated`, which is meant to run inside a Kata
+Containers VM for hardware-level isolation. Neither this repo nor `ansible-automation` provisions
+it: no `RuntimeClass`, no `fci.io/runtime=kata` node label or taint, no `kata-deploy`
+installation. `compute-service/internal/instancetype.Checker` fails closed, so every `dedicated`
+create is correctly rejected with `invalid_input` rather than scheduling a pod that can never
+start.
+
+This is a tracked decision, not a defect: Kata's default hypervisor (`kata-qemu`) needs nested
+virtualization the cluster's Raspberry Pi (arm64) hardware doesn't provide, so a Kata pool would
+realistically require adding non-Pi (`x86`) nodes to the cluster. See
+`k3s-manifests/plans/PR-05-resolve-kata-node-pool.md` for the full analysis and the provisioning
+path if this is ever brought into scope.
+
+---
+
 ## External Prerequisites
 
 ### OpenBao

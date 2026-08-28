@@ -1,4 +1,4 @@
-.PHONY: lint template schema unittest kyverno-test validate
+.PHONY: lint template schema unittest kyverno-test validate check-digests
 
 FIND_CHARTS = find infrastructure applications -type f -name Chart.yaml -exec dirname {} \;
 HELM_SET = --set image.tag=ci
@@ -49,3 +49,6 @@ kyverno-test:
 	fi
 
 validate: lint template schema unittest kyverno-test
+
+check-digests:
+	@./scripts/check-image-digests.sh

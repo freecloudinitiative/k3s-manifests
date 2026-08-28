@@ -22,9 +22,12 @@ Usage: check-image-digests.sh [--service <name>] [--tag <tag>] [--quiet]
 
 For each applications/<svc>/app.yaml, compares the pinned image.digest
 (read from spec.source.helm.parameters) against the digest published for
-sha-<commit SHA>, where <commit SHA> is the tip of the default branch of
-the matching github.com/<owner>/<svc> source repo (derived from
-image.repository). Exits non-zero if any service's pinned digest is stale.
+sha-<commit SHA>, where <commit SHA> is the newest commit on the default
+branch of the matching github.com/<owner>/<svc> source repo (derived from
+image.repository) that actually has a published image — the image-build
+workflow runs asynchronously after a commit lands, so this walks back
+through recent commits rather than assuming the tip is already published.
+Exits non-zero if any service's pinned digest is stale.
 
 Requires: crane (https://github.com/google/go-containerregistry),
 gh (GitHub CLI, authenticated)
@@ -141,24 +144,48 @@ for app_yaml in "$APPLICATIONS_DIR"/*/app.yaml; do
 
   host="${repository%%/*}"
   owner_repo="${repository#*/}"
+  login_host_if_needed "$host"
 
   if [ -n "$OVERRIDE_TAG" ]; then
     tag="$OVERRIDE_TAG"
-  else
-    if ! commit_sha="$(gh api "repos/$owner_repo/commits" -q '.[0].sha' 2>"$ERR_FILE")"; then
-      echo "ERROR  $svc  failed to look up latest commit for github.com/$owner_repo: $(cat "$ERR_FILE")" >&2
+    if ! published_digest="$(crane digest "$repository:$tag" 2>"$ERR_FILE")"; then
+      echo "ERROR  $svc  failed to resolve $repository:$tag: $(cat "$ERR_FILE")" >&2
       status=1
       continue
     fi
-    tag="sha-$commit_sha"
-  fi
+  else
+    # The image-build workflow publishes asynchronously after a commit lands
+    # (ARCHITECTURE.md: "Publish must succeed before tag is promoted"), so the
+    # default branch tip may not have a published image yet. Walk back through
+    # recent commits and compare against the newest one that does.
+    if ! commit_shas="$(gh api "repos/$owner_repo/commits" -q '.[].sha' 2>"$ERR_FILE")"; then
+      echo "ERROR  $svc  failed to look up commits for github.com/$owner_repo: $(cat "$ERR_FILE")" >&2
+      status=1
+      continue
+    fi
 
-  login_host_if_needed "$host"
+    tag=""
+    published_digest=""
+    behind=0
+    while IFS= read -r commit_sha; do
+      candidate_tag="sha-$commit_sha"
+      if published_digest="$(crane digest "$repository:$candidate_tag" 2>"$ERR_FILE")"; then
+        tag="$candidate_tag"
+        break
+      fi
+      behind=$((behind + 1))
+    done <<EOF
+$commit_shas
+EOF
 
-  if ! published_digest="$(crane digest "$repository:$tag" 2>"$ERR_FILE")"; then
-    echo "ERROR  $svc  failed to resolve $repository:$tag: $(cat "$ERR_FILE")" >&2
-    status=1
-    continue
+    if [ -z "$tag" ]; then
+      echo "ERROR  $svc  no published image found for any of the last $behind commits on github.com/$owner_repo's default branch" >&2
+      status=1
+      continue
+    fi
+    if [ "$behind" -gt 0 ] && [ "$QUIET" -ne 1 ]; then
+      echo "NOTE   $svc  default branch is $behind commit(s) ahead of the newest published image; comparing against $tag" >&2
+    fi
   fi
 
   if [ "$pinned_digest" != "$published_digest" ]; then

@@ -128,24 +128,21 @@ metrics:
 
 instanceTypeCacheTTL: 5m
 
-# events.enabled publishes instance state-change events to Valkey Pub/Sub.
-# Off by default: no subscriber exists yet.
-events:
+# backup -- nightly crash-consistent compute-engine disk backups.
+# Off by default. Do NOT enable before compute-service PR-01 (direct-call
+# issuer fix) is deployed: every pass would fail at ResolveTarget with a 401
+# from storage-service. Also requires compute-service PR-04 (data-job image)
+# to exist so backup.jobImage has something to reference.
+backup:
   enabled: false
+  schedule: "0 2 * * *"
+  retentionDays: 7
+  concurrencyPerNode: 1
+  region: ""
+  # Digest-pinned. compute-service config.Validate rejects a tag.
+  jobImage: ""
+  bucketEndpoint: "http://storage-service.backend.svc.cluster.local"
 
-# Backups (BACKUP_ENABLED and friends in internal/config/config.go) are
-# deliberately off for v1 — not set here, so the service default
-# (BACKUP_ENABLED=false) applies. This is a decision, not an oversight;
-# see APPS.md's compute-service section.
-#
-# Enabling requires wiring, none of which exists in this repo yet:
-#   - BACKUP_JOB_IMAGE: a published, digest-pinned backup job image
-#   - BACKUP_ENDPOINT / BACKUP_REGION / BACKUP_ACCESS_KEY / BACKUP_SECRET_KEY:
-#     credentials for the storage-service backup bucket (its
-#     POST /internal/accounts/{accountID}/backup-bucket route is already
-#     deployed and reachable — only compute-service's side is missing)
-#   - kubernetes.enabled must stay true (already the case)
-#
 # Restore is a separate, unrelated v1 decision: it is intentionally never
 # exposed via HTTP regardless of this setting (see compute-service/README.md
 # and the TestRestore_NoRouteExposed guard test).

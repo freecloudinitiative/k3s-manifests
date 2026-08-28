@@ -136,8 +136,29 @@ spec:
             {{- end }}
             - name: INSTANCE_TYPE_CACHE_TTL
               value: {{ .Values.instanceTypeCacheTTL | quote }}
-            - name: EVENTS_ENABLED
-              value: {{ .Values.events.enabled | quote }}
+            - name: BACKUP_ENABLED
+              value: {{ .Values.backup.enabled | quote }}
+            {{- if .Values.backup.enabled }}
+            {{- if not (regexMatch "@sha256:[0-9a-f]{64}$" .Values.backup.jobImage) }}
+            {{- fail "backup.jobImage must be digest-pinned (…@sha256:<64 hex>) when backup.enabled is true" }}
+            {{- end }}
+            - name: BACKUP_SCHEDULE
+              value: {{ .Values.backup.schedule | quote }}
+            - name: BACKUP_RETENTION_DAYS
+              value: {{ .Values.backup.retentionDays | quote }}
+            - name: BACKUP_CONCURRENCY_PER_NODE
+              value: {{ .Values.backup.concurrencyPerNode | quote }}
+            - name: BACKUP_JOB_IMAGE
+              value: {{ .Values.backup.jobImage | quote }}
+            - name: BACKUP_ENDPOINT
+              value: {{ .Values.backup.bucketEndpoint | quote }}
+            - name: BACKUP_REGION
+              value: {{ .Values.backup.region | quote }}
+            - name: BACKUP_ACCESS_KEY_FILE
+              value: /etc/compute-service/backup-objectstore/access-key
+            - name: BACKUP_SECRET_KEY_FILE
+              value: /etc/compute-service/backup-objectstore/secret-key
+            {{- end }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               # bare host:port, no scheme — platform-common rejects a URL scheme for OTLP gRPC
               value: {{ .Values.config.otelEndpoint | quote }}
@@ -175,6 +196,11 @@ spec:
             - name: valkey-ca
               mountPath: /etc/compute-service/valkey
               readOnly: true
+            {{- if .Values.backup.enabled }}
+            - name: backup-objectstore-credentials
+              mountPath: /etc/compute-service/backup-objectstore
+              readOnly: true
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -229,6 +255,22 @@ spec:
               - key: {{ .Values.secrets.valkeyCACert.keyName }}
                 path: ca.crt
             defaultMode: 0444
+        {{- if .Values.backup.enabled }}
+        # Reuses storage-service's Garage credentials — not chart-owned by
+        # compute-service — so the backup scheduler can delete expired
+        # objects directly from Garage without a second copy of the
+        # credential. See CHARTS.md's Direct-Call Public Keys precedent for
+        # this hardcoded-cross-service-Secret-name pattern.
+        - name: backup-objectstore-credentials
+          secret:
+            secretName: storage-service-objectstore-credentials
+            defaultMode: 0444
+            items:
+              - key: access-key
+                path: access-key
+              - key: secret-key
+                path: secret-key
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

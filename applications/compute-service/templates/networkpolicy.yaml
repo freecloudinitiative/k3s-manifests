@@ -86,6 +86,17 @@ spec:
           port: 9090
         - protocol: TCP
           port: 4317
+    {{- if .Values.backup.enabled }}
+    # garage — the backup scheduler deletes expired backup objects
+    # directly from Garage's S3 API during retention sweeps.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: garage
+      ports:
+        - protocol: TCP
+          port: 3900
+    {{- end }}
     # customer namespaces — compute-service creates and manages workloads
     # in fci-cust-* namespaces. The wildcard cannot be expressed in a
     # NetworkPolicy namespaceSelector; runtime access is enforced by RBAC

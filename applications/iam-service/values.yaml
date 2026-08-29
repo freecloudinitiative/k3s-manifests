@@ -151,9 +151,19 @@ config:
   authentikReconcileEnabled: true
   authentikReconcileInterval: 15m
   authentikReconcileAdopt: true
-  # Authentik group UUIDs for admin/editor/viewer/auditor roles. Empty skips
-  # group assignment for that role — never fatal. These groups don't exist
-  # yet in infrastructure/authentik/blueprint.yaml; fill in after creation.
+  # Authentik group UUIDs (pk), not names — iam-service calls
+  # /api/v3/core/groups/{pk}/add_user/. Blueprints create groups by name and
+  # generate the pk, so these cannot be known until after
+  # infrastructure/authentik/blueprint.yaml has applied. Two-step:
+  #
+  #   1. Sync the authentik Application, wait for the blueprint to reconcile.
+  #   2. Read the four pks and commit them here:
+  #      kubectl -n authentik exec deploy/authentik-server -- \
+  #        ak shell -c "from authentik.core.models import Group; \
+  #        print({g.name: str(g.pk) for g in Group.objects.filter(name__startswith='fci-')})"
+  #
+  # Empty is a supported state — group assignment is skipped, never fatal — but
+  # role-based access via Authentik does not work until these are filled.
   authentikGroupAdmin: ""
   authentikGroupEditor: ""
   authentikGroupViewer: ""

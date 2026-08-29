@@ -94,6 +94,14 @@ kubernetes:
 # is unrelated to and does not change that path.
 networkPolicy:
   enabled: true
+  # k3s's default kubernetes Service address. Confirmed 2026-08-29 alongside
+  # clusterCIDRs above — same underlying cluster fact, must change together.
+  # Previously this chart's egress rule opened the whole service CIDR
+  # (10.43.0.0/16); narrowed to /32 to match its three peer charts
+  # (compute-service, database-service, terminal-gateway) once confirming that
+  # storage-service/internal/k8s/ only ever reaches the Kubernetes API server
+  # through this ipBlock — never another in-cluster Service.
+  kubernetesAPIServerCIDR: 10.43.0.1/32
 
 objectStore:
   enabled: true
@@ -131,6 +139,13 @@ reconcile:
   maxAttempts: 10
   resyncInterval: 5m
 
+# Confirmed 2026-08-29: ansible-automation/roles/k3s-master-setup/tasks/main.yml
+# passes neither --cluster-cidr nor --service-cidr to the k3s install script for
+# either the primary or joining masters, so the cluster runs k3s's own
+# compiled-in defaults below, not values that could have drifted from an
+# override — no live-cluster query was needed. Two independent checks read
+# these — network-creation overlap refusal and NetworkPolicy output validation
+# — and both fail open if the range is narrower than reality.
 clusterCIDRs:
   pod: 10.42.0.0/16
   service: 10.43.0.0/16

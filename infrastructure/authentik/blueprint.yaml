@@ -67,6 +67,22 @@ data:
         identifiers:
           name: registry-admins
 
+      # FCI IAM role groups. iam-service adds each provisioned user to exactly
+      # one of these, keyed by iam.users.role. Names are a cross-repo contract
+      # with iam-service/internal/authz — do not rename without changing both.
+      - model: authentik_core.group
+        identifiers:
+          name: fci-admin
+      - model: authentik_core.group
+        identifiers:
+          name: fci-editor
+      - model: authentik_core.group
+        identifiers:
+          name: fci-viewer
+      - model: authentik_core.group
+        identifiers:
+          name: fci-auditor
+
       # GRAFANA
       - model: authentik_providers_oauth2.oauth2provider
         id: grafana-provider

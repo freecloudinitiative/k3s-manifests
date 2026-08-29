@@ -102,9 +102,7 @@ spec:
                 value: "fci-cust-*"
     # Token lists mirror compute-service/internal/k8s/rbac.go
     # EnsureNamespaceRBAC. Changing that function without changing these
-    # lists denies every customer namespace provision. compute-service's
-    # internal/k8s/rbac_test.go pins the Go side; kyverno-tests/
-    # restrict-compute-service-rbac-writes pins this side.
+    # lists denies every customer namespace provision.
     - name: restrict-role-content
       match:
         any:

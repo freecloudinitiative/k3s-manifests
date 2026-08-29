@@ -1,0 +1,40 @@
+suite: database-service pod security context contract
+templates:
+  - deployment.yaml
+  # deployment.yaml hashes this template into its rollout annotation.
+  - configmap.yaml
+release:
+  name: database-service
+set:
+  image:
+    tag: t
+tests:
+  - it: sets fsGroup so the container can read its 0400 secret mounts
+    template: deployment.yaml
+    asserts:
+      # Kubelet projects secret volume files root:root unless fsGroup is set.
+      # This chart mounts a secret at defaultMode 0400 and runs as UID 65532,
+      # so without fsGroup the process gets EACCES at startup. Render-time
+      # checks cannot detect that failure.
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 65532
+
+  - it: runs as the non-root UID fsGroup is paired with
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 65532
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+
+  - it: keeps the private signing key at 0400
+    template: deployment.yaml
+    asserts:
+      # Broadening to 0444 would make the key readable by every UID in the
+      # pod. fsGroup, not a wider mode, is the fix for the read failure.
+      - equal:
+          path: spec.template.spec.volumes[?(@.name=='signing-key')].secret.defaultMode
+          value: 256  # Decimal representation of octal 0400.

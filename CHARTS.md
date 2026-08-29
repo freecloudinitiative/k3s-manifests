@@ -63,6 +63,12 @@ Every Kyverno policy with `failureAction: Enforce` must have its own case
 directory under `infrastructure/kyverno-policies/kyverno-tests/`. Audit-only
 policies do not require one.
 
+Every chart mounting a secret at `defaultMode: 0400` under a non-root
+`runAsUser` must set `podSecurityContext.fsGroup` to that UID's group, and must
+carry a `tests/security_test.yaml` asserting it. Without `fsGroup` the file is
+projected `root:root` and the container cannot read it — a startup `EACCES` no
+render-time check can see.
+
 `applications/database-service/tests/rbac_test.yaml` is the first suite in this repo — it locks the
 namespace-template ClusterRole's rendered name (see below) against the security-critical contract
 with compute-service and Kyverno. Other charts have no `tests/` directory yet; `make unittest` finds

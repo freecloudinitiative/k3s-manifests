@@ -1,0 +1,33 @@
+suite: frontend pod security context exception
+templates:
+  - deployment.yaml
+  # deployment.yaml hashes this template into its rollout annotation.
+  - configmap.yaml
+release:
+  name: frontend
+set:
+  image:
+    tag: t
+tests:
+  - it: runs nginx as its non-root UID without an fsGroup
+    template: deployment.yaml
+    asserts:
+      # Frontend mounts no Secret volumes, so it has no root-owned 0400 file
+      # that needs an fsGroup. UID 101 is nginx's intentional runtime user;
+      # adding fsGroup 65532 to match sibling charts would be cargo culting.
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 101
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - notExists:
+          path: spec.template.spec.securityContext.fsGroup
+
+  - it: mounts no secret volume
+    template: deployment.yaml
+    asserts:
+      # If frontend gains a Secret volume, review its mode and add fsGroup
+      # coverage before allowing a 0400 projection into this non-root Pod.
+      - notExists:
+          path: spec.template.spec.volumes[?(@.secret)]

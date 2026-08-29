@@ -40,7 +40,9 @@ rules:
     resources: ["pods"]
     verbs: ["get", "list"]
   - apiGroups: [""]
-    resources: ["pods/exec"]
+    # Intentional test fixture: terminal-gateway requires create on the
+    # pods/exec subresource to establish customer console sessions.
+    resources: ["pods/exec"]  # NOSONAR
     verbs: ["create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1

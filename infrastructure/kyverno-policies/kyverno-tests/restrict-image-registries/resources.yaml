@@ -4,9 +4,17 @@ metadata:
   name: pod-ghcr
   namespace: backend
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: app
       image: ghcr.io/freecloudinitiative/api-gateway@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
 ---
 apiVersion: v1
 kind: Pod
@@ -14,9 +22,17 @@ metadata:
   name: pod-docker-qualified
   namespace: backend
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: cloudflared
       image: docker.io/cloudflare/cloudflared:2026.8.2
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
 ---
 apiVersion: v1
 kind: Pod
@@ -24,9 +40,17 @@ metadata:
   name: pod-docker-bare
   namespace: backend
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: cloudflared
       image: cloudflare/cloudflared:2026.8.2
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
 ---
 apiVersion: v1
 kind: Pod
@@ -34,9 +58,17 @@ metadata:
   name: pod-zot
   namespace: frontend
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: frontend
       image: registry.freecloudinitiative.com/freecloudinitiative/frontend:x
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
 ---
 apiVersion: v1
 kind: Pod
@@ -44,9 +76,17 @@ metadata:
   name: pod-compute-os
   namespace: fci-cust-test
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: instance
       image: ghcr.io/freecloudinitiative/compute-os-debian-12@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
 ---
 apiVersion: v1
 kind: Pod
@@ -54,9 +94,17 @@ metadata:
   name: pod-unlisted-registry
   namespace: frontend
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: app
       image: public.ecr.aws/foo/bar:1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
 ---
 apiVersion: v1
 kind: Pod
@@ -64,12 +112,27 @@ metadata:
   name: pod-bad-initcontainer
   namespace: backend
 spec:
+  automountServiceAccountToken: false
   initContainers:
     - name: init
       image: example/init:1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
   containers:
     - name: app
       image: ghcr.io/freecloudinitiative/api-gateway:1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi
 ---
 apiVersion: v1
 kind: Pod
@@ -77,6 +140,14 @@ metadata:
   name: pod-upstream-out-of-scope
   namespace: longhorn-system
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: manager
       image: longhornio/longhorn-manager:v1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        limits:
+          memory: 128Mi

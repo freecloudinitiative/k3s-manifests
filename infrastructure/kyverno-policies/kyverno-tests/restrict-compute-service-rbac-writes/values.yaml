@@ -1,0 +1,6 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: UserInfo
+metadata:
+  name: compute-service
+userInfo:
+  username: system:serviceaccount:backend:compute-service

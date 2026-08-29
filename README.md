@@ -76,9 +76,12 @@ Export same values, then run bootstrap after Garage pods become Ready:
 ./scripts/garage-bootstrap.sh
 ```
 
-Without bootstrap, `storage-service` can report Ready while every object call
-fails. Current readiness probe calls `ListBuckets`, not configured `platform`
-bucket. PR-05 narrows probe to configured bucket.
+Readiness probe issues `HeadBucket` against configured `OBJECT_STORE_BUCKET`.
+Without bootstrap, `storage-service` stays `NotReady`; it does not serve failing
+calls. `/api/buckets` and `/api/networks` have no healthy endpoint, and
+`compute-service` cannot resolve a backup bucket. Run
+`scripts/garage-bootstrap.sh` after Garage pods become Ready, before
+`storage-service` is expected to serve.
 
 ## How Start
 

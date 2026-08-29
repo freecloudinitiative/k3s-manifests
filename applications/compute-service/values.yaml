@@ -102,6 +102,13 @@ kubernetes:
   terminalGatewayServiceAccountName: terminal-gateway
   terminalGatewayServiceAccountNamespace: backend
 
+# Source Secret compute-service copies into each customer namespace as the
+# instance image-pull Secret. Cross-repo contract: must equal
+# compute-service/internal/k8s/config.go's INSTANCE_PULL_SECRET_SOURCE default.
+# Created by infrastructure/external-secrets/external-secret-registry.yaml.
+instancePullSecret:
+  sourceName: zot-registry-pull-credentials
+
 reconcile:
   interval: 2s
   batchSize: 10

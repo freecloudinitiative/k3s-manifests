@@ -59,16 +59,14 @@ rules:
     resources: ["roles"]
     verbs: ["create", "list", "watch"]
   # get/update/patch/delete carry the object name in the request URL, so
-  # resourceNames restricts them correctly here. "escalate" is likewise
-  # safe to scope: unlike the base "create" authorization check above, the
-  # RBAC self-escalation check runs after the body is decoded and is keyed
-  # on the object's own name, so resourceNames applies to it too. Required
-  # because a subject may only create/update a Role containing rules it
-  # doesn't already hold if it has "escalate" on that Role.
+  # resourceNames restricts them correctly here. The "escalate" and "bind"
+  # checks are also name-keyed and run after the request body is decoded, so
+  # resourceNames applies to both. "escalate" gates Role writes containing
+  # rules the subject lacks; "bind" gates RoleBindings referencing that Role.
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["roles"]
     resourceNames: ["compute-service-workloads", "terminal-gateway-exec"]
-    verbs: ["get", "update", "patch", "delete", "escalate"]
+    verbs: ["get", "update", "patch", "delete", "escalate", "bind"]
   # Create the RoleBindings that grant the above Roles, plus the
   # storage-service-namespace-role / database-service-namespace-role
   # ClusterRoles owned by their respective charts (see role-template.yaml

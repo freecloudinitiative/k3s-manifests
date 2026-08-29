@@ -59,6 +59,10 @@ applications/<service>/
 Suites are YAML at `applications/<service>/tests/*_test.yaml`. Run with
 `helm unittest applications/<service>`.
 
+Every Kyverno policy with `failureAction: Enforce` must have its own case
+directory under `infrastructure/kyverno-policies/kyverno-tests/`. Audit-only
+policies do not require one.
+
 `applications/database-service/tests/rbac_test.yaml` is the first suite in this repo — it locks the
 namespace-template ClusterRole's rendered name (see below) against the security-critical contract
 with compute-service and Kyverno. Other charts have no `tests/` directory yet; `make unittest` finds

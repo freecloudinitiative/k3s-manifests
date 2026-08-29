@@ -97,7 +97,10 @@ spec:
               # object's own name and — unlike request.object.metadata.name
               # — is populated by the API server for update/delete requests
               # too, where request.object may be absent.
-              - key: "{{ request.name }}"
+              # The API server supplies request.name for update/delete;
+              # local CLI create requests do not, so fall back to the
+              # object name while retaining request.name as the authority.
+              - key: "{{ request.name || request.object.metadata.name }}"
                 operator: NotEquals
                 value: "fci-cust-*"
     # Token lists mirror compute-service/internal/k8s/rbac.go
@@ -155,62 +158,32 @@ spec:
                 value:
                   - compute-service-workloads
                   - terminal-gateway-exec
-              - all:
-                  - key: "{{ request.object.metadata.name }}"
-                    operator: Equals
-                    value: compute-service-workloads
-                  - any:
-                      - key: "{{ request.object.rules[].apiGroups[] }}"
-                        operator: AnyNotIn
-                        value:
-                          - ""
-                          - "apps"
-                          - "batch"
-                          - "networking.k8s.io"
-                      - key: "{{ request.object.rules[].resources[] }}"
-                        operator: AnyNotIn
-                        value:
-                          - deployments
-                          - services
-                          - persistentvolumeclaims
-                          - configmaps
-                          - resourcequotas
-                          - limitranges
-                          - secrets
-                          - jobs
-                          - networkpolicies
-                          - pods
-                      - key: "{{ request.object.rules[].verbs[] }}"
-                        operator: AnyNotIn
-                        value:
-                          - create
-                          - get
-                          - list
-                          - watch
-                          - update
-                          - patch
-                          - delete
-                          - deletecollection
-              - all:
-                  - key: "{{ request.object.metadata.name }}"
-                    operator: Equals
-                    value: terminal-gateway-exec
-                  - any:
-                      - key: "{{ request.object.rules[].apiGroups[] }}"
-                        operator: AnyNotIn
-                        value:
-                          - ""
-                      - key: "{{ request.object.rules[].resources[] }}"
-                        operator: AnyNotIn
-                        value:
-                          - pods
-                          - pods/exec
-                      - key: "{{ request.object.rules[].verbs[] }}"
-                        operator: AnyNotIn
-                        value:
-                          - get
-                          - list
-                          - create
+              # Deny conditions cannot nest an `all` block inside `any`.
+              # Select the per-role allowlist with JMESPath instead, then
+              # apply one flat condition for each token dimension.
+              - key: "{{ request.object.rules[].apiGroups[] }}"
+                operator: AnyNotIn
+                value: >-
+                  {{ request.object.metadata.name ==
+                  'compute-service-workloads' &&
+                  `["", "apps", "batch", "networking.k8s.io"]` || `[""]` }}
+              - key: "{{ request.object.rules[].resources[] }}"
+                operator: AnyNotIn
+                value: >-
+                  {{ request.object.metadata.name ==
+                  'compute-service-workloads' &&
+                  `["deployments", "services", "persistentvolumeclaims",
+                  "configmaps", "resourcequotas", "limitranges", "secrets",
+                  "jobs", "networkpolicies", "pods"]` ||
+                  `["pods", "pods/exec"]` }}
+              - key: "{{ request.object.rules[].verbs[] }}"
+                operator: AnyNotIn
+                value: >-
+                  {{ request.object.metadata.name ==
+                  'compute-service-workloads' &&
+                  `["create", "get", "list", "watch", "update", "patch",
+                  "delete", "deletecollection"]` ||
+                  `["get", "list", "create"]` }}
     - name: restrict-rolebinding-content
       match:
         any:

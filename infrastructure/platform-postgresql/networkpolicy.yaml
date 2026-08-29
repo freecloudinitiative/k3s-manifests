@@ -17,6 +17,13 @@ spec:
         - protocol: TCP
           port: 5432
     - from:
+        - podSelector:
+            matchLabels:
+              fci.io/role: db-bootstrap
+      ports:
+        - protocol: TCP
+          port: 5432
+    - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: authentik

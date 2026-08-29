@@ -15,7 +15,7 @@ spec:
     targetRevision: HEAD
     path: infrastructure/platform-postgresql
     directory:
-      include: '{certificate.yaml,cluster.yaml,database-role.yaml,database.yaml,networkpolicy.yaml}'
+      include: '{certificate.yaml,cluster.yaml,database-role.yaml,database.yaml,networkpolicy.yaml,grants-job.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: platform-database

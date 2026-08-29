@@ -33,7 +33,10 @@ spec:
       password_encryption: scram-sha-256
       ssl_min_protocol_version: TLSv1.2
       shared_buffers: 256MB
-      max_connections: "200"
+      # Role limits total 245 of 260; 15 connections remain for CNPG superuser,
+      # replication, and pg_monitor. Higher max_connections increases per-backend
+      # memory on Raspberry Pi nodes; shared_buffers remains 256MB.
+      max_connections: "260"
     pg_hba:
       - hostnossl all all all reject
 

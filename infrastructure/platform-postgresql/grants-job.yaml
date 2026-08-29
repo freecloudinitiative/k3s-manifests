@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: platform-postgresql-grants
+  namespace: platform-database
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        fci.io/role: db-bootstrap
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: grant-database-create
+          image: ghcr.io/cloudnative-pg/postgresql:16@sha256:2df439412099abae19e8d2ccba95a9bc21ee58af4462c9f62d02cd6bdd026dba
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+              ephemeral-storage: 16Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+              ephemeral-storage: 64Mi
+          env:
+            - name: PGHOST
+              value: platform-postgresql-rw.platform-database.svc.cluster.local
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              value: platform
+            - name: PGUSER
+              value: platform
+            - name: PGSSLMODE
+              value: require
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: platform-postgresql-credentials
+                  key: password
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              for attempt in $(seq 1 60); do
+                role_count="$(
+                  psql -XAtqc \
+                    "SELECT count(*) FROM pg_roles WHERE rolname IN ('iam', 'compute', 'database', 'storage');" \
+                    2>/dev/null || true
+                )"
+                if [ "${role_count}" = "4" ]; then
+                  break
+                fi
+                if [ "${attempt}" = "60" ]; then
+                  echo "service roles unavailable after 60 attempts" >&2
+                  exit 1
+                fi
+                sleep 5
+              done
+
+              psql -X -v ON_ERROR_STOP=1 -c \
+                'GRANT CREATE ON DATABASE platform TO iam, compute, "database", storage;'

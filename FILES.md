@@ -127,8 +127,8 @@ infrastructure/garage/
 
 infrastructure/authentik/
   app.yaml                                    ArgoCD Application for Authentik Helm chart.
-  values.yaml                                 Authentik config: 2 server + 2 worker, Postgres, Let's Encrypt TLS. blueprints.configMaps: [].
-  blueprint.yaml                              Authentik Blueprint ConfigMap (not mounted; values leave configMaps empty).
+  values.yaml                                 Authentik config: 2 server + 2 worker, Postgres, Let's Encrypt TLS. blueprints.configMaps: [authentik-blueprints].
+  blueprint.yaml                              Authentik Blueprint ConfigMap: frontend OIDC provider and redirect URI, four fci-* role groups, Grafana/ArgoCD/Zot/Prometheus providers.
   certificate.yaml                            TLS certificate for Authentik (Let's Encrypt).
   networkpolicy.yaml                          NetworkPolicy for Authentik namespaced traffic.
   service-account.yaml                        ServiceAccount for Authentik runtime.

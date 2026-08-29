@@ -264,6 +264,7 @@ Role limits total 245 of `max_connections: 260`, leaving 15 for CNPG operations.
 - Region: `fci-local`.
 - S3 API in-cluster only (`ingress.s3.api.enabled: false`).
 - Prometheus ServiceMonitor enabled.
+- Bootstrap: layout, bucket, key created out of band by `scripts/garage-bootstrap.sh`, not chart.
 
 ---
 

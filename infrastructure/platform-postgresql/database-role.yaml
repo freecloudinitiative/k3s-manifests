@@ -56,6 +56,11 @@ spec:
   createdb: false
   createrole: false
   bypassrls: false
+  # applications/storage-service/templates/deployment.yaml sets DB_MAX_CONNS=10;
+  # applications/storage-service/values.yaml sets replicaCount=2.
+  # Pool ceiling: 10 × 2 = 20; connectionLimit 30 adds 10 rollout-surge headroom.
+  # Role budget: platform=80 + authentik=60 + storage=30 + iam=25 + compute=25
+  #   + database=25 = 245 of max_connections=250.
   connectionLimit: 30
   databaseRoleReclaimPolicy: retain
   passwordSecret:
@@ -77,13 +82,12 @@ spec:
   createdb: false
   createrole: false
   bypassrls: false
-  # DB_MAX_CONNS default: 5 (iam-service internal/config/config.go)
-  # Replicas: 1 (Raspberry Pi cluster, single replica per service)
-  # Formula: DB_MAX_CONNS × replicas = 5 × 1 = 5
-  # Connection-limit budget check (max_connections=200):
-  #   platform=80, authentik=60, storage=30, iam=5, compute=5, database=5 → total 185
-  #   Leaves 15 connections reserved for CNPG superuser, replication, and pg_monitor
-  connectionLimit: 5
+  # applications/iam-service/templates/deployment.yaml sets DB_MAX_CONNS=10;
+  # applications/iam-service/values.yaml sets replicaCount=2.
+  # Pool ceiling: 10 × 2 = 20; connectionLimit 25 adds 5 rollout-surge headroom.
+  # Role budget: platform=80 + authentik=60 + storage=30 + iam=25 + compute=25
+  #   + database=25 = 245 of max_connections=250.
+  connectionLimit: 25
   databaseRoleReclaimPolicy: retain
   passwordSecret:
     name: iam-postgresql-credentials
@@ -104,10 +108,12 @@ spec:
   createdb: false
   createrole: false
   bypassrls: false
-  # DB_MAX_CONNS default: 5 (compute-service internal/config/config.go)
-  # Replicas: 1 (Raspberry Pi cluster, single replica per service)
-  # Formula: DB_MAX_CONNS × replicas = 5 × 1 = 5
-  connectionLimit: 5
+  # applications/compute-service/templates/deployment.yaml sets DB_MAX_CONNS=10;
+  # applications/compute-service/values.yaml sets replicaCount=2.
+  # Pool ceiling: 10 × 2 = 20; connectionLimit 25 adds 5 rollout-surge headroom.
+  # Role budget: platform=80 + authentik=60 + storage=30 + iam=25 + compute=25
+  #   + database=25 = 245 of max_connections=250.
+  connectionLimit: 25
   databaseRoleReclaimPolicy: retain
   passwordSecret:
     name: compute-postgresql-credentials
@@ -128,10 +134,12 @@ spec:
   createdb: false
   createrole: false
   bypassrls: false
-  # DB_MAX_CONNS default: 5 (database-service internal/config/config.go)
-  # Replicas: 1 (Raspberry Pi cluster, single replica per service)
-  # Formula: DB_MAX_CONNS × replicas = 5 × 1 = 5
-  connectionLimit: 5
+  # applications/database-service/values.yaml sets config.databaseMaxConnections=10
+  # (rendered as DB_MAX_CONNS) and replicaCount=2.
+  # Pool ceiling: 10 × 2 = 20; connectionLimit 25 adds 5 rollout-surge headroom.
+  # Role budget: platform=80 + authentik=60 + storage=30 + iam=25 + compute=25
+  #   + database=25 = 245 of max_connections=250.
+  connectionLimit: 25
   databaseRoleReclaimPolicy: retain
   passwordSecret:
     name: database-postgresql-credentials

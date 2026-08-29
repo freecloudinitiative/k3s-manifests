@@ -210,7 +210,7 @@ before the chart version pinned in `infrastructure/kyverno/app.yaml`. Three poli
 - TLS enforced (`hostnossl reject`), password auth `scram-sha-256`.
 - `enableSuperuserAccess: false`.
 - Storage: `local-path`, 20 Gi per instance. Not Longhorn.
-- `max_connections: 200`, `shared_buffers: 256MB`.
+- `max_connections: 250`, `shared_buffers: 256MB`.
 - `primaryUpdateMethod: switchover`.
 - PodMonitor enabled.
 
@@ -223,11 +223,19 @@ Databases: `platform` (default), `authentik`. Four FCI backend services share `p
 | `platform` | — | 80 | `platform-postgresql-credentials` |
 | `authentik` | — | 60 | `authentik-postgresql-credentials` |
 | `storage` | `storage` | 30 | `storage-postgresql-credentials` |
-| `iam` | `iam` | 5 | `iam-postgresql-credentials` |
-| `compute` | `compute` | 5 | `compute-postgresql-credentials` |
-| `database` | `database` | 5 | `database-postgresql-credentials` |
+| `iam` | `iam` | 25 | `iam-postgresql-credentials` |
+| `compute` | `compute` | 25 | `compute-postgresql-credentials` |
+| `database` | `database` | 25 | `database-postgresql-credentials` |
 
-Role comments still say `DB_MAX_CONNS` (5) × 1 replica = 5. Charts now set `replicaCount: 2` and `DB_MAX_CONNS: 10` (compute, iam, storage hardcoded; database-service `config.databaseMaxConnections: 10`). Role limits and chart pools do not match.
+PostSync Job grants `CREATE` on `platform` database to four service roles. Apply grant immediately on an existing cluster:
+
+```bash
+kubectl -n platform-database exec -it platform-postgresql-1 -- \
+  psql -U platform -d platform -c \
+  'GRANT CREATE ON DATABASE platform TO iam, compute, "database", storage;'
+```
+
+Role limits total 245 of `max_connections: 250`. Each service pool ceiling is `DB_MAX_CONNS: 10` × `replicaCount: 2` = 20; limits reserve rollout-surge headroom.
 
 ---
 

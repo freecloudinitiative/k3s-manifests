@@ -31,12 +31,45 @@ EXPECTED_REPLICAS="${GARAGE_EXPECTED_REPLICAS:-3}"
 WAIT_TIMEOUT="${GARAGE_WAIT_TIMEOUT:-10m}"
 POD="${STATEFULSET}-0"
 
-for bin in kubectl awk sed sort; do
+for bin in kubectl awk jq sed sort; do
   if ! command -v "$bin" >/dev/null 2>&1; then
     echo "garage-bootstrap.sh: $bin is required but not found on PATH" >&2
     exit 2
   fi
 done
+
+# Match bytesize 2.3.1 units accepted by Garage. JSON layout reports bytes,
+# avoiding lossy comparison against human-formatted `garage layout show` output.
+if ! capacity_bytes="$(printf '%s\n' "$CAPACITY" | awk '
+  {
+    value = toupper($0)
+    gsub(/[[:space:]]/, "", value)
+    if (value !~ /^[0-9]+([.][0-9]+)?(B|KB|KIB|MB|MIB|GB|GIB|TB|TIB|PB|PIB)?$/) {
+      exit 1
+    }
+    unit = value
+    sub(/^[0-9]+([.][0-9]+)?/, "", unit)
+    number = value
+    sub(/(B|KB|KIB|MB|MIB|GB|GIB|TB|TIB|PB|PIB)$/, "", number)
+    factor = 1
+    if (unit == "KB") factor = 1000
+    if (unit == "KIB") factor = 1024
+    if (unit == "MB") factor = 1000 ^ 2
+    if (unit == "MIB") factor = 1024 ^ 2
+    if (unit == "GB") factor = 1000 ^ 3
+    if (unit == "GIB") factor = 1024 ^ 3
+    if (unit == "TB") factor = 1000 ^ 4
+    if (unit == "TIB") factor = 1024 ^ 4
+    if (unit == "PB") factor = 1000 ^ 5
+    if (unit == "PIB") factor = 1024 ^ 5
+    bytes = int(number * factor)
+    if (bytes < 1) exit 1
+    printf "%.0f\n", bytes
+  }
+')"; then
+  echo "garage-bootstrap.sh: invalid GARAGE_CAPACITY: $CAPACITY" >&2
+  exit 2
+fi
 
 garage() {
   kubectl -n "$NS" exec "$POD" -- /garage "$@"
@@ -62,10 +95,8 @@ if [ "$node_count" != "$EXPECTED_REPLICAS" ]; then
   exit 1
 fi
 
-layout_output="$(garage layout show)"
-current_version="$(printf '%s\n' "$layout_output" | awk -F ': ' '
-  /^Current cluster layout version:/ { print $2; exit }
-')"
+layout_json="$(garage json-api GetClusterLayout)"
+current_version="$(printf '%s\n' "$layout_json" | jq -r '.version // empty')"
 if ! printf '%s\n' "$current_version" | awk '/^[[:digit:]]+$/ { found = 1 } END { exit !found }'; then
   echo "garage-bootstrap.sh: could not read current layout version" >&2
   exit 1
@@ -77,12 +108,13 @@ if [ "$current_version" -eq 0 ]; then
 fi
 while IFS= read -r node_id; do
   [ -n "$node_id" ] || continue
-  if ! printf '%s\n' "$layout_output" | awk -v id="$node_id" '
-    /^==== CURRENT CLUSTER LAYOUT ====$/ { current = 1; next }
-    /^Current cluster layout version:/ { current = 0 }
-    current && $1 == id && $0 !~ /gateway/ { found = 1 }
-    END { exit !found }
-  '; then
+  if ! printf '%s\n' "$layout_json" | jq -e \
+    --arg id "$node_id" \
+    --arg zone "$ZONE" \
+    --argjson capacity "$capacity_bytes" \
+    '[.roles[] | select(.id | startswith($id)) |
+      select(.zone == $zone and .capacity == $capacity)] | length == 1' \
+    >/dev/null; then
     layout_ready=0
   fi
 done <<EOF
@@ -90,7 +122,7 @@ $node_ids
 EOF
 
 if [ "$layout_ready" -eq 1 ]; then
-  echo "Garage layout version $current_version already assigns capacity to all nodes."
+  echo "Garage layout version $current_version already matches zone and capacity."
 else
   echo "Assigning Garage layout..."
   while IFS= read -r node_id; do

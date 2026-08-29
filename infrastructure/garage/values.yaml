@@ -19,7 +19,7 @@ deployment:
 # The upstream chart still defaults to its legacy amd64-only repository. The
 # documented image below is multi-architecture and supports mixed k3s nodes.
 image:
-  repository: dxflrs/garage
+  repository: docker.io/dxflrs/garage
   tag: v2.3.0@sha256:866bd13ed2038ba7e7190e840482bc27234c4afaf77be8cfa439ae088c1e4690
   pullPolicy: IfNotPresent
 

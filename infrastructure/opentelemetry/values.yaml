@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://www.schemastore.org/any.json
 image:
-  repository: otel/opentelemetry-collector-contrib
+  repository: docker.io/otel/opentelemetry-collector-contrib
 
 mode: deployment
 replicaCount: 1

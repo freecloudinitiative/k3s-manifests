@@ -7,13 +7,12 @@ metadata:
     policies.kyverno.io/category: Supply Chain
     policies.kyverno.io/severity: medium
     policies.kyverno.io/description: >-
-      Flags images pulled from outside the approved registry allowlist.
-      Enforced: FCI workloads pull from ghcr.io (PR-04) and
-      registry.freecloudinitiative.com (the platform's own Zot registry —
-      source of customer compute-instance OS images and the target for the
-      backend image migration). docker.io, quay.io, and registry.k8s.io
-      remain allowed for upstream infrastructure charts (Traefik, Longhorn,
-      CNPG, Authentik, kube-prometheus-stack, ...).
+      Constrains images in FCI's own namespaces — the backend and frontend
+      services this repo builds, and the customer workloads compute-service
+      projects into fci-cust-*. Third-party infrastructure charts are pinned
+      by chart version and digest in their own values files and are deliberately
+      out of scope: gating them here turns every upstream chart bump into a
+      policy edit, and the pin is the stronger control.
 spec:
   # spec.validationFailureAction has had no effect since Kyverno 1.13 (the
   # chart pinned in infrastructure/kyverno/app.yaml is 3.8.1, well past
@@ -29,6 +28,10 @@ spec:
           - resources:
               kinds:
                 - Pod
+              namespaces:
+                - backend
+                - frontend
+                - "fci-cust-*"
       validate:
         failureAction: Enforce
         message: "Image registry is not in the approved allowlist."

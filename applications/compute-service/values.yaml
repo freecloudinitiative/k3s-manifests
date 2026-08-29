@@ -129,18 +129,20 @@ metrics:
 instanceTypeCacheTTL: 5m
 
 # backup -- nightly crash-consistent compute-engine disk backups.
-# Off by default. Do NOT enable before compute-service PR-01 (direct-call
-# issuer fix) is deployed: every pass would fail at ResolveTarget with a 401
-# from storage-service. Also requires compute-service PR-04 (data-job image)
-# to exist so backup.jobImage has something to reference.
+# Preconditions closed: issuer fix (compute-service PR-33, merged) makes
+# ResolveTarget match storage-service's expected issuer; digest catalogue
+# gate fixed and passing (compute-service PR-34/PR#83); data-job image
+# published to GHCR nonprod (compute-service PR#84/#85, tag v0.5.0).
 backup:
-  enabled: false
+  enabled: true
   schedule: "0 2 * * *"
   retentionDays: 7
   concurrencyPerNode: 1
-  region: ""
+  # Matches storage-service applications/storage-service/values.yaml
+  # objectStore.region (fci-local) -- a mismatch fails S3 request signing.
+  region: fci-local
   # Digest-pinned. compute-service config.Validate rejects a tag.
-  jobImage: ""
+  jobImage: "ghcr.io/freecloudinitiative/compute-data-job@sha256:e7db325c93f7bf4990b8e1b85b9e0ba0eed2f861894fc688d703416f9cc405d2"
   bucketEndpoint: "http://storage-service.backend.svc.cluster.local"
 
 # Restore is a separate, unrelated v1 decision: it is intentionally never

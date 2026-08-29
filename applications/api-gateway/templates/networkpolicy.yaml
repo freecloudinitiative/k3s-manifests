@@ -69,7 +69,9 @@ spec:
       ports:
         - protocol: TCP
           port: 6379
-    # Backend services proxied by the gateway — pod ports 8080 (HTTP) and 8443 (HTTPS).
+    # Backend services proxied by the gateway — pod port 8080 is the only
+    # port any backend upstream listens on. NetworkPolicy ports match the
+    # destination pod port, never the Service port.
     - to:
         - namespaceSelector:
             matchLabels:
@@ -77,8 +79,6 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
-        - protocol: TCP
-          port: 8443
     # OTLP trace/metric export to the OpenTelemetry collector in monitoring.
     - to:
         - namespaceSelector:

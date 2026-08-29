@@ -279,7 +279,7 @@ Role limits total 245 of `max_connections: 260`, leaving 15 for CNPG operations.
 - Public endpoint: `https://auth.freecloudinitiative.com` — Let's Encrypt via cert-manager. Provides ForwardAuth SSO for ArgoCD, Grafana, Prometheus, Alloy, Zot, Longhorn.
 - Ingress on Traefik `websecure` + security-headers middleware.
 - Outpost discovery disabled. Built-in Postgres disabled.
-- `blueprint.yaml` ConfigMap (`authentik-blueprints`) is loaded via `values.yaml` `blueprints.configMaps: [authentik-blueprints]`. It declares the four `fci-admin`/`fci-editor`/`fci-viewer`/`fci-auditor` `authentik_core.group` entries `iam-service` resolves by name at runtime — see the iam-service section.
+- `values.yaml` sets `blueprints.configMaps: [authentik-blueprints]`, so Authentik loads the `blueprint.yaml` ConfigMap. It declares OIDC provider `freecloudinitiative-frontend` with redirect URI `https://freecloudinitiative.com/callback`, four `fci-admin`/`fci-editor`/`fci-viewer`/`fci-auditor` role groups, and Grafana, ArgoCD, Zot, and Prometheus providers. Without it, OIDC login does not work.
 
 ---
 

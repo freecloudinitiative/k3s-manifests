@@ -492,10 +492,11 @@ disabled client (both empty, or Authentik unreachable) is nil-safe throughout �
 reconciliation just no-op. The token volume is `optional: true` so a pod starts fine even before
 OpenBao is seeded with `authentik/admin-token` — the client only stats/reads the file lazily per
 call, never at construction, so a missing file surfaces as a per-call error, not a stuck rollout.
-`AUTHENTIK_GROUP_ADMIN/EDITOR/VIEWER/AUDITOR` ship empty: the
-`admin`/`editor`/`viewer`/`auditor` groups don't exist yet in `infrastructure/authentik/blueprint.yaml`
-(only `grafana-admins`, `argocd-admins`, `vault-admins`, `registry-admins` are defined there); an
-empty group ID skips assignment for that role, not fatal. Prometheus metrics `authentik_drift_total`
+`AUTHENTIK_GROUP_ADMIN/EDITOR/VIEWER/AUDITOR` ship empty: the `fci-admin`/`fci-editor`/`fci-viewer`/
+`fci-auditor` groups are now declared in `infrastructure/authentik/blueprint.yaml`, but their
+generated UUIDs (pks) can't be known until after the blueprint has synced to a live cluster — see
+the read-back procedure documented above `authentikGroupAdmin` in `applications/iam-service/values.yaml`.
+An empty group ID skips assignment for that role, not fatal. Prometheus metrics `authentik_drift_total`
 and `authentik_reconcile_runs_total` are only populated once a real admin token is seeded.
 
 ---

@@ -41,6 +41,8 @@ We employ a dual-registry strategy depending on the environment:
 
 ## Prerequisites
 
+### OpenBao
+
 OpenBao **is** deployed by this repo (via ArgoCD), but it must be manually
 initialised and unsealed after the first sync before `external-secrets` can connect.
 
@@ -58,6 +60,25 @@ initialised and unsealed after the first sync before `external-secrets` can conn
   Secret then fails to start. See
   [ARCHITECTURE.md § Secret Flow](ARCHITECTURE.md) for the key inventory
   to seed.
+
+### Garage
+
+Garage is deployed by ArgoCD, but serves no data until cluster layout is
+applied. Bucket `platform` and storage-service key must also exist. Key needs
+read/write access on bucket. Access-key ID and secret must exactly match
+`GARAGE_STORAGE_SERVICE_ACCESS_KEY` and
+`GARAGE_STORAGE_SERVICE_SECRET_KEY` values seeded to OpenBao by
+`ansible-automation`.
+
+Export same values, then run bootstrap after Garage pods become Ready:
+
+```bash
+./scripts/garage-bootstrap.sh
+```
+
+Without bootstrap, `storage-service` can report Ready while every object call
+fails. Current readiness probe calls `ListBuckets`, not configured `platform`
+bucket. PR-05 narrows probe to configured bucket.
 
 ## How Start
 

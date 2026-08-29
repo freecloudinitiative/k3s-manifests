@@ -251,4 +251,5 @@ Repo-local checks. Not wired into CI; a workflow can call these directly.
 ```
 check-image-digests.sh                        Reports app.yaml image.digest pins that lag the
                                                published image (see APPS.md). make check-digests.
+garage-bootstrap.sh                           Applies Garage layout, bucket, key, permissions.
 ```

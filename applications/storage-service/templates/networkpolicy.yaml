@@ -59,12 +59,12 @@ spec:
           port: 6379
     # the Kubernetes API server. NetworkPolicy cannot express the
     # control-plane endpoint as a namespace/pod selector, so this uses an
-    # ipBlock for the cluster's Service CIDR rather than silently omitting
-    # egress restriction for this destination (an omission is how a
-    # NetworkPolicy appears complete while permitting everything).
+    # ipBlock rather than silently omitting egress restriction for this
+    # destination (an omission is how a NetworkPolicy appears complete while
+    # permitting everything). Keep this /32 aligned with the k3s service CIDR.
     - to:
         - ipBlock:
-            cidr: {{ .Values.clusterCIDRs.service }}
+            cidr: {{ .Values.networkPolicy.kubernetesAPIServerCIDR }}
       ports:
         - protocol: TCP
           port: 443

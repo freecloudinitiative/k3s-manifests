@@ -337,6 +337,22 @@ Key rules:
 - api-gateway: ingress from `frontend` only; egress to `authentik` on pod port 9000 for JWKS.
 - terminal-gateway: ingress from `backend` only.
 
+**Cluster CIDR coupling**: `applications/storage-service/values.yaml`'s
+`clusterCIDRs.pod`/`clusterCIDRs.service`, and the `networkPolicy.kubernetesAPIServerCIDR`
+value in each of `storage-service`, `compute-service`, `database-service`, and
+`terminal-gateway`, are all derived from the same underlying fact — the real
+k3s cluster's pod and service CIDRs. They must be changed together: if the
+cluster's CIDRs ever change (a re-install with explicit `--cluster-cidr`/
+`--service-cidr` flags, for example), update all five values in the same PR.
+Confirmed 2026-08-29 that the deployed cluster runs k3s's compiled-in defaults
+(`10.42.0.0/16` pod, `10.43.0.0/16` service) — `ansible-automation/roles/k3s-master-setup`
+passes neither flag to the install script. `storage-service` additionally reads
+`clusterCIDRs` at runtime to refuse a customer VPC that overlaps either range
+(`storage-service/internal/service/network.go`) and to validate generated
+NetworkPolicy output never names a protected range as a customer peer
+(`storage-service/internal/projection`) — both checks fail open (accept a range
+they should refuse) if these values are narrower than the real cluster.
+
 ---
 
 ## Why Built This Way

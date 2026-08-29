@@ -105,6 +105,16 @@ Always verify the rendered name after any release-name or `fullnameOverride` cha
 helm template <release> applications/<chart> --set image.tag=t | grep -A1 "kind: ClusterRole$"
 ```
 
+There are two shapes for customer-namespace RBAC in this repo, not one. `storage-service` and
+`database-service` use the ClusterRole-template pattern above. `terminal-gateway` uses neither a
+ClusterRole nor a namespaced Role template — its chart emits **no RBAC objects at all**.
+compute-service builds Role `terminal-gateway-exec` and its RoleBinding directly in Go
+(`EnsureNamespaceRBAC` in `compute-service/internal/k8s/rbac.go`) at the moment it provisions each
+customer namespace, since it already knows the namespace name at that point and doesn't need the
+ClusterRole indirection. Do not add a `role-template.yaml` back to `terminal-gateway`: a chart-side
+copy of the same Role/RoleBinding would put Argo CD's `selfHeal` and compute-service's reconcile loop
+in an ownership contest over the same two objects, with no error surfaced from either side.
+
 ## What a Suite Must Assert
 
 Suites assert **security boundaries**, not style. `helm lint` and ArgoCD

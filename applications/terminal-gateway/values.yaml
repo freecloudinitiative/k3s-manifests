@@ -52,6 +52,14 @@ securityContext:
 
 # Unlike most FCI services, terminal-gateway calls the Kubernetes API to open
 # pods/exec streams. The token mount is intentional and covered by chart tests.
+#
+# This chart deliberately creates no customer-namespace RBAC. Role
+# terminal-gateway-exec and its RoleBinding to this ServiceAccount are created
+# by compute-service at namespace-provision time
+# (compute-service/internal/k8s/rbac.go EnsureNamespaceRBAC), because customer
+# namespace names are not known at deploy time. Re-adding a chart-side template
+# puts Argo CD selfHeal and compute-service's reconcile loop in an ownership
+# contest over the same two objects, with no error from either.
 automountServiceAccountToken: true
 
 podDisruptionBudget:
@@ -133,13 +141,6 @@ probes:
     initialDelaySeconds: 10
     periodSeconds: 20
     failureThreshold: 3
-
-# Roles cannot be safely granted at cluster scope. compute-service owns
-# creation of this exact Role and RoleBinding whenever it provisions an
-# fci-cust-* namespace. This optional list exists for bootstrap/testing only;
-# each entry is validated by the template and can never target a platform
-# namespace.
-customerNamespaces: []
 
 nodeSelector: {}
 tolerations: []

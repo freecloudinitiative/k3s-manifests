@@ -378,7 +378,7 @@ All seven Applications source `https://github.com/freecloudinitiative/k3s-manife
 
 **What**: HTTP reverse proxy and auth gateway for FCI backend services.
 
-**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
+**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply. **Sync-wave**: 11.
 
 **Image**: `ghcr.io/freecloudinitiative/api-gateway:sha-0ac98efb497a`. `replicaCount: 2`.
 
@@ -405,7 +405,7 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **What**: VM lifecycle management. Chart at `applications/compute-service`.
 
-**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
+**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply. **Sync-wave**: 11.
 
 **Image**: `ghcr.io/freecloudinitiative/compute-service` pinned by `image.digest`. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
 
@@ -430,7 +430,7 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **What**: Customer database (CNPG) management. Chart at `applications/database-service`.
 
-**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
+**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply. **Sync-wave**: 11.
 
 **Image**: `ghcr.io/freecloudinitiative/database-service:sha-f247d60ac4de`. Other services use `ghcr.io/freecloudinitiative`. Chart falls back to `Chart.appVersion` (`0.1.0`) if `image.tag` and `image.digest` are both empty — siblings `fail` instead. `replicaCount: 2`. `config.databaseMaxConnections: 10`. `config.computeServiceURL: http://compute-service.backend.svc.cluster.local`, `config.computeTimeout: 10s`.
 
@@ -469,7 +469,7 @@ patch, or delete CNPG `Cluster` objects in that namespace.
 
 **What**: Identity and access management. Chart at `applications/iam-service`. Postgres-only — holds no Valkey credential.
 
-**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
+**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply. **Sync-wave**: 11.
 
 **Image**: `ghcr.io/freecloudinitiative/iam-service` pinned by `image.digest`. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
 
@@ -504,7 +504,7 @@ and `authentik_reconcile_runs_total` are only populated once a real admin token 
 
 **What**: Object storage management. Chart at `applications/storage-service`. Garage S3 backend (`http://garage.garage.svc.cluster.local:3900`, region `fci-local`, bucket `platform`). Garage serves plain HTTP — `objectStore.caCertPath` empty.
 
-**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
+**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply. **Sync-wave**: 11.
 
 **Image**: `ghcr.io/freecloudinitiative/storage-service:sha-2f2daba0c43e`. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
 
@@ -525,7 +525,7 @@ and `authentik_reconcile_runs_total` are only populated once a real admin token 
 
 **What**: WebSocket-to-Kubernetes exec terminal proxy. Chart at `applications/terminal-gateway`.
 
-**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
+**Namespace**: `backend`. **Sync**: auto, prune, selfHeal, ServerSideApply. **Sync-wave**: 11.
 
 **Image**: `ghcr.io/freecloudinitiative/terminal-gateway:sha-e3c09b7baefc`. `replicaCount: 2`.
 
@@ -545,7 +545,7 @@ No Ingress. NetworkPolicy admits `backend` only. frontend nginx proxies `/ws/` �
 
 **What**: React SPA + nginx. Chart at `applications/frontend`.
 
-**Namespace**: `frontend`. **Sync**: auto, prune, selfHeal, ServerSideApply.
+**Namespace**: `frontend`. **Sync**: auto, prune, selfHeal, ServerSideApply. **Sync-wave**: 11.
 
 **Image**: `ghcr.io/freecloudinitiative/frontend:sha-7eefcc02593a`. `replicaCount: 2`.
 

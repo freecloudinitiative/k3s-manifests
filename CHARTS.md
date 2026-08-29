@@ -23,6 +23,23 @@ invariants go in `helm unittest` suites — YAML next to the chart they test.
 If a check seems to need Go, it is the wrong check. Express it in YAML or
 leave it out.
 
+## Image Registries
+
+Image references must carry an explicit registry host. `restrict-image-registries`
+is Enforce and matches the literal string, so `cloudflare/cloudflared` is denied
+while `docker.io/cloudflare/cloudflared` is not. This applies to local charts and
+to any complete image reference this repo supplies through an upstream chart's
+values; a chart that composes a separate registry and repository must still
+render a fully-qualified reference.
+
+The policy governs FCI's own workloads in `backend`, `frontend`, and
+`fci-cust-*`. Customer compute images remain in scope through the wildcard.
+Third-party infrastructure namespaces are deliberately out of scope: their
+charts are controlled by the exact versions in `infrastructure/*/app.yaml`, and
+image digests committed in values remain pinned. Re-audit rendered images when
+bumping an upstream chart rather than expanding the admission-policy allowlist
+for each vendor registry.
+
 ## Every Chart Carries Tests
 
 Contract: every chart under `applications/<service>/` should carry a

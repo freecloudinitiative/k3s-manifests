@@ -36,6 +36,10 @@ podSecurityContext:
   runAsNonRoot: true
   runAsUser: 65532
   runAsGroup: 65532
+  # Secret volume files are owned by root:root unless fsGroup is set; without
+  # it, this non-root container cannot read the 0400 internal-signing.key it
+  # mounts, and the process exits at startup. Matches every sibling chart.
+  fsGroup: 65532
   seccompProfile:
     type: RuntimeDefault
 

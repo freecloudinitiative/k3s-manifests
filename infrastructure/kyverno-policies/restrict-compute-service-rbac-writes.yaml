@@ -16,7 +16,7 @@ metadata:
       body is even decoded), and has no way to restrict the namespace of
       the object being created either. So on its own, that ClusterRole lets
       a compromised or misdirected compute-service identity create a Role
-      with arbitrary rules (e.g. Secret read), or a RoleBinding granting
+      with arbitrary rules (e.g. wildcard access), or a RoleBinding granting
       storage-service's or database-service's namespace-role ClusterRole,
       in any namespace, to any subject — not just the fci-cust-* customer
       namespaces and the four backend service accounts this is meant for.
@@ -100,6 +100,9 @@ spec:
               - key: "{{ request.name }}"
                 operator: NotEquals
                 value: "fci-cust-*"
+    # Token lists mirror compute-service/internal/k8s/rbac.go
+    # EnsureNamespaceRBAC. Changing that function without changing these
+    # lists denies every customer namespace provision.
     - name: restrict-role-content
       match:
         any:
@@ -125,8 +128,14 @@ spec:
           compute-service-workloads or terminal-gateway-exec, and every rule
           in it must draw its apiGroups/resources/verbs only from the tokens
           that specific role name actually uses in internal/k8s/rbac.go —
-          not the union of both roles' tokens. A single shared allowlist
-          would let a Role named terminal-gateway-exec carry
+          not the union of both roles' tokens. compute-service-workloads may
+          use apiGroups ["", apps, batch, networking.k8s.io], resources
+          [deployments, services, persistentvolumeclaims, configmaps,
+          resourcequotas, limitranges, secrets, jobs, networkpolicies, pods],
+          and verbs [create, get, list, watch, update, patch, delete,
+          deletecollection]. terminal-gateway-exec may use only apiGroup [""],
+          resources [pods, pods/exec], and verbs [get, list, create]. A single
+          shared allowlist would let a Role named terminal-gateway-exec carry
           compute-service-workloads' full CRUD on deployments/services/
           configmaps/PVCs/quotas; once bound via the approved RoleBinding
           pairing, that grants terminal-gateway control over customer
@@ -156,6 +165,8 @@ spec:
                         value:
                           - ""
                           - "apps"
+                          - "batch"
+                          - "networking.k8s.io"
                       - key: "{{ request.object.rules[].resources[] }}"
                         operator: AnyNotIn
                         value:
@@ -165,6 +176,10 @@ spec:
                           - configmaps
                           - resourcequotas
                           - limitranges
+                          - secrets
+                          - jobs
+                          - networkpolicies
+                          - pods
                       - key: "{{ request.object.rules[].verbs[] }}"
                         operator: AnyNotIn
                         value:
@@ -175,6 +190,7 @@ spec:
                           - update
                           - patch
                           - delete
+                          - deletecollection
               - all:
                   - key: "{{ request.object.metadata.name }}"
                     operator: Equals

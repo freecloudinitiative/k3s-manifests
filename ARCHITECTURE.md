@@ -85,20 +85,16 @@ Wave  9  traefik
 
 Wave 10  argocd app-config
 
-applications/*                 ← no Application-level wave (default 0).
-                                 backend / frontend are pre-declared in
-                                 namespaces/*.yaml, also wave 0. The root
-                                 Application and each backend service's
-                                 Application reconcile independently, so wave
-                                 equality is not a cross-Application ordering
-                                 guarantee — in practice Namespace-kind
-                                 resources apply before other kinds within a
-                                 wave (ArgoCD's built-in resource ordering).
-                                 CreateNamespace=true stays on each
-                                 Application as a real fallback for that race,
-                                 not a no-op.
-                                 ExternalSecrets for those pods use resource
-                                 wave -2 inside external-secrets Application.
+Wave 11  applications/*            ← every FCI service Application. Above
+                                     argocd app-config (10) so all
+                                     infrastructure Applications exist first:
+                                     External Secrets (1) must be running
+                                     before any service Secret can sync, and
+                                     platform-postgresql (4) before any
+                                     service opens a pool. backend / frontend
+                                     namespaces stay wave 0 in
+                                     namespaces/*.yaml. CreateNamespace=true
+                                     remains on each Application as fallback.
 ```
 
 Resource waves inside an Application (e.g. ExternalSecret `-2`, DatabaseRole `1`)

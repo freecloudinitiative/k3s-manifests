@@ -279,7 +279,7 @@ Role limits total 245 of `max_connections: 260`, leaving 15 for CNPG operations.
 - Public endpoint: `https://auth.freecloudinitiative.com` — Let's Encrypt via cert-manager. Provides ForwardAuth SSO for ArgoCD, Grafana, Prometheus, Alloy, Zot, Longhorn.
 - Ingress on Traefik `websecure` + security-headers middleware.
 - Outpost discovery disabled. Built-in Postgres disabled.
-- `blueprint.yaml` ConfigMap exists. `values.yaml` sets `blueprints.configMaps: []` — Authentik does not load it.
+- `blueprint.yaml` ConfigMap (`authentik-blueprints`) is loaded via `values.yaml` `blueprints.configMaps: [authentik-blueprints]`. It declares the four `fci-admin`/`fci-editor`/`fci-viewer`/`fci-auditor` `authentik_core.group` entries `iam-service` resolves by name at runtime — see the iam-service section.
 
 ---
 
@@ -501,12 +501,15 @@ disabled client (both empty, or Authentik unreachable) is nil-safe throughout �
 reconciliation just no-op. The token volume is `optional: true` so a pod starts fine even before
 OpenBao is seeded with `authentik/admin-token` — the client only stats/reads the file lazily per
 call, never at construction, so a missing file surfaces as a per-call error, not a stuck rollout.
-`AUTHENTIK_GROUP_ADMIN/EDITOR/VIEWER/AUDITOR` ship empty: the `fci-admin`/`fci-editor`/`fci-viewer`/
-`fci-auditor` groups are now declared in `infrastructure/authentik/blueprint.yaml`, but their
-generated UUIDs (pks) can't be known until after the blueprint has synced to a live cluster — see
-the read-back procedure documented above `authentikGroupAdmin` in `applications/iam-service/values.yaml`.
-An empty group ID skips assignment for that role, not fatal. Prometheus metrics `authentik_drift_total`
-and `authentik_reconcile_runs_total` are only populated once a real admin token is seeded.
+`AUTHENTIK_GROUP_ADMIN/EDITOR/VIEWER/AUDITOR` are configured by **name** (`fci-admin`/`fci-editor`/
+`fci-viewer`/`fci-auditor`), not UUID — `iam-service` resolves each name to its Authentik UUID at
+runtime (`GET /api/v3/core/groups/?name=`), caching hits and retrying misses, so no manual UUID
+read-back against a live cluster is ever needed. The names are a cross-repo contract with
+`infrastructure/authentik/blueprint.yaml`'s `authentik_core.group` entries; renaming a group requires
+changing both. An empty value, or a name that hasn't resolved yet (e.g. the blueprint hasn't synced),
+skips assignment for that role — never fatal — and is retried automatically on the next attempt.
+Prometheus metrics `authentik_drift_total` and `authentik_reconcile_runs_total` are only populated
+once a real admin token is seeded.
 
 ---
 

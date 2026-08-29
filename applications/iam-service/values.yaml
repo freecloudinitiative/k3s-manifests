@@ -151,23 +151,19 @@ config:
   authentikReconcileEnabled: true
   authentikReconcileInterval: 15m
   authentikReconcileAdopt: true
-  # Authentik group UUIDs (pk), not names — iam-service calls
-  # /api/v3/core/groups/{pk}/add_user/. Blueprints create groups by name and
-  # generate the pk, so these cannot be known until after
-  # infrastructure/authentik/blueprint.yaml has applied. Two-step:
+  # Authentik group NAMES, not UUIDs — iam-service resolves each name to its
+  # UUID at runtime via GET /api/v3/core/groups/?name=. Names are a
+  # cross-repo contract with infrastructure/authentik/blueprint.yaml's
+  # authentik_core.group identifiers.name; renaming requires changing both.
   #
-  #   1. Sync the authentik Application, wait for the blueprint to reconcile.
-  #   2. Read the four pks and commit them here:
-  #      kubectl -n authentik exec deploy/authentik-server -- \
-  #        ak shell -c "from authentik.core.models import Group; \
-  #        print({g.name: str(g.pk) for g in Group.objects.filter(name__startswith='fci-')})"
-  #
-  # Empty is a supported state — group assignment is skipped, never fatal — but
-  # role-based access via Authentik does not work until these are filled.
-  authentikGroupAdmin: ""
-  authentikGroupEditor: ""
-  authentikGroupViewer: ""
-  authentikGroupAuditor: ""
+  # Empty stays a supported state — group assignment is skipped, never
+  # fatal. A name that does not resolve yet (blueprint not applied) is
+  # logged and skipped for that pass, then retried automatically — no
+  # restart needed once the blueprint applies.
+  authentikGroupAdmin: "fci-admin"
+  authentikGroupEditor: "fci-editor"
+  authentikGroupViewer: "fci-viewer"
+  authentikGroupAuditor: "fci-auditor"
 
 serviceMonitor:
   enabled: true

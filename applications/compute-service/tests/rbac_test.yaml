@@ -1,0 +1,27 @@
+suite: compute-service cluster RBAC contract
+templates:
+  - clusterrole.yaml
+release:
+  name: compute-service
+set:
+  image:
+    tag: t
+tests:
+  - it: grants escalate on roles unscoped, because a create carries no name to match resourceNames against
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: ["rbac.authorization.k8s.io"]
+            resources: ["roles"]
+            verbs: ["escalate"]
+
+  - it: keeps escalate off the resourceNames-scoped roles rule and keeps bind on it
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: ["rbac.authorization.k8s.io"]
+            resources: ["roles"]
+            resourceNames: ["compute-service-workloads", "terminal-gateway-exec"]
+            verbs: ["get", "update", "patch", "delete", "bind"]

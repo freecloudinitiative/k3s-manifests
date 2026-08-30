@@ -58,15 +58,23 @@ rules:
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["roles"]
     verbs: ["create", "list", "watch"]
+  # "escalate" cannot be scoped by resourceNames for the same reason as
+  # "create": RoleEscalationAuthorized derives the name from RequestInfo,
+  # which is populated from the request URL and is empty on a collection
+  # POST. It therefore has to be granted unscoped here. The hard-coded Role
+  # names in rbac.go plus restrict-compute-service-rbac-writes bound which
+  # Roles and rule sets compute-service may actually create.
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles"]
+    verbs: ["escalate"]
   # get/update/patch/delete carry the object name in the request URL, so
-  # resourceNames restricts them correctly here. The "escalate" and "bind"
-  # checks are also name-keyed and run after the request body is decoded, so
-  # resourceNames applies to both. "escalate" gates Role writes containing
-  # rules the subject lacks; "bind" gates RoleBindings referencing that Role.
+  # resourceNames restricts them correctly here. "bind" differs from
+  # "escalate": BindingAuthorized reads roleRef.Name from the decoded request
+  # body, so resourceNames applies to RoleBindings referencing these Roles.
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["roles"]
     resourceNames: ["compute-service-workloads", "terminal-gateway-exec"]
-    verbs: ["get", "update", "patch", "delete", "escalate", "bind"]
+    verbs: ["get", "update", "patch", "delete", "bind"]
   # Create the RoleBindings that grant the above Roles, plus the
   # storage-service-namespace-role / database-service-namespace-role
   # ClusterRoles owned by their respective charts (see role-template.yaml

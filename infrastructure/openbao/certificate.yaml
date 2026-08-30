@@ -4,7 +4,7 @@ metadata:
   name: openbao-server
   namespace: openbao
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   secretName: openbao-server-tls
   privateKey:

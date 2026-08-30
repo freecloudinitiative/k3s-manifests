@@ -302,7 +302,7 @@ Role limits total 245 of `max_connections: 260`, leaving 15 for CNPG operations.
 - Single replica.
 - Backend: Garage S3 (`garage.garage.svc.cluster.local:3900`, bucket `zot-registry`, region `fci-local`).
 - S3 credentials from ExternalSecret `zot-s3-credentials`.
-- Bucket and key created by second `scripts/garage-bootstrap.sh` run with `GARAGE_BUCKET=zot-registry`.
+- Bucket and key created by second run using Zot's distinct OpenBao credentials: `GARAGE_BUCKET=zot-registry GARAGE_KEY_NAME=zot GARAGE_ACCESS_KEY=... GARAGE_SECRET_KEY=... ./scripts/garage-bootstrap.sh`.
 - Public endpoint: `https://ghcr.io/freecloudinitiative` — Let's Encrypt.
 - Auth via Authentik SSO (ForwardAuth).
 - GC enabled, 24h delay.

@@ -1,0 +1,146 @@
+# ExternalSecret must deliver values byte-identical to
+# storage-service-objectstore-credentials (namespace backend, see
+# infrastructure/external-secrets/external-secret-storage.yaml) — the
+# bootstrap script exits 1 if the Garage key already exists with a
+# different secret than what's supplied here.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: garage-bootstrap-credentials
+  namespace: garage
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: openbao-store
+  target:
+    name: garage-bootstrap-credentials
+    creationPolicy: Owner
+    deletionPolicy: Retain
+  data:
+    - secretKey: access-key
+      remoteRef:
+        key: garage
+        property: storage-service-access-key
+    - secretKey: secret-key
+      remoteRef:
+        key: garage
+        property: storage-service-secret-key
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: garage-bootstrap
+  namespace: garage
+---
+# pods/exec backs the script's garage() shell function (kubectl exec into
+# the garage-0 pod to run the garage CLI). statefulsets get/list/watch
+# backs kubectl rollout status.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: garage-bootstrap
+  namespace: garage
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: garage-bootstrap
+  namespace: garage
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: garage-bootstrap
+subjects:
+  - kind: ServiceAccount
+    name: garage-bootstrap
+    namespace: garage
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: garage-bootstrap
+  namespace: garage
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        fci.io/role: garage-bootstrap
+    spec:
+      serviceAccountName: garage-bootstrap
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: garage-bootstrap
+          image: alpine/k8s:1.30.4@sha256:129291af93e2b5df392f619cee8564cac4b377d66ff45f52f165af87688b68b9
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+              ephemeral-storage: 16Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+              ephemeral-storage: 64Mi
+          env:
+            - name: GARAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: garage-bootstrap-credentials
+                  key: access-key
+            - name: GARAGE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: garage-bootstrap-credentials
+                  key: secret-key
+            - name: GARAGE_ZONE
+              value: fci-local
+            - name: GARAGE_CAPACITY
+              value: 100GB
+            - name: GARAGE_BUCKET
+              value: platform
+            - name: GARAGE_KEY_NAME
+              value: storage-service
+            - name: GARAGE_EXPECTED_REPLICAS
+              value: "3"
+          command:
+            - /bin/bash
+            - /scripts/garage-bootstrap.sh
+          volumeMounts:
+            - name: bootstrap-script
+              mountPath: /scripts
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: bootstrap-script
+          configMap:
+            name: garage-bootstrap-script
+            defaultMode: 0555
+        - name: tmp
+          emptyDir: {}

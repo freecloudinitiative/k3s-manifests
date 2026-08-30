@@ -45,4 +45,5 @@ data:
   CONN_POOL_IDLE_TTL: {{ .Values.connectionPool.idleTTL | quote }}
   CONN_POOL_ACQUIRE_TIMEOUT: {{ .Values.connectionPool.acquireTimeout | quote }}
   IMPORT_CONCURRENCY_PER_DATABASE: {{ .Values.import.concurrencyPerDatabase | quote }}
+  IMPORT_MAX_BYTES: {{ .Values.import.maxBytes | quote }}
   IMPORT_TEMP_DIR: /tmp

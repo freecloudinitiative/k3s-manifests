@@ -92,6 +92,10 @@ connectionPool:
 
 import:
   concurrencyPerDatabase: 2
+  # Below api-gateway MAX_BODY_BYTES (12582912) and nginx client_max_body_size
+  # (12m). Multipart envelope adds boundary and options part on top of file, so
+  # file ceiling must sit under transport ceiling.
+  maxBytes: "10485760"
 
 config:
   logLevel: info

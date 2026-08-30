@@ -1,11 +1,10 @@
 admissionController:
-  replicas: 1
-  # Single replica on a Pi node can restart/OOM; without this, the default
-  # failurePolicy (Fail) would block ALL resource creation cluster-wide
-  # while the pod is down. Revisit once replicas > 1.
-  container:
-    extraArgs:
-      forceFailurePolicyIgnore: true
+  # Admission enforcement is a security boundary for compute-service's
+  # unscoped RBAC create/escalate grants. Keep two replicas so a single pod
+  # restart does not make the fail-closed webhooks unavailable. The chart
+  # automatically creates a minAvailable: 1 PodDisruptionBudget for replicas
+  # greater than one.
+  replicas: 2
   resources:
     requests:
       cpu: 100m

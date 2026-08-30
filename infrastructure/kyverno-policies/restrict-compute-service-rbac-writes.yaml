@@ -32,6 +32,12 @@ metadata:
       rule sets, pairs an approved Role/ClusterRole with the wrong service
       account, or writes to a Namespace outside fci-cust-*.
 spec:
+  # This policy is the security boundary for compute-service's necessarily
+  # unscoped Role create/escalate grants. Reject matching API requests if the
+  # admission webhook cannot evaluate them; failing open would let a
+  # compromised identity create and bind an arbitrary namespaced Role.
+  webhookConfiguration:
+    failurePolicy: Fail
   # spec.validationFailureAction has had no effect since Kyverno 1.13 (the
   # chart pinned in infrastructure/kyverno/app.yaml is 3.8.1, well past
   # that) — it's deprecated in favor of a per-rule failureAction under each

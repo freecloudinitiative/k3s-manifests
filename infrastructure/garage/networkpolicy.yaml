@@ -19,6 +19,12 @@ spec:
         - protocol: TCP
           port: 3901
     # Only explicitly approved storage clients access the private S3 API.
+    # Backup and restore Jobs run inside customer namespaces and access this
+    # endpoint directly; their platformEgressRules already allow the matching
+    # egress. EnsureNamespace stamps fci.io/tier=customer on those namespaces,
+    # and no platform namespace carries that label. The job-specific Pod
+    # selectors keep unrelated customer workloads away from the private API;
+    # separate peers are required because backup and restore labels are ORed.
     - from:
         - namespaceSelector:
             matchLabels:
@@ -26,6 +32,24 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: zot-registry
+        - namespaceSelector:
+            matchLabels:
+              fci.io/tier: customer
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/managed-by: compute-service
+            matchExpressions:
+              - key: fci.io/backup-id
+                operator: Exists
+        - namespaceSelector:
+            matchLabels:
+              fci.io/tier: customer
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/managed-by: compute-service
+            matchExpressions:
+              - key: fci.io/restore-id
+                operator: Exists
       ports:
         - protocol: TCP
           port: 3900

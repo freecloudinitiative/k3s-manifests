@@ -24,7 +24,7 @@ spec:
       path: infrastructure/garage
       ref: values
       directory:
-        include: '{rpc-secret.yaml,networkpolicy.yaml}'
+        include: '{rpc-secret.yaml,networkpolicy.yaml,bootstrap-script-configmap.yaml,bootstrap-job.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: garage

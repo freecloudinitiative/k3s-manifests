@@ -147,7 +147,14 @@ config:
   # port is 80 (targetPort 9000); see infrastructure/authentik/networkpolicy.yaml
   # for the corresponding pod-port-9000 ingress rule.
   authentikUrl: "http://authentik-server.authentik.svc.cluster.local:80"
-  authentikTimeout: 10s
+  # Must stay below api-gateway's IAM_TIMEOUT (default 5s) — this timeout
+  # bounds one leg of that outer request budget, not the whole request.
+  # Authentik sync is best-effort (failure logs WARN, local row kept); the
+  # background reconciler at authentikReconcileInterval repairs a sync that
+  # timed out, so shrinking this loses nothing durable. Do not fix a slow
+  # Authentik by raising this above the outer budget — raise IAM_TIMEOUT
+  # instead, deliberately, if the budget itself needs to grow.
+  authentikTimeout: 3s
   authentikReconcileEnabled: true
   authentikReconcileInterval: 15m
   authentikReconcileAdopt: true

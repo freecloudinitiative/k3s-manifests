@@ -1,17 +1,25 @@
 #!/usr/bin/env bash
-# Applies Garage cluster layout, creates platform bucket, imports storage-service
-# key, and grants bucket access. Layout bootstrap is not GitOps: node IDs are
-# generated at runtime and must be assigned after pods start. Script is
-# idempotent and safe to re-run.
+# Applies Garage cluster layout, creates one bucket, imports one key, and grants
+# bucket access per run. Run once for each bucket/key pair. Parameterize pair
+# with GARAGE_BUCKET, GARAGE_KEY_NAME, GARAGE_ACCESS_KEY, and GARAGE_SECRET_KEY.
+# Layout bootstrap is not GitOps: node IDs are generated at runtime and must be
+# assigned after pods start. Script is idempotent and safe to re-run.
 #
-# GARAGE_STORAGE_SERVICE_ACCESS_KEY and GARAGE_STORAGE_SERVICE_SECRET_KEY must
-# exactly match values ansible-automation seeded to OpenBao. Mismatch leaves
-# storage-service using credentials Garage does not recognize. Secret is never
-# printed; Garage key-import output is suppressed because it contains secret.
+# Supplied credentials must exactly match values ansible-automation seeded to
+# OpenBao. Mismatch leaves consumer using credentials Garage does not recognize.
+# Secret is never printed; Garage key-import output is suppressed because it
+# contains secret.
+#
+# Zot registry bucket:
+#   GARAGE_BUCKET=zot-registry GARAGE_KEY_NAME=zot \
+#   GARAGE_ACCESS_KEY=... GARAGE_SECRET_KEY=... ./scripts/garage-bootstrap.sh
 set -euo pipefail
 
+GARAGE_ACCESS_KEY="${GARAGE_ACCESS_KEY:-${GARAGE_STORAGE_SERVICE_ACCESS_KEY:-}}"
+GARAGE_SECRET_KEY="${GARAGE_SECRET_KEY:-${GARAGE_STORAGE_SERVICE_SECRET_KEY:-}}"
+
 missing=""
-for name in GARAGE_STORAGE_SERVICE_ACCESS_KEY GARAGE_STORAGE_SERVICE_SECRET_KEY; do
+for name in GARAGE_ACCESS_KEY GARAGE_SECRET_KEY; do
   if [ -z "${!name:-}" ]; then
     missing="$missing $name"
   fi
@@ -153,9 +161,9 @@ else
 fi
 
 key_output=""
-if key_output="$(garage key info "$GARAGE_STORAGE_SERVICE_ACCESS_KEY" --show-secret 2>/dev/null)"; then
+if key_output="$(garage key info "$GARAGE_ACCESS_KEY" --show-secret 2>/dev/null)"; then
   existing_secret="$(printf '%s\n' "$key_output" | sed -n 's/^Secret key:[[:space:]]*//p')"
-  if [ "$existing_secret" != "$GARAGE_STORAGE_SERVICE_SECRET_KEY" ]; then
+  if [ "$existing_secret" != "$GARAGE_SECRET_KEY" ]; then
     unset key_output existing_secret
     echo "garage-bootstrap.sh: Garage key ID exists but secret does not match OpenBao value" >&2
     exit 1
@@ -166,12 +174,12 @@ else
   echo "Importing Garage storage-service key..."
   # Garage prints imported secret on success. Discard command output.
   if ! garage key import \
-    "$GARAGE_STORAGE_SERVICE_ACCESS_KEY" \
-    "$GARAGE_STORAGE_SERVICE_SECRET_KEY" \
+    "$GARAGE_ACCESS_KEY" \
+    "$GARAGE_SECRET_KEY" \
     -n "$KEY_NAME" --yes >/dev/null; then
-    key_output="$(garage key info "$GARAGE_STORAGE_SERVICE_ACCESS_KEY" --show-secret 2>/dev/null)" || exit 1
+    key_output="$(garage key info "$GARAGE_ACCESS_KEY" --show-secret 2>/dev/null)" || exit 1
     existing_secret="$(printf '%s\n' "$key_output" | sed -n 's/^Secret key:[[:space:]]*//p')"
-    if [ "$existing_secret" != "$GARAGE_STORAGE_SERVICE_SECRET_KEY" ]; then
+    if [ "$existing_secret" != "$GARAGE_SECRET_KEY" ]; then
       unset key_output existing_secret
       echo "garage-bootstrap.sh: Garage key import failed and existing secret does not match" >&2
       exit 1
@@ -183,11 +191,11 @@ fi
 echo "Granting read, write, and owner access on $BUCKET..."
 garage bucket allow \
   --read --write --owner \
-  --key "$GARAGE_STORAGE_SERVICE_ACCESS_KEY" \
+  --key "$GARAGE_ACCESS_KEY" \
   "$BUCKET" >/dev/null
 
 echo
 echo "Garage bootstrap verification"
 garage bucket info "$BUCKET"
 # No --show-secret: Garage renders secret as redacted.
-garage key info "$GARAGE_STORAGE_SERVICE_ACCESS_KEY"
+garage key info "$GARAGE_ACCESS_KEY"

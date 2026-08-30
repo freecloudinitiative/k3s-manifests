@@ -66,9 +66,9 @@ initialised and unsealed after the first sync before `external-secrets` can conn
 Garage is deployed by ArgoCD, but serves no data until cluster layout is
 applied. Bucket `platform` and storage-service key must also exist. Key needs
 read/write access on bucket. Access-key ID and secret must exactly match
-`GARAGE_STORAGE_SERVICE_ACCESS_KEY` and
-`GARAGE_STORAGE_SERVICE_SECRET_KEY` values seeded to OpenBao by
-`ansible-automation`.
+`GARAGE_ACCESS_KEY` and `GARAGE_SECRET_KEY` values seeded to OpenBao by
+`ansible-automation`. Legacy names `GARAGE_STORAGE_SERVICE_ACCESS_KEY` and
+`GARAGE_STORAGE_SERVICE_SECRET_KEY` remain accepted.
 
 Export same values, then run bootstrap after Garage pods become Ready:
 
@@ -119,7 +119,7 @@ OpenBao deployed by ArgoCD, but manually initialised and unsealed before `extern
 **Step 4 — Bootstrap Garage.**
 
 - Wait for Garage StatefulSet, 3 Ready pods (`GARAGE_EXPECTED_REPLICAS=3`).
-- Export `GARAGE_STORAGE_SERVICE_ACCESS_KEY` and `GARAGE_STORAGE_SERVICE_SECRET_KEY`, matching values seeded to OpenBao.
+- Export `GARAGE_ACCESS_KEY` and `GARAGE_SECRET_KEY`, matching values seeded to OpenBao.
 - Run `./scripts/garage-bootstrap.sh` (idempotent).
 - `storage-service` readiness probe is `HeadBucket` on bucket `platform`. Until bootstrap succeeds, `storage-service` stays `NotReady`, `/api/buckets` and `/api/networks` have no healthy endpoint, and `compute-service` cannot resolve a backup bucket.
 - See [Garage](#garage) for details.

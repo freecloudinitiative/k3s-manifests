@@ -17,8 +17,8 @@ spec:
       valueFiles:
         - values.yaml
       parameters:
-        - name: image.digest
-          value: "sha256:edb9fd02e41dbfd000756581012a6b6062d8c0bfea6addf04381b7d44047baac"
+        - name: image.tag
+          value: "v0.5.5"
         - name: imagePullSecrets[0].name
           value: zot-registry-pull-credentials
   destination:

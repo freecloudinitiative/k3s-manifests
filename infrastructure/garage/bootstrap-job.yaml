@@ -89,6 +89,12 @@ spec:
       restartPolicy: OnFailure
       securityContext:
         runAsNonRoot: true
+        # alpine/k8s has no non-root user baked in (USER unset, defaults to
+        # root) — unlike grants-job.yaml's postgresql image, which does.
+        # runAsNonRoot rejects a root-default image with no runAsUser, so
+        # this must be set explicitly.
+        runAsUser: 65532
+        runAsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
       containers:

@@ -21,6 +21,9 @@ spec:
       targetRevision: HEAD
       path: infrastructure/openbao
       ref: values
+    - repoURL: https://github.com/freecloudinitiative/k3s-manifests.git
+      targetRevision: HEAD
+      path: infrastructure/openbao
       directory:
         include: "*.yaml"
         exclude: "{app.yaml,values.yaml}"

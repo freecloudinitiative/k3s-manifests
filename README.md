@@ -110,7 +110,31 @@ ansible-playbook playbook.yml --ask-vault-pass
   `namespaces/*.yaml`) and `applications/` (matches `*/app*.yaml`)
 - Sync: automated, prune, selfHeal
 
-From this point, any push to this repo is applied automatically.
+Sync is automated for subsequent pushes, but two manual gates below block first bring-up.
+
+**Step 3 — Unseal OpenBao.**
+
+OpenBao deployed by ArgoCD, but manually initialised and unsealed before `external-secrets` connects. Every `ExternalSecret` fails closed until then, and every pod mounting a Secret fails to start. See [OpenBao](#openbao) for details.
+
+**Step 4 — Bootstrap Garage.**
+
+- Wait for Garage StatefulSet, 3 Ready pods (`GARAGE_EXPECTED_REPLICAS=3`).
+- Export `GARAGE_STORAGE_SERVICE_ACCESS_KEY` and `GARAGE_STORAGE_SERVICE_SECRET_KEY`, matching values seeded to OpenBao.
+- Run `./scripts/garage-bootstrap.sh` (idempotent).
+- `storage-service` readiness probe is `HeadBucket` on bucket `platform`. Until bootstrap succeeds, `storage-service` stays `NotReady`, `/api/buckets` and `/api/networks` have no healthy endpoint, and `compute-service` cannot resolve a backup bucket.
+- See [Garage](#garage) for details.
+
+**Step 5 — Verify.**
+
+Check cluster status before declaring bring-up complete:
+
+```bash
+kubectl -n backend get deploy
+kubectl -n backend get pods -l app.kubernetes.io/name=storage-service
+kubectl -n argocd get applications.argoproj.io
+```
+
+Expect `storage-service` Ready 1/1, all Applications `Synced` and `Healthy`.
 
 **To add a new FCI service after bootstrap:**
 

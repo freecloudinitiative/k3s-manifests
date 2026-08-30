@@ -36,7 +36,8 @@ metadata:
   namespace: garage
 ---
 # pods/exec backs the script's garage() shell function (kubectl exec into
-# the garage-0 pod to run the garage CLI). statefulsets get/list/watch
+# the garage-0 pod to run the garage CLI) — resourceNames restricts create
+# to that one pod, not every pod in the namespace. statefulsets get/list/watch
 # backs kubectl rollout status.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -49,6 +50,7 @@ rules:
     verbs: ["get", "list"]
   - apiGroups: [""]
     resources: ["pods/exec"]
+    resourceNames: ["garage-0"]
     verbs: ["create"]
   - apiGroups: ["apps"]
     resources: ["statefulsets"]

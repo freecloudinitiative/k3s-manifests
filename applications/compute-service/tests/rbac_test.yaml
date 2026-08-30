@@ -25,3 +25,43 @@ tests:
             resources: ["roles"]
             resourceNames: ["compute-service-workloads", "terminal-gateway-exec"]
             verbs: ["get", "update", "patch", "delete", "bind"]
+
+  - it: matches the complete cluster RBAC rule set exactly
+    asserts:
+      - equal:
+          path: rules
+          value:
+            - apiGroups: [""]
+              resources: ["namespaces"]
+              verbs: ["get", "list", "watch"]
+            - apiGroups: [""]
+              resources: ["namespaces"]
+              verbs: ["create", "update", "patch", "delete"]
+            - apiGroups: ["node.k8s.io"]
+              resources: ["runtimeclasses"]
+              verbs: ["get", "list"]
+            - apiGroups: [""]
+              resources: ["nodes"]
+              verbs: ["get", "list"]
+            - apiGroups: ["rbac.authorization.k8s.io"]
+              resources: ["roles"]
+              verbs: ["create", "list", "watch"]
+            - apiGroups: ["rbac.authorization.k8s.io"]
+              resources: ["roles"]
+              verbs: ["escalate"]
+            - apiGroups: ["rbac.authorization.k8s.io"]
+              resources: ["roles"]
+              resourceNames: ["compute-service-workloads", "terminal-gateway-exec"]
+              verbs: ["get", "update", "patch", "delete", "bind"]
+            - apiGroups: ["rbac.authorization.k8s.io"]
+              resources: ["rolebindings"]
+              verbs: ["create", "list", "watch"]
+            - apiGroups: ["rbac.authorization.k8s.io"]
+              resources: ["rolebindings"]
+              resourceNames: ["compute-service-workloads", "terminal-gateway-exec",
+                              "storage-service-namespace", "database-service-namespace"]
+              verbs: ["get", "update", "patch", "delete"]
+            - apiGroups: ["rbac.authorization.k8s.io"]
+              resources: ["clusterroles"]
+              resourceNames: ["storage-service-namespace-role", "database-service-namespace-role"]
+              verbs: ["bind"]

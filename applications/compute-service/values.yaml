@@ -149,7 +149,7 @@ backup:
   # objectStore.region (fci-local) -- a mismatch fails S3 request signing.
   region: fci-local
   # Digest-pinned. compute-service config.Validate rejects a tag.
-  jobImage: "ghcr.io/freecloudinitiative/compute-data-job@sha256:e7db325c93f7bf4990b8e1b85b9e0ba0eed2f861894fc688d703416f9cc405d2"
+  jobImage: "ghcr.io/freecloudinitiative/compute-data-job@sha256:428c4414d0a2a108c530b08e7997cd1c4d9ffd6a7476d5ac6d8adb50a4e024b9"
   bucketEndpoint: "http://storage-service.backend.svc.cluster.local"
 
 # Restore is a separate, unrelated v1 decision: it is intentionally never

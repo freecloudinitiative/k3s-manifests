@@ -120,7 +120,7 @@ infrastructure/valkey/
 infrastructure/garage/
   app.yaml                                    ArgoCD Application for Garage Helm chart.
   values.yaml                                 Garage config: 3 replicas, replicationFactor 3, longhorn-local PVCs.
-  networkpolicy.yaml                          NetworkPolicy: restrict Garage to cluster-internal only.
+  networkpolicy.yaml                          NetworkPolicy: Garage peers plus private cross-node SNAT CIDR.
   rpc-secret.yaml                             Garage RPC secret (value from OpenBao).
 
 infrastructure/authentik/

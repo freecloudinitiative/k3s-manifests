@@ -117,6 +117,10 @@ networkPolicy:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: backend
+        # k3s cross-node Service traffic is SNATed to the private node-overlay
+        # address before kube-router evaluates this policy.
+        - ipBlock:
+            cidr: 10.1.1.0/24
       ports:
         - protocol: TCP
           port: 6379
@@ -124,6 +128,8 @@ networkPolicy:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: monitoring
+        - ipBlock:
+            cidr: 10.1.1.0/24
       ports:
         - protocol: TCP
           port: 9121

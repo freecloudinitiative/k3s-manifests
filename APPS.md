@@ -248,7 +248,7 @@ Role limits total 245 of `max_connections: 260`, leaving 15 for CNPG operations.
 **Config**:
 - 3-node StatefulSet, `replicationFactor: 3`, `consistencyMode: consistent`.
 - One pod per worker (required anti-affinity). Tolerates `memory=limited:NoSchedule`.
-- Storage per node: 100 Gi data + 2 Gi metadata (`longhorn-local` — 1 replica; Garage replicates itself).
+- Storage per node: 10 Gi data + 2 Gi metadata (`longhorn-local` — 1 replica; Garage replicates itself).
 - Region: `fci-local`.
 - S3 API in-cluster only (`ingress.s3.api.enabled: false`).
 - Prometheus ServiceMonitor enabled.

@@ -319,8 +319,10 @@ documented egress allowlists remain in the charts behind
 `networkPolicy.restrictEgress` for a future CNI migration.
 
 Key rules:
-- Valkey: `backend` namespace port 6379, `monitoring` port 9121 exporter.
-- Garage: cluster-internal only (no external ingress).
+- Valkey and Garage keep namespace-selected NetworkPolicy peers and add only
+  the private `10.1.1.0/24` node-overlay CIDR because k3s SNATs valid cross-node
+  Service traffic before kube-router evaluates those peers. Valkey additionally
+  requires TLS/ACL authentication.
 - Authentik: cluster-internal + Cloudflare tunnel for public host.
 - platform-postgresql: CNPG NetworkPolicy plus `networkpolicy.yaml`.
 - api-gateway: ingress from `frontend` only; egress to `authentik` on pod port 9000 for JWKS.

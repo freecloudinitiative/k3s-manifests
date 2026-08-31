@@ -18,6 +18,11 @@ global:
       value: "false"
     - name: AUTHENTIK_POSTGRESQL__HOST
       value: platform-postgresql-rw.platform-database.svc.cluster.local
+    # 2026.8 uses the direct endpoint for advisory migration locks and
+    # LISTEN/NOTIFY. Point it at CNPG directly so bootstrap replicas cannot
+    # apply the squashed and legacy migration paths concurrently.
+    - name: AUTHENTIK_POSTGRESQL__DIRECT__HOST
+      value: platform-postgresql-rw.platform-database.svc.cluster.local
     - name: AUTHENTIK_POSTGRESQL__NAME
       value: authentik
     - name: AUTHENTIK_POSTGRESQL__USER
@@ -51,7 +56,7 @@ blueprints:
     - authentik-blueprints
 
 server:
-  replicas: 2
+  replicas: 1
   serviceAccountName: authentik-runtime
   automountServiceAccountToken: false
   pdb:
@@ -101,7 +106,7 @@ server:
     type: ClusterIP
 
 worker:
-  replicas: 2
+  replicas: 1
   serviceAccountName: authentik-runtime
   automountServiceAccountToken: false
   envFrom:

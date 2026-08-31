@@ -100,7 +100,6 @@ infrastructure/kyverno-policies/
   app.yaml                                    ArgoCD Application for Kyverno policy CRs.
   disallow-latest-tag.yaml                    Policy: images must have explicit tag (not latest). Audit.
   require-run-as-non-root.yaml                Policy: all containers must run as non-root. Audit.
-  restrict-image-registries.yaml              Policy: images must come from approved registries. Audit.
   restrict-compute-service-rbac-writes.yaml   Policy: compute-service RBAC/Namespace writes. Enforce.
   deny-pods-on-restoring-pvcs.yaml            Policy: deny Pods mounting a PVC locked by fci.io/restore-id unless label matches. Enforce.
   kyverno-tests/

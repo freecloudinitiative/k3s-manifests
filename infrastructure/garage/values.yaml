@@ -66,9 +66,17 @@ resources:
     cpu: "1"
     memory: 1Gi
 
+# Garage's own /health returns 503 until a layout is assigned — expected,
+# documented behavior, not a crash. bootstrap-job.yaml (a PostSync hook)
+# assigns the layout, but PostSync only runs once ArgoCD sees this
+# StatefulSet Healthy, which (with an HTTP /health probe) never happens:
+# the liveness probe kills the container on every 503 before the job can
+# reach it, and the readiness-gated health check never passes either.
+# tcpSocket only asks "is the process listening", which is what a liveness
+# probe should check — full cluster health belongs to monitoring, not to a
+# probe that kills the pod.
 livenessProbe:
-  httpGet:
-    path: /health
+  tcpSocket:
     port: 3903
   initialDelaySeconds: 10
   periodSeconds: 30
@@ -76,8 +84,7 @@ livenessProbe:
   failureThreshold: 3
 
 readinessProbe:
-  httpGet:
-    path: /health
+  tcpSocket:
     port: 3903
   initialDelaySeconds: 5
   periodSeconds: 10

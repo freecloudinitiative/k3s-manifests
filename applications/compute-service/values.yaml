@@ -80,6 +80,10 @@ podDisruptionBudget:
 
 networkPolicy:
   enabled: true
+  # k3s kube-router rejects Service ClusterIP traffic before the namespace and
+  # ipBlock peers below can match it. Keep ingress isolation, but leave egress
+  # unrestricted until the cluster moves to a CNI with pre-DNAT policy support.
+  restrictEgress: false
   # k3s default Kubernetes API Service ClusterIP. Override if your cluster
   # service CIDR differs.
   kubernetesAPIServerCIDR: 10.43.0.1/32

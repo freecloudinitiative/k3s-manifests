@@ -67,6 +67,9 @@ podDisruptionBudget:
 
 networkPolicy:
   enabled: true
+  # See compute-service: Service ClusterIP traffic is rejected by kube-router
+  # before these destination peers match. Ingress remains restricted.
+  restrictEgress: false
   # k3s's default kubernetes Service address. Override if the cluster service
   # CIDR differs; an explicit /32 avoids opening all service-CIDR egress.
   kubernetesAPIServerCIDR: 10.43.0.1/32

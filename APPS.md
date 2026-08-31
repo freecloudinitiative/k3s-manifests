@@ -463,7 +463,7 @@ patch, or delete CNPG `Cluster` objects in that namespace.
 | `iam-service-postgresql-ca-cert` | `ca.crt` | volume `/etc/iam-service/postgres` | OpenBao `platform-postgresql/ca-cert` |
 | `iam-service-internal-public-key` | `internal-public.pem` | `/etc/iam-service/internal/internal-public.pem` | OpenBao `api-gateway/internal-public-key` |
 | `terminal-gateway-public-key` (shared) | `internal-public.pem` | `/etc/iam-service/terminal-gateway/terminal-gateway-public.pem` | OpenBao `terminal-gateway/internal-public-key`; owned by `external-secret-terminal.yaml` |
-| `iam-service-authentik-token` | `token` | `/etc/iam-service/authentik/token` (`AUTHENTIK_TOKEN_PATH`), `defaultMode: 0400`, volume `optional: true` | OpenBao `authentik/admin-token` — seeded manually, no automated source (created in Authentik UI/API, not by `blueprint.yaml`) |
+| `iam-service-authentik-token` | `token` | `/etc/iam-service/authentik/token` (`AUTHENTIK_TOKEN_PATH`), `defaultMode: 0400`, volume `optional: true` | OpenBao `authentik/admin-token` — an operator-chosen `AUTHENTIK_ADMIN_TOKEN` value, seeded by `openbao-secrets-init` alongside every other secret and also passed to Authentik as `AUTHENTIK_BOOTSTRAP_TOKEN`, so Authentik creates its akadmin API token with that same value at boot; no manual UI step |
 
 **Authentik integration** (`AUTHENTIK_*` env vars): user/group sync on account writes plus a
 background drift reconciler, both optional and never fatal. `AUTHENTIK_URL` points at

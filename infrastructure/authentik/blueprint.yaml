@@ -90,6 +90,7 @@ data:
           name: grafana
         attrs:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           client_type: confidential
           client_id: grafana-oidc
           client_secret: !Env GRAFANA_OIDC_SECRET
@@ -115,6 +116,7 @@ data:
           name: argocd
         attrs:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           client_type: confidential
           client_id: argocd-oidc
           client_secret: !Env ARGOCD_OIDC_SECRET
@@ -140,6 +142,7 @@ data:
           name: prometheus
         attrs:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           external_host: https://prometheus.freecloudinitiative.com
           mode: forward_single
       - model: authentik_core.application
@@ -155,6 +158,7 @@ data:
           name: alloy
         attrs:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           external_host: https://alloy.freecloudinitiative.com
           mode: forward_single
       - model: authentik_core.application
@@ -170,6 +174,7 @@ data:
           name: longhorn
         attrs:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           external_host: https://longhorn.freecloudinitiative.com
           mode: forward_single
       - model: authentik_core.application

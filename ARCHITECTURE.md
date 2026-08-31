@@ -145,8 +145,9 @@ Traefik (DaemonSet on master node, hostPort 80/443)
 UIs use subdomains on `websecure` (HTTPS) protected by Authentik ForwardAuth SSO.
 ```
 
-OpenBao is not routed through this repo's Traefik. Out-of-band prerequisite
-(see [README.md § Prerequisites](README.md)). This repo never creates its
+OpenBao is not routed through this repo's Traefik. It is installed, initialized,
+unsealed, and seeded entirely by `ansible-automation` before ArgoCD ever syncs
+(see [README.md § Prerequisites](README.md)) — this repo never creates its
 namespace or Service.
 
 ### API Traffic (authenticated)

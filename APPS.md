@@ -104,9 +104,12 @@ Authentik ForwardAuth.
 
 **What**: Central secret management (Vault fork).
 
-**Config**:
-- Upstream chart `openbao` `0.28.6`.
-- Namespace `openbao`. Sync-wave `2`.
+**Not managed by this repo.** Installed, initialized, unsealed, and seeded by the
+`ansible-automation` repo's `openbao-setup` + `openbao-secrets-init` roles, before
+`argocd-bootstrap` ever runs — so it's fully ready before ArgoCD starts syncing
+anything that depends on it (`external-secrets-config` in particular). This repo
+never creates the `openbao` namespace or Service; `infrastructure/openbao/values.yaml`
+is kept only as the single source of truth Ansible fetches for the Helm install.
 
 ---
 

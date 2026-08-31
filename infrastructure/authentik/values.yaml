@@ -33,6 +33,15 @@ global:
       value: verify-full
     - name: AUTHENTIK_POSTGRESQL__SSLROOTCERT
       value: /certs/platform-postgresql/ca.crt
+    # Default is 0 (a brand-new connection per request, closed at the end
+    # of it). authentik-server and platform-postgresql routinely land on
+    # different nodes, and a fresh sslmode=verify-full TLS handshake
+    # measured ~0.8-1s cross-node on this fleet -- paid on every single
+    # HTTP request, which is most of why login felt slow (each step of
+    # the flow is its own request). 60s lets gunicorn's sync workers keep
+    # a connection alive across a login's several round trips.
+    - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
+      value: "60"
   volumeMounts:
     - name: platform-postgresql-ca
       mountPath: /certs/platform-postgresql

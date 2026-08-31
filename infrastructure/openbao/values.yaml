@@ -1,3 +1,8 @@
+# Not applied by ArgoCD — there is no infrastructure/openbao/app.yaml. The
+# ansible-automation repo's openbao-setup role fetches this file directly
+# (raw GitHub URL) and passes it to `helm install/upgrade` before ArgoCD ever
+# runs, so OpenBao is fully ready before anything tries to read from it. Kept
+# here, not duplicated into ansible-automation, so there's one source of truth.
 global:
   enabled: true
   tlsDisable: false

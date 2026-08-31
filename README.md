@@ -42,13 +42,17 @@ organization at `ghcr.io/freecloudinitiative`. External Secrets materializes
 
 ### OpenBao
 
-OpenBao **is** deployed by this repo (via ArgoCD), but it must be manually
-initialised and unsealed after the first sync before `external-secrets` can connect.
+OpenBao is **not** deployed by this repo. It is installed (Helm), initialized,
+unsealed, and seeded entirely by the `ansible-automation` repo's `openbao-setup`
+and `openbao-secrets-init` roles — which run *before* `argocd-bootstrap`, so
+OpenBao is fully ready before ArgoCD ever syncs anything. `infrastructure/openbao/values.yaml`
+is kept in this repo only as the single source of truth Ansible fetches for the
+Helm install; there is no `Application` for it here.
 
 - Service must resolve at
   `openbao-active.openbao.svc.cluster.local:8200` — hardcoded in
   [infrastructure/external-secrets/cluster-store.yaml](infrastructure/external-secrets/cluster-store.yaml)
-  and must match whatever provisions OpenBao out of band.
+  and must match what `ansible-automation` provisions.
 - `openbao` namespace and a Kubernetes auth role/mount granting
   `external-secrets-openbao` ServiceAccount (namespace `external-secrets`)
   read access must exist in OpenBao — see

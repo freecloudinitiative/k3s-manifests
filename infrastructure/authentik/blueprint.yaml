@@ -183,3 +183,141 @@ data:
         attrs:
           name: Longhorn
           provider: !KeyOf longhorn-proxy
+  enrollment.yaml: |
+    version: 1
+    metadata:
+      name: Free Cloud Initiative self-service enrollment
+      labels:
+        blueprints.goauthentik.io/instantiate: "true"
+    entries:
+      # Checks the two password prompts match. authentik ships no built-in
+      # policy for this -- every "add a signup flow" example defines its own
+      # tiny expression policy, so this mirrors that pattern.
+      - model: authentik_policies_expression.expressionpolicy
+        id: enrollment-password-match-policy
+        identifiers:
+          name: enrollment-password-match
+        attrs:
+          expression: |
+            return request.context.get('prompt_data', {}).get('password') == request.context.get('prompt_data', {}).get('password_repeat')
+
+      - model: authentik_stages_prompt.prompt
+        id: enrollment-prompt-username
+        identifiers:
+          field_key: username
+          name: enrollment-username
+        attrs:
+          label: Username
+          type: username
+          required: true
+          placeholder: Username
+          order: 0
+      - model: authentik_stages_prompt.prompt
+        id: enrollment-prompt-name
+        identifiers:
+          field_key: name
+          name: enrollment-name
+        attrs:
+          label: Name
+          type: text
+          required: true
+          placeholder: Name
+          order: 1
+      - model: authentik_stages_prompt.prompt
+        id: enrollment-prompt-email
+        identifiers:
+          field_key: email
+          name: enrollment-email
+        attrs:
+          label: Email
+          type: email
+          required: true
+          placeholder: Email
+          order: 2
+      - model: authentik_stages_prompt.prompt
+        id: enrollment-prompt-password
+        identifiers:
+          field_key: password
+          name: enrollment-password
+        attrs:
+          label: Password
+          type: password
+          required: true
+          placeholder: Password
+          order: 3
+      - model: authentik_stages_prompt.prompt
+        id: enrollment-prompt-password-repeat
+        identifiers:
+          field_key: password_repeat
+          name: enrollment-password-repeat
+        attrs:
+          label: Password (repeat)
+          type: password
+          required: true
+          placeholder: Repeat password
+          order: 4
+
+      - model: authentik_stages_prompt.promptstage
+        id: enrollment-prompt-stage
+        identifiers:
+          name: enrollment-details-prompt
+        attrs:
+          fields:
+            - !KeyOf enrollment-prompt-username
+            - !KeyOf enrollment-prompt-name
+            - !KeyOf enrollment-prompt-email
+            - !KeyOf enrollment-prompt-password
+            - !KeyOf enrollment-prompt-password-repeat
+          validation_policies:
+            - !KeyOf enrollment-password-match-policy
+
+      - model: authentik_stages_user_write.userwritestage
+        id: enrollment-user-write-stage
+        identifiers:
+          name: enrollment-user-write
+
+      - model: authentik_stages_user_login.userloginstage
+        id: enrollment-user-login-stage
+        identifiers:
+          name: enrollment-user-login
+
+      - model: authentik_flows.flow
+        id: enrollment-flow
+        identifiers:
+          slug: default-enrollment-flow
+        attrs:
+          name: Free Cloud Initiative signup
+          title: Welcome to Free Cloud Initiative!
+          designation: enrollment
+          authentication: require_unauthenticated
+
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          target: !KeyOf enrollment-flow
+          stage: !KeyOf enrollment-prompt-stage
+        attrs:
+          order: 10
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          target: !KeyOf enrollment-flow
+          stage: !KeyOf enrollment-user-write-stage
+        attrs:
+          order: 20
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          target: !KeyOf enrollment-flow
+          stage: !KeyOf enrollment-user-login-stage
+        attrs:
+          order: 30
+
+      # Puts the "Sign up" link on the login screen (default-authentication-
+      # flow's identification stage). state: present + matching identifiers
+      # updates this existing built-in object rather than creating a new one.
+      - model: authentik_stages_identification.identificationstage
+        identifiers:
+          name: default-authentication-identification
+        attrs:
+          user_fields:
+            - email
+            - username
+          enrollment_flow: !KeyOf enrollment-flow

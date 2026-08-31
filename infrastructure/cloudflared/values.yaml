@@ -1,10 +1,7 @@
 replicaCount: 2
 
 image:
-  # Fully-qualified: infrastructure/kyverno-policies/restrict-image-registries.yaml
-  # runs failureAction: Enforce and matches the literal image string, so a bare
-  # Docker Hub path ("cloudflare/cloudflared") is denied even though the runtime
-  # resolves it identically.
+  # Keep the registry explicit so image resolution is deterministic.
   repository: docker.io/cloudflare/cloudflared
   tag: "2026.8.2"
   pullPolicy: IfNotPresent

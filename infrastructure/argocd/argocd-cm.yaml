@@ -19,3 +19,30 @@ data:
     hs.status = "Healthy"
     hs.message = "Ingress is managed by Traefik"
     return hs
+  # Without this, ArgoCD has no health check for ExternalSecret and treats
+  # it as Healthy the instant the CR is admitted — before the External
+  # Secrets Operator controller has actually read OpenBao and materialized
+  # the real Secret. Every later sync-wave's pod that mounts one of these
+  # Secrets was racing that reconcile and failing its first schedule with
+  # "secret not found" (observed across authentik, cloudflared, grafana,
+  # terminal-gateway). Gating on status.conditions[type=Ready] makes ArgoCD
+  # actually wait for ESO to finish before the next wave proceeds.
+  resource.customizations.health.external-secrets.io_ExternalSecret: |
+    hs = {}
+    if obj.status ~= nil and obj.status.conditions ~= nil then
+      for i, condition in ipairs(obj.status.conditions) do
+        if condition.type == "Ready" and condition.status == "True" then
+          hs.status = "Healthy"
+          hs.message = condition.message
+          return hs
+        end
+        if condition.type == "Ready" and condition.status == "False" then
+          hs.status = "Degraded"
+          hs.message = condition.message
+          return hs
+        end
+      end
+    end
+    hs.status = "Progressing"
+    hs.message = "Waiting for ExternalSecret to sync"
+    return hs

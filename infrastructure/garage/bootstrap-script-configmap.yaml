@@ -19,9 +19,7 @@ data:
     # Secret is never printed; Garage key-import output is suppressed because it
     # contains secret.
     #
-    # Zot registry bucket:
-    #   GARAGE_BUCKET=zot-registry GARAGE_KEY_NAME=zot \
-    #   GARAGE_ACCESS_KEY=... GARAGE_SECRET_KEY=... ./scripts/garage-bootstrap.sh
+    #
     set -euo pipefail
 
     GARAGE_ACCESS_KEY="${GARAGE_ACCESS_KEY:-${GARAGE_STORAGE_SERVICE_ACCESS_KEY:-}}"

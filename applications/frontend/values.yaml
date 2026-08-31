@@ -13,7 +13,7 @@ replicaCount: 2
 
 # imagePullSecrets -- pull credentials for ghcr.io/freecloudinitiative, which sits
 # behind Traefik basicAuth (infrastructure/zot-registry/middleware.yaml). Set via the
-# app.yaml helm parameter to zot-registry-pull-credentials.
+# app.yaml helm parameter to ghcr-pull-credentials.
 imagePullSecrets: []
 
 # service -- Kubernetes Service settings.

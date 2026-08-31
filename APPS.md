@@ -335,12 +335,12 @@ Role limits total 245 of `max_connections: 260`, leaving 15 for CNPG operations.
 **Config**:
 - Receives: OTLP gRPC (4317) + OTLP HTTP (4318).
 - Traces: OTel → Tempo (`tempo.monitoring.svc.cluster.local:4317`).
-- Logs: OTel → Loki (`loki-gateway.monitoring.svc.cluster.local:80`).
+- Logs: OTel OTLP/HTTP exporter → Loki (`loki-gateway.monitoring.svc.cluster.local:80/otlp`).
 - Batch: 1 s timeout, 256 items.
 - Memory limiter: 80% limit.
 - Extra Service `opentelemetry-collector-external` (LoadBalancer) on 4317/4318/8888.
 
-Chart Service name expected by most backends: `opentelemetry-collector.monitoring.svc.cluster.local:4317`. database-service `values.yaml` still sets `otel-collector.monitoring.svc.cluster.local:4317` — that hostname does not match this Service.
+Chart Service name expected by the backends: `opentelemetry-collector.monitoring.svc.cluster.local:4317`.
 
 ---
 
@@ -395,7 +395,7 @@ No Ingress. NetworkPolicy admits `frontend` only.
 
 **Image**: `ghcr.io/freecloudinitiative/compute-service` pinned by `image.digest`. `replicaCount: 2`. `DB_MAX_CONNS: 10`.
 
-**Metrics**: `metrics.enabled: true`, `PROMETHEUS_URL` set to `kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090`. This gates compute-service's own outbound Prometheus range queries that back the dashboard's per-engine Metrics tab (`GET /api/compute-engines/{id}/metrics`) — distinct from `/metrics` scraping, which `ServiceMonitor` already handles regardless of this flag. NetworkPolicy egress to `monitoring` includes TCP/9090 for these queries alongside TCP/4317 for OTLP export.
+**Metrics**: `metrics.enabled: true`, `PROMETHEUS_URL` set to `kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090`. This gates compute-service's own outbound Prometheus range queries that back the dashboard's per-engine Metrics tab (`GET /api/compute-engines/{id}/metrics`) — distinct from `/metrics` scraping, which `ServiceMonitor` already handles regardless of this flag. The chart retains its destination allowlist, but `networkPolicy.restrictEgress` is disabled for k3s kube-router compatibility; ingress remains restricted.
 
 **Secrets (namespace `backend`)**:
 

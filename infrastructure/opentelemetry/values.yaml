@@ -36,8 +36,11 @@ config:
       endpoint: tempo.monitoring.svc.cluster.local:4317
       tls:
         insecure: true
-    loki:
-      endpoint: http://loki-gateway.monitoring.svc.cluster.local:80/loki/api/v1/push
+    # The dedicated Loki exporter was removed from recent Collector releases.
+    # Loki accepts native OTLP/HTTP logs at /otlp/v1/logs; the exporter appends
+    # /v1/logs to this base endpoint.
+    otlphttp/loki:
+      endpoint: http://loki-gateway.monitoring.svc.cluster.local:80/otlp
     debug:
       verbosity: basic
 
@@ -50,4 +53,4 @@ config:
       logs:
         receivers: [otlp]
         processors: [memory_limiter, batch]
-        exporters: [loki, debug]
+        exporters: [otlphttp/loki, debug]

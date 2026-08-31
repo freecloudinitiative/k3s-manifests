@@ -22,7 +22,7 @@ spec:
       path: infrastructure/longhorn
       ref: values
       directory:
-        include: storageclasses.yaml
+        include: '{disk-bootstrap.yaml,storageclasses.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: longhorn-system

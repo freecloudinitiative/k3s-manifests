@@ -88,6 +88,9 @@ kubernetes:
 # is unrelated to and does not change that path.
 networkPolicy:
   enabled: true
+  # See compute-service: Service ClusterIP traffic is rejected by kube-router
+  # before these destination peers match. Ingress remains restricted.
+  restrictEgress: false
   # k3s's default kubernetes Service address. Confirmed 2026-08-29 alongside
   # clusterCIDRs above — same underlying cluster fact, must change together.
   # Previously this chart's egress rule opened the whole service CIDR

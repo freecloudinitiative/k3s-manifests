@@ -310,8 +310,13 @@ Services expose `/metrics`. Prometheus scrapes any `ServiceMonitor`.
 
 ## Network Isolation
 
-Each namespace has NetworkPolicy rules. Traffic is deny-by-default. Only
-declared paths are allowed.
+Each namespace has NetworkPolicy rules. Ingress is deny-by-default and only
+declared paths are allowed. compute-service, storage-service, and
+terminal-gateway deliberately leave egress unrestricted: k3s kube-router
+rejects Service ClusterIP traffic before namespaceSelector/ipBlock peers match,
+which otherwise blocks DNS, the Kubernetes API, Valkey, and Garage. Their
+documented egress allowlists remain in the charts behind
+`networkPolicy.restrictEgress` for a future CNI migration.
 
 Key rules:
 - Valkey: `backend` namespace port 6379, `monitoring` port 9121 exporter.
@@ -320,6 +325,9 @@ Key rules:
 - platform-postgresql: CNPG NetworkPolicy plus `networkpolicy.yaml`.
 - api-gateway: ingress from `frontend` only; egress to `authentik` on pod port 9000 for JWKS.
 - terminal-gateway: ingress from `backend` only.
+- Longhorn: an Argo CD Sync hook labels Ansible's `node-tier` workers for
+  default-disk creation before the chart reconciles; no manual node labeling is
+  required after a rebuild.
 
 **Cluster CIDR coupling**: `applications/storage-service/values.yaml`'s
 `clusterCIDRs.pod`/`clusterCIDRs.service`, and the `networkPolicy.kubernetesAPIServerCIDR`

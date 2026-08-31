@@ -10,7 +10,11 @@ spec:
   podSelector:
     matchLabels:
       {{- include "terminal-gateway.selectorLabels" . | nindent 6 }}
-  policyTypes: [Ingress, Egress]
+  policyTypes:
+    - Ingress
+    {{- if .Values.networkPolicy.restrictEgress }}
+    - Egress
+    {{- end }}
   ingress:
     # api-gateway proxies the WebSocket upgrade; there is intentionally no Ingress.
     - from:
@@ -28,6 +32,7 @@ spec:
       ports:
         - protocol: TCP
           port: {{ .Values.service.metricsPort }}
+  {{- if .Values.networkPolicy.restrictEgress }}
   egress:
     - to:
         - namespaceSelector:
@@ -64,4 +69,5 @@ spec:
               kubernetes.io/metadata.name: backend
       ports:
         - {protocol: TCP, port: 8080}
+  {{- end }}
 {{- end }}

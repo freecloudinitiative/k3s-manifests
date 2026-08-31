@@ -1,6 +1,15 @@
 persistence:
   createStorageClass: false
 
+global:
+  # worker-3 is deliberately tainted as the low-memory node. Longhorn must run
+  # its manager there too so the node can contribute its prepared storage disk.
+  tolerations:
+    - key: memory
+      operator: Equal
+      value: limited
+      effect: NoSchedule
+
 preUpgradeChecker:
   # Longhorn explicitly recommends disabling this job for Argo CD installs.
   jobEnabled: false

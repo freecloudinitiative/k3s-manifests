@@ -55,6 +55,7 @@ infrastructure/cert-manager/
 
 infrastructure/longhorn/
   app.yaml                                    ArgoCD Application for Longhorn Helm chart.
+  disk-bootstrap.yaml                         Argo Sync hook: label Ansible worker nodes for Longhorn default disks.
   storageclasses.yaml                         StorageClasses: longhorn-platform (2 replicas) + longhorn-local (1 replica).
   values.yaml                                 Longhorn Helm values.
 
@@ -170,7 +171,7 @@ infrastructure/tempo/
 
 infrastructure/opentelemetry/
   app.yaml                                    ArgoCD Application for OTel Collector Helm chart.
-  values.yaml                                 OTel config: OTLP receivers, batch processor, Tempo + Loki exporters.
+  values.yaml                                 OTel config: OTLP receivers, batch processor, Tempo + Loki OTLP/HTTP exporters.
   service.yaml                                LoadBalancer Service opentelemetry-collector-external (4317/4318/8888).
 
 infrastructure/alloy/

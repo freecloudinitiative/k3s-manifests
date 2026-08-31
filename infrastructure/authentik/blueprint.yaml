@@ -321,3 +321,17 @@ data:
             - email
             - username
           enrollment_flow: !KeyOf enrollment-flow
+
+      # Without this, a login or signup started directly at
+      # auth.freecloudinitiative.com (no app/client_id context -- exactly
+      # what a fresh signup is, since the enrollment flow above runs on
+      # this domain with no redirect_uri) lands on authentik's own "My
+      # applications" page instead of the app. Setting the default Brand's
+      # default_application makes authentik immediately continue into this
+      # application's own OIDC flow, which lands the user back on
+      # freecloudinitiative.com/callback like a normal login does.
+      - model: authentik_brands.brand
+        identifiers:
+          domain: authentik-default
+        attrs:
+          default_application: !Find [authentik_core.application, [slug, freecloudinitiative]]

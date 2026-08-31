@@ -32,9 +32,8 @@ Exits non-zero if any service's pinned digest is stale.
 Requires: crane (https://github.com/google/go-containerregistry),
 gh (GitHub CLI, authenticated)
 
-Auth: if GHCR_USERNAME/GHCR_TOKEN and/or REGISTRY_USERNAME/REGISTRY_PASSWORD
-are set, this script runs `crane auth login` for the relevant registry
-host(s) (ghcr.io / registry.freecloudinitiative.com) before checking. If
+Auth: if GHCR_USERNAME/GHCR_TOKEN are set, this script runs `crane auth login`
+for ghcr.io before checking. If
 unset, it relies on crane's default docker-config auth — i.e. you already
 ran `docker login`/`crane auth login` yourself. GitHub auth comes from `gh`'s
 own login state.
@@ -95,10 +94,6 @@ login_host_if_needed() {
     ghcr.io)
       user="${GHCR_USERNAME:-}"
       pass="${GHCR_TOKEN:-}"
-      ;;
-    registry.freecloudinitiative.com)
-      user="${REGISTRY_USERNAME:-}"
-      pass="${REGISTRY_PASSWORD:-}"
       ;;
   esac
 

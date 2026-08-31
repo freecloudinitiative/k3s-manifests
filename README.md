@@ -34,10 +34,9 @@ One Git repo means:
 
 ## Container Registry Strategy
 
-We employ a dual-registry strategy depending on the environment:
-
-- **Pre-prod / Test Environment:** Uses **GitHub Container Registry (GHCR)** (`ghcr.io/freecloudinitiative`). This is the current default in these manifests. It prevents the chicken-and-egg problem where an empty cluster cannot start the internal registry without pulling images first.
-- **Production Environment (Planned):** Will use our self-hosted, air-gapped registry **`registry.freecloudinitiative.com`** (powered by Zot and backed by Garage S3) for strict security and data sovereignty.
+All platform workloads pull from the private GitHub Container Registry
+organization at `ghcr.io/freecloudinitiative`. External Secrets materializes
+`ghcr-pull-credentials` in `backend` and `frontend` from OpenBao.
 
 ## Prerequisites
 
@@ -208,7 +207,6 @@ infrastructure/
   garage/             S3-compatible object storage, 3-replica distributed.
   authentik/          OIDC identity provider.
   cloudflared/        Cloudflare tunnel — public endpoints without port forwarding.
-  zot-registry/       OCI container image registry backed by Garage S3.
   argocd/             ArgoCD self-configuration (ArgoCD manages itself).
   kube-prometheus-stack/ Prometheus + Grafana + Alertmanager.
   loki/               Log aggregation.

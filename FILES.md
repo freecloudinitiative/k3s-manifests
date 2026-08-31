@@ -36,7 +36,6 @@ infrastructure/namespaces/
   platform-database.yaml                      Namespace: platform-database (Postgres cluster)
   traefik.yaml                                Namespace: traefik
   valkey.yaml                                 Namespace: valkey
-  zot-registry.yaml                           Namespace: zot-registry
 
 infrastructure/metallb/
   app.yaml                                    ArgoCD Application for MetalLB Helm chart.
@@ -73,6 +72,7 @@ infrastructure/cloudnative-pg/
 
 infrastructure/external-secrets/
   app.yaml                                    ArgoCD Application for External Secrets Operator.
+  app-config.yaml                             ArgoCD Application for OpenBao store and ExternalSecrets.
   cluster-store.yaml                          ClusterSecretStore pointing to OpenBao (Kubernetes auth).
   service-account.yaml                        ServiceAccount for External Secrets to auth with OpenBao.
   rbac.yaml                                   RBAC for External Secrets service account.
@@ -87,8 +87,8 @@ infrastructure/external-secrets/
   external-secret-iam.yaml                    iam-service DatabaseRole + chart-facing secrets.
   external-secret-compute.yaml                compute-service DatabaseRole + chart-facing secrets.
   external-secret-database.yaml               database-service DatabaseRole + chart-facing secrets.
-  external-secret-registry.yaml               zot-registry-pull-credentials (backend).
-  external-secret-registry-frontend.yaml      zot-registry-pull-credentials (frontend).
+  external-secret-ghcr.yaml                   ghcr-pull-credentials (backend).
+  external-secret-ghcr-frontend.yaml          ghcr-pull-credentials (frontend).
   external-secret-argocd.yaml                 ArgoCD OIDC credentials.
 
 infrastructure/kyverno/
@@ -128,7 +128,7 @@ infrastructure/garage/
 infrastructure/authentik/
   app.yaml                                    ArgoCD Application for Authentik Helm chart.
   values.yaml                                 Authentik config: 2 server + 2 worker, Postgres, Let's Encrypt TLS. blueprints.configMaps: [authentik-blueprints].
-  blueprint.yaml                              Authentik Blueprint ConfigMap: frontend OIDC provider and redirect URI, four fci-* role groups, Grafana/ArgoCD/Zot/Prometheus providers.
+  blueprint.yaml                              Authentik Blueprint ConfigMap: frontend OIDC provider and redirect URI, four fci-* role groups, Grafana/ArgoCD/Prometheus providers.
   certificate.yaml                            TLS certificate for Authentik (Let's Encrypt).
   networkpolicy.yaml                          NetworkPolicy for Authentik namespaced traffic.
   service-account.yaml                        ServiceAccount for Authentik runtime.
@@ -139,14 +139,6 @@ infrastructure/cloudflared/
   values.yaml                                 cloudflared config: 2 replicas, tunnel token from Secret.
   templates/
     deployment.yaml                           cloudflared Deployment template.
-
-infrastructure/zot-registry/
-  app.yaml                                    ArgoCD Application for Zot Registry Helm chart.
-  values.yaml                                 Zot config: Garage S3 backend, Let's Encrypt TLS, Prometheus metrics.
-  external-secrets.yaml                       ExternalSecret for Zot S3 credentials + htpasswd.
-  middleware.yaml                             Traefik Middleware for registry authentication.
-  networkpolicy.yaml                          NetworkPolicy for Zot registry.
-  service-account.yaml                        ServiceAccount for Zot registry.
 
 infrastructure/argocd/
   app-config.yaml                             ArgoCD Application to manage ArgoCD's own config (self-management).

@@ -4,7 +4,9 @@ metadata:
   name: garage
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    # external-secrets-config is wave 3 and must first materialize the
+    # OpenBao-backed Garage bootstrap credentials.
+    argocd.argoproj.io/sync-wave: "4"
     argocd.argoproj.io/sync-wave-health: all
   finalizers:
     - resources-finalizer.argocd.argoproj.io

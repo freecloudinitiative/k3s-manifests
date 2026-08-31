@@ -22,19 +22,11 @@ ArgoCD syncs every 3 minutes and on any Git push. Drift from declared state is s
 
 ## Application Image Promotion (Environment Strategy)
 
-We employ a dual-registry strategy depending on the environment:
-
-**1. Test / Pre-prod Environment (Current)**
-In test environments where the cluster is still bootstrapping or lacks public tunneling, we use **GitHub Container Registry (GHCR)** (`ghcr.io/freecloudinitiative`). This avoids the chicken-and-egg problem where the cluster cannot pull images to start the registry that hosts those images.
-
-**2. Production Environment (Planned)**
-When moving to production, we will switch back to our self-hosted, air-gapped registry: **`registry.freecloudinitiative.com`** (powered by Zot and backed by Garage S3). 
-
-`registry.freecloudinitiative.com` is behind Authentik SSO (ForwardAuth).
-External Secrets Operator materializes `zot-registry-pull-credentials` in
-`backend` and `frontend` from OpenBao `zot-registry/pull-username` and
-`zot-registry/pull-password`. Applications pass that Secret as
-`imagePullSecrets[0].name`.
+Platform images are stored in the private GitHub Container Registry
+organization at `ghcr.io/freecloudinitiative`. External Secrets Operator
+materializes `ghcr-pull-credentials` in `backend` and `frontend` from OpenBao
+`ghcr-registry/ghcr-username` and `ghcr-registry/ghcr-token`. Applications
+pass that Secret as `imagePullSecrets[0].name`.
 
 Application images are promoted with static ArgoCD Helm parameters in each
 `applications/<name>/app.yaml`. Parameter is part of Git history, so deploy
@@ -56,20 +48,20 @@ Wave  0  namespaces/*.yaml     ← Namespace objects (no Application)
 
 Wave  1  cert-manager
          kyverno
-         external-secrets      ← operator + ClusterSecretStore
+         external-secrets      ← operator and CRDs only
 
 Wave  2  longhorn
          loki
          kyverno-policies
          cloudnative-pg        ← operator before Cluster CRs
 
-Wave  3  garage
-         cert-manager-configs  ← issuers + CA cert
+Wave  3  external-secrets-config ← OpenBao store + ExternalSecrets
+         cert-manager-configs    ← issuers + CA cert
 
-Wave  4  metallb
+Wave  4  garage
+         metallb
          platform-postgresql
          valkey
-         zot-registry
 
 Wave  5  authentik
          metallb-config        ← IP pool + L2Advertisement
@@ -146,8 +138,6 @@ Traefik (DaemonSet on master node, hostPort 80/443)
    │   (internal_only in terraform-cloudflare-infra — unproxied RFC1918 A
    │    record, TLS via ca-cluster-issuer since Let's Encrypt HTTP-01 can't
    │    reach them; clients must trust the internal CA)
-   ├── registry.freecloudinitiative.com ──► Zot Registry (namespace: zot-registry)
-   │                                        (Traefik middleware: Authentik ForwardAuth)
    ├── argocd.freecloudinitiative.com ──► ArgoCD server (namespace: argocd)
    ├── longhorn.freecloudinitiative.com ──► Longhorn UI (namespace: longhorn-system)
    └── /traefik-dashboard ► Traefik internal API
@@ -201,7 +191,7 @@ Pod mounts or references Secret via env/volume
 token. OpenBao Kubernetes auth role grants access only to
 `external-secrets-openbao` ServiceAccount (namespace `external-secrets`).
 
-Store allow-list: `authentik`, `argocd`, `backend`, `frontend`, `zot-registry`,
+Store allow-list: `authentik`, `argocd`, `backend`, `frontend`,
 `monitoring`, `platform-database`, `valkey`. `cloudflared` is not listed;
 `cloudflared-tunnel-token` ExternalSecret in `cloudflared` cannot sync until
 that namespace is added.
@@ -225,9 +215,7 @@ Seed these out of band before matching `ExternalSecret` can reach
 | `secret/data/terminal-gateway` | `internal-signing-key` | terminal-gateway token issuance | `terminal-gateway-signing-key` (backend) |
 | `secret/data/valkey` | `password` | Valkey ACL + every backend client | `valkey-auth` (valkey); `valkey-password` / `*-valkey-password` (backend) |
 | `secret/data/valkey` | `ca-cert` | Valkey TLS verify | `valkey-ca-cert` / `*-valkey-ca-cert` (backend) |
-| `secret/data/zot-registry` | `pull-username`, `pull-password` | image pulls | `zot-registry-pull-credentials` (backend, frontend) |
-| `secret/data/zot-registry` | `s3-access-key-id`, `s3-secret-access-key` | Zot Garage backend | `zot-s3-credentials` (zot-registry) |
-| `secret/data/authentik` | `zot-oidc-secret` | Traefik registry SSO | `zot-oidc-secret` (zot-registry) |
+| `secret/data/ghcr-registry` | `ghcr-username`, `ghcr-token` | image pulls | `ghcr-pull-credentials` (backend, frontend) |
 | `secret/data/authentik` | `postgresql-password` | authentik pod + `DatabaseRole` | `authentik-config` (authentik), `authentik-postgresql-credentials` (platform-database) |
 | `secret/data/authentik` | `secret-key` | authentik signing key | `authentik-config` (authentik) |
 | `secret/data/authentik` | `bootstrap-email` | first-run bootstrap | `authentik-bootstrap` (authentik) |
@@ -262,9 +250,7 @@ CNPG. All `*-postgresql-credentials` that feed a `DatabaseRole` live in
                   │  Longhorn longhorn-local PVC (1 replica — Garage       │
                   │  handles its own replication)                           │
                   │                                                          │
-                  │  Used by:                                                │
-                  │  ├─ zot-registry (bucket: zot-registry)                │
-                  │  └─ storage-service (bucket: platform, customer data)   │
+                  │  Used by storage-service (bucket: platform, customer data)│
                   └──────────────────────────────────────────────────────────┘
 
                   ┌─── platform-postgresql (CNPG) ─────────────────────────┐
@@ -401,7 +387,6 @@ outbound-only. Tunnel token is the only secret that enables public access.
 | valkey | `valkey` | any node |
 | authentik | `authentik` | any node (hard anti-affinity between server pods) |
 | cloudflared | `cloudflared` | any node |
-| zot-registry | `zot-registry` | any node (tolerates `memory=limited`) |
 | kube-prometheus-stack | `monitoring` | any node |
 | loki | `monitoring` | any node |
 | tempo | `monitoring` | any node |

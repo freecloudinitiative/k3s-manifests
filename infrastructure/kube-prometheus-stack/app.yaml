@@ -32,6 +32,15 @@ spec:
       prune: true
       selfHeal: true
       allowEmpty: true
+    # cert-manager patches the Prometheus operator admission webhook after the
+    # chart first starts. Retry through that short window instead of leaving a
+    # fresh cluster on a permanently failed sync revision.
+    retry:
+      limit: -1
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 2m
     syncOptions:
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true

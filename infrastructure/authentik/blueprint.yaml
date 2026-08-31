@@ -310,18 +310,6 @@ data:
         attrs:
           order: 30
 
-      # Puts the "Sign up" link on the login screen (default-authentication-
-      # flow's identification stage). state: present + matching identifiers
-      # updates this existing built-in object rather than creating a new one.
-      - model: authentik_stages_identification.identificationstage
-        identifiers:
-          name: default-authentication-identification
-        attrs:
-          user_fields:
-            - email
-            - username
-          enrollment_flow: !KeyOf enrollment-flow
-
       # Without this, a login or signup started directly at
       # auth.freecloudinitiative.com (no app/client_id context -- exactly
       # what a fresh signup is, since the enrollment flow above runs on
@@ -335,3 +323,39 @@ data:
           domain: authentik-default
         attrs:
           default_application: !Find [authentik_core.application, [slug, freecloudinitiative]]
+
+      # "Sign in with Google" button on the login screen. Client
+      # credentials come from OpenBao via external-secret-authentik.yaml
+      # (GOOGLE_OAUTH_CLIENT_ID/SECRET), seeded by
+      # ansible-automation's AUTHENTIK_GOOGLE_CLIENT_ID/SECRET. Redirect
+      # URI registered on the Google Cloud OAuth client must be
+      # https://auth.freecloudinitiative.com/source/oauth/callback/google/
+      # -- the slug below ("google") is baked into that URL.
+      - model: authentik_sources_oauth.oauthsource
+        id: google-oauth-source
+        identifiers:
+          slug: google
+        attrs:
+          name: Google
+          provider_type: google
+          consumer_key: !Env GOOGLE_OAUTH_CLIENT_ID
+          consumer_secret: !Env GOOGLE_OAUTH_CLIENT_SECRET
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          enrollment_flow: !Find [authentik_flows.flow, [slug, default-source-enrollment]]
+          pre_authentication_flow: !Find [authentik_flows.flow, [slug, default-source-pre-authentication]]
+
+      # Puts the "Sign up" and "Sign in with Google" affordances on the
+      # login screen. state: present + matching identifiers updates this
+      # existing built-in object rather than creating a new one -- doing
+      # so re-validates the whole serializer, so user_fields has to be
+      # repeated here even though it isn't changing.
+      - model: authentik_stages_identification.identificationstage
+        identifiers:
+          name: default-authentication-identification
+        attrs:
+          user_fields:
+            - email
+            - username
+          enrollment_flow: !KeyOf enrollment-flow
+          sources:
+            - !KeyOf google-oauth-source

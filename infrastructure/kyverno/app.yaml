@@ -8,6 +8,11 @@ metadata:
     argocd.argoproj.io/sync-wave-health: all
   finalizers:
     - resources-finalizer.argocd.argoproj.io
+    # Kyverno ships PreDelete hooks. Argo CD adds these finalizers at runtime;
+    # declaring them keeps the parent app-of-apps from reporting permanent
+    # drift on the child Application.
+    - pre-delete-finalizer.argocd.argoproj.io
+    - pre-delete-finalizer.argocd.argoproj.io/cleanup
 spec:
   project: default
   sources:
@@ -41,3 +46,7 @@ spec:
       jsonPointers:
         - /spec/conversion/webhook/clientConfig/caBundle
         - /status
+      # Some Kyverno CRDs render an empty label map, which the API server
+      # normalizes away. Ignore only that empty-map normalization.
+      jqPathExpressions:
+        - '.metadata.labels | select(. == {})'

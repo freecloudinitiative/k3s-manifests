@@ -34,6 +34,16 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    # A fresh cluster can reach this application before External Secrets has
+    # authenticated to OpenBao. Keep retrying the same Git revision after the
+    # bootstrap credential becomes available; automated sync alone does not
+    # retry a revision whose initial operation exhausted its retry window.
+    retry:
+      limit: -1
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 2m
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true

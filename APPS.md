@@ -179,14 +179,12 @@ Standalone Helm chart. Policies live in `kyverno-policies` app.
 | Policy | Mode | Rule |
 |---|---|---|
 | `disallow-latest-tag` | Audit | Images must have explicit tag or digest. `latest` flagged, not blocked. |
-| `require-run-as-non-root` | Audit | Containers must run as non-root (`runAsNonRoot: true`). |
 | `restrict-compute-service-rbac-writes` | Enforce | compute-service may write Roles / RoleBindings / Namespaces only in `fci-cust-*`, and only approved role/subject pairings. |
 
 Every policy sets `failureAction` per rule, inside each rule's `validate` block — the top-level
 `spec.validationFailureAction` field is deprecated and has had no effect since Kyverno 1.13, well
-before the chart version pinned in `infrastructure/kyverno/app.yaml`. Three policies (`disallow-latest-tag`,
-`require-run-as-non-root`) log only; `restrict-compute-service-rbac-writes`
-blocks.
+before the chart version pinned in `infrastructure/kyverno/app.yaml`. `disallow-latest-tag`
+logs only; `restrict-compute-service-rbac-writes` blocks.
 
 ---
 

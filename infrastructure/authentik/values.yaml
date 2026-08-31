@@ -84,6 +84,18 @@ server:
     limits:
       cpu: "1"
       memory: 1Gi
+  # Chart default timeoutSeconds (3s) is too tight for this fleet:
+  # /-/health/ready/ does a real DB round-trip and routinely takes ~3s
+  # under load here, so kubelet was marking the pod NotReady on
+  # "context deadline exceeded" even though authentik itself was fine
+  # a moment later -- pulling it out of the Service endpoints and
+  # making auth.freecloudinitiative.com 502 with no healthy backend.
+  livenessProbe:
+    timeoutSeconds: 10
+  readinessProbe:
+    timeoutSeconds: 10
+  startupProbe:
+    timeoutSeconds: 10
   metrics:
     enabled: true
     serviceMonitor:
@@ -137,6 +149,14 @@ worker:
     limits:
       cpu: "1"
       memory: 1Gi
+  # See server.readinessProbe above -- same too-tight-for-this-fleet
+  # default timeout, this time on the `ak healthcheck` exec probe.
+  livenessProbe:
+    timeoutSeconds: 10
+  readinessProbe:
+    timeoutSeconds: 10
+  startupProbe:
+    timeoutSeconds: 10
   metrics:
     enabled: true
     serviceMonitor:

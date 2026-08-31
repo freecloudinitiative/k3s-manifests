@@ -31,9 +31,6 @@ spec:
               kubernetes.io/metadata.name: backend
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: zot-registry
-        - namespaceSelector:
-            matchLabels:
               fci.io/tier: customer
           podSelector:
             matchLabels:

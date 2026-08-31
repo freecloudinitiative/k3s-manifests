@@ -107,7 +107,7 @@ kubernetes:
 # compute-service/internal/k8s/config.go's INSTANCE_PULL_SECRET_SOURCE default.
 # Created by infrastructure/external-secrets/external-secret-registry.yaml.
 instancePullSecret:
-  sourceName: zot-registry-pull-credentials
+  sourceName: ghcr-pull-credentials
 
 reconcile:
   interval: 2s

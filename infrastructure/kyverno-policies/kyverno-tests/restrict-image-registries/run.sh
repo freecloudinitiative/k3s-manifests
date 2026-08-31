@@ -17,7 +17,7 @@ cases=(
   "pod-ghcr:pass"
   "pod-docker-qualified:pass"
   "pod-docker-bare:fail"
-  "pod-zot:pass"
+  "pod-retired-registry:fail"
   "pod-compute-os:pass"
   "pod-unlisted-registry:fail"
   "pod-bad-initcontainer:fail"

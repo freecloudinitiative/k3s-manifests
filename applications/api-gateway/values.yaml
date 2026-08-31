@@ -3,7 +3,6 @@
 replicaCount: 2
 
 image:
-  # repository: registry.freecloudinitiative.com/freecloudinitiative/api-gateway # uncomment when deploying to prod
   repository: ghcr.io/freecloudinitiative/api-gateway
   pullPolicy: IfNotPresent
   # tag or digest is injected by the ArgoCD Application via helm.parameters

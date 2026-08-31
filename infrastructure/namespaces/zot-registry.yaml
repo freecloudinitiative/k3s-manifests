@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: zot-registry
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    name: zot-registry

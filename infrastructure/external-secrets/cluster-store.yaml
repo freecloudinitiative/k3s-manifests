@@ -12,7 +12,9 @@ spec:
         - authentik
         - argocd
         - backend
+        - cloudflared
         - frontend
+        - garage
         - monitoring
         - platform-database
         - valkey

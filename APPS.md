@@ -116,8 +116,7 @@ Authentik ForwardAuth.
 
 **Config**:
 - One `ClusterSecretStore` named `openbao-store`. Server `https://openbao-active.openbao.svc.cluster.local:8200`. Kubernetes SA auth, role `external-secrets`.
-- Store `conditions.namespaces`: `authentik`, `argocd`, `backend`, `frontend`, `monitoring`, `platform-database`, `valkey`.
-- `cloudflared` is not on that list. `cloudflared-tunnel-token` ExternalSecret still lives in `cloudflared` — store will refuse it until `cloudflared` is added.
+- Store `conditions.namespaces`: `authentik`, `argocd`, `backend`, `cloudflared`, `frontend`, `garage`, `monitoring`, `platform-database`, `valkey`.
 
 **ExternalSecrets** (Kubernetes Secret name = target unless noted):
 

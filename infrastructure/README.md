@@ -16,14 +16,13 @@ Prometheus: https://prometheus.freecloudinitiative.com
 Alloy:      https://alloy.freecloudinitiative.com
 Longhorn:   https://longhorn.freecloudinitiative.com
 Authentik:  https://auth.freecloudinitiative.com
-Registry:   https://registry.freecloudinitiative.com
 Frontend:   https://freecloudinitiative.com
 ```
 
 Ops UIs use dedicated subdomains via `Ingress` in `infrastructure/traefik`.
 The frontend SPA is the exception — it's the product, so it sits on the
 apex (`applications/frontend`) rather than a subdomain.
-Authentik ForwardAuth protects ArgoCD, Grafana, Prometheus, Alloy, Longhorn, Zot with SSO.
+Authentik ForwardAuth protects ArgoCD, Grafana, Prometheus, Alloy, and Longhorn with SSO.
 Identity provider behind a path prefix breaks cookies and OIDC redirect URIs.
 
 OpenBao itself is not deployed by this repo and is not routed through this
@@ -46,7 +45,6 @@ out-of-band deployment provides.
   cert-manager-issued certificate) - not a NodePort, and not a path prefix
   (Authentik doesn't tolerate running under one).
 - `valkey`: private, Redis-protocol cache/Pub/Sub service for backend replicas.
-- `zot-registry`: private Zot OCI registry backed by Garage object storage.
 - `longhorn`: CSI block storage with explicit replicated and node-local storage classes.
 - `garage`: private, three-node S3-compatible object storage for the storage service and backup targets.
 - `kube-prometheus-stack`, `alloy`, `loki`, `tempo`, `opentelemetry`: private observability stack.
@@ -63,8 +61,8 @@ out-of-band deployment provides.
   inert until that lands).
 - `cloudflared`: Cloudflare Tunnel connector. Forwards root domain and
   public hosts to Traefik ClusterIP. Traefik routes by hostname for all UIs.
-  Ingress lives in `infrastructure/traefik`, `authentik`, `zot-registry`,
-  and `applications/frontend`.
+  Ingress lives in `infrastructure/traefik`, `authentik`, and
+  `applications/frontend`.
   The tunnel itself (and its DNS records) is created by the separate
   [terraform-cloudflare-infra](https://github.com/freecloudinitiative/terraform-cloudflare-infra)
   repo; this chart only runs the connector. Its `TUNNEL_TOKEN` comes from
@@ -76,16 +74,17 @@ out-of-band deployment provides.
 Secrets are never stored in plaintext in this repository. OpenBao recovery
 material and bootstrap credentials must remain outside both Git and Kubernetes.
 `ClusterSecretStore` allow-list is `authentik`, `argocd`, `backend`, `frontend`,
-`zot-registry`, `monitoring`, `platform-database`, `valkey`. Customer
+`monitoring`, `platform-database`, `valkey`. Customer
 namespaces must never be added. `cloudflared` is not on that list —
 `cloudflared-tunnel-token` ExternalSecret cannot sync until it is.
 
 ## Identity and data bootstrap
 
-App-of-Apps waves: namespaces (0), cert-manager / kyverno / external-secrets
-(1), longhorn / loki / kyverno-policies / cloudnative-pg (2), garage +
-issuers (3), metallb / platform-postgresql / valkey / zot-registry (4),
-authentik (5). Full table in [ARCHITECTURE.md](../ARCHITECTURE.md).
+App-of-Apps waves: namespaces (0), cert-manager / kyverno / External Secrets
+operator (1), longhorn / loki / kyverno-policies / cloudnative-pg / OpenBao
+(2), External Secrets OpenBao configuration + issuers (3), Garage / MetalLB /
+platform-postgresql / Valkey (4), Authentik (5). Full table in
+[ARCHITECTURE.md](../ARCHITECTURE.md).
 
 Before secret bootstrap role can seed OpenBao, export strong unique values
 for:

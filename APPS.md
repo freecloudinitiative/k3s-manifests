@@ -8,7 +8,7 @@
 
 Creates Kubernetes namespaces. Each YAML carries sync-wave `0`. Root app includes `namespaces/*.yaml`. No dedicated `Application`.
 
-Namespaces in this folder: `authentik`, `backend`, `cert-manager`, `cloudflared`, `cnpg-system`, `frontend`, `garage`, `kyverno`, `longhorn-system`, `metallb-system`, `monitoring`, `openbao`, `platform-database`, `traefik`, `valkey`, `zot-registry`.
+Namespaces in this folder: `authentik`, `backend`, `cert-manager`, `cloudflared`, `cnpg-system`, `frontend`, `garage`, `kyverno`, `longhorn-system`, `metallb-system`, `monitoring`, `openbao`, `platform-database`, `traefik`, `valkey`.
 
 `external-secrets` is not here. That Application sets `CreateNamespace=true`. `argocd` comes from bootstrap / out-of-band.
 
@@ -35,7 +35,7 @@ Namespaces in this folder: `authentik`, `backend`, `cert-manager`, `cloudflared`
 | Issuer | Name | Used for |
 |---|---|---|
 | Self-signed (bootstrap) | `selfsigned-cluster-issuer` | Private CA root certificate |
-| Private CA | `ca-cluster-issuer` | Internal service certs (OpenBao, Valkey, Postgres) and internal-only-DNS hosts (Zot Registry, ArgoCD, Longhorn, Traefik dashboard) |
+| Private CA | `ca-cluster-issuer` | Internal service certs (OpenBao, Valkey, Postgres) and internal-only-DNS hosts (ArgoCD, Longhorn, Traefik dashboard) |
 | Let's Encrypt production | `letsencrypt-production` | Public certs reachable over HTTP-01 (Authentik, frontend, Grafana, Prometheus, Alloy) |
 
 **Sync-wave**: `cert-manager` Application `1`. Issuer/CA YAMLs wave `1`. `cert-manager-configs` Application `3`.
@@ -47,11 +47,6 @@ internal CA instead. Two consequences:
 - Any client that doesn't trust the internal CA sees a certificate warning for these four hosts.
   Acceptable for internal dashboards (ArgoCD, Longhorn, Traefik) — import the CA in a browser to
   clear it.
-- containerd on every k3s node must trust the internal CA to pull from
-  `registry.freecloudinitiative.com` without error (via `/etc/rancher/k3s/certs.d/` or
-  `registries.yaml` — not yet configured; tracked as an `ansible-automation` follow-up). **The
-  ghcr.io → internal-registry migration must not be considered complete until this node-level trust
-  is in place.**
 
 ---
 
@@ -121,7 +116,7 @@ Authentik ForwardAuth.
 
 **Config**:
 - One `ClusterSecretStore` named `openbao-store`. Server `https://openbao-active.openbao.svc.cluster.local:8200`. Kubernetes SA auth, role `external-secrets`.
-- Store `conditions.namespaces`: `authentik`, `argocd`, `backend`, `frontend`, `zot-registry`, `monitoring`, `platform-database`, `valkey`.
+- Store `conditions.namespaces`: `authentik`, `argocd`, `backend`, `frontend`, `monitoring`, `platform-database`, `valkey`.
 - `cloudflared` is not on that list. `cloudflared-tunnel-token` ExternalSecret still lives in `cloudflared` — store will refuse it until `cloudflared` is added.
 
 **ExternalSecrets** (Kubernetes Secret name = target unless noted):
@@ -163,10 +158,8 @@ Authentik ForwardAuth.
 | `terminal-gateway-public-key` | `backend` | Shared public half (iam + compute) |
 | `terminal-gateway-valkey-password` | `backend` | terminal-gateway Valkey password |
 | `terminal-gateway-valkey-ca-cert` | `backend` | terminal-gateway Valkey CA |
-| `zot-registry-pull-credentials` | `backend` | Docker pull creds for FCI images |
-| `zot-registry-pull-credentials` | `frontend` | Docker pull creds for frontend image |
-| `zot-s3-credentials` | `zot-registry` | Garage S3 for Zot (defined in `zot-registry/external-secrets.yaml`) |
-| `zot-registry-auth` | `zot-registry` | htpasswd for Traefik registry-auth |
+| `ghcr-pull-credentials` | `backend` | GHCR pull credentials for FCI images |
+| `ghcr-pull-credentials` | `frontend` | GHCR pull credentials for the frontend image |
 
 **Namespace rule**: CNPG resolves `DatabaseRole.spec.passwordSecret` in namespace where `DatabaseRole` reconciles (`platform-database`). Secrets that feed a `DatabaseRole` must live in `platform-database`. Backend copies for pods are separate `ExternalSecret` objects.
 
@@ -255,7 +248,7 @@ Role limits total 245 of `max_connections: 260`, leaving 15 for CNPG operations.
 
 ### garage
 
-**What**: S3-compatible distributed object storage. Backend for Zot registry and `storage-service`.
+**What**: S3-compatible distributed object storage for `storage-service`.
 
 **Config**:
 - 3-node StatefulSet, `replicationFactor: 3`, `consistencyMode: consistent`.
@@ -276,10 +269,10 @@ Role limits total 245 of `max_connections: 260`, leaving 15 for CNPG operations.
 - 2 server replicas, 2 worker replicas. Hard pod anti-affinity.
 - Backed by `platform-postgresql` (`authentik` database). TLS `verify-full`, CA mount.
 - Secrets from OpenBao via ExternalSecret.
-- Public endpoint: `https://auth.freecloudinitiative.com` — Let's Encrypt via cert-manager. Provides ForwardAuth SSO for ArgoCD, Grafana, Prometheus, Alloy, Zot, Longhorn.
+- Public endpoint: `https://auth.freecloudinitiative.com` — Let's Encrypt via cert-manager. Provides ForwardAuth SSO for ArgoCD, Grafana, Prometheus, Alloy, and Longhorn.
 - Ingress on Traefik `websecure` + security-headers middleware.
 - Outpost discovery disabled. Built-in Postgres disabled.
-- `values.yaml` sets `blueprints.configMaps: [authentik-blueprints]`, so Authentik loads the `blueprint.yaml` ConfigMap. It declares OIDC provider `freecloudinitiative-frontend` with redirect URI `https://freecloudinitiative.com/callback`, four `fci-admin`/`fci-editor`/`fci-viewer`/`fci-auditor` role groups, and Grafana, ArgoCD, Zot, and Prometheus providers. Without it, OIDC login does not work.
+- `values.yaml` sets `blueprints.configMaps: [authentik-blueprints]`, so Authentik loads the `blueprint.yaml` ConfigMap. It declares OIDC provider `freecloudinitiative-frontend` with redirect URI `https://freecloudinitiative.com/callback`, four `fci-admin`/`fci-editor`/`fci-viewer`/`fci-auditor` role groups, and Grafana, ArgoCD, and Prometheus providers. Without it, OIDC login does not work.
 
 ---
 
@@ -291,22 +284,6 @@ Role limits total 245 of `max_connections: 260`, leaving 15 for CNPG operations.
 - 2 replicas. Image `cloudflare/cloudflared:2026.8.2`.
 - Tunnel token never in Git — OpenBao via ExternalSecret `cloudflared-tunnel-token`.
 - Routes to Traefik. Tunnel DNS lives in `terraform-cloudflare-infra`, not this repo.
-
----
-
-### zot-registry
-
-**What**: OCI container image registry. FCI services pull images from here.
-
-**Config**:
-- Single replica.
-- Backend: Garage S3 (`garage.garage.svc.cluster.local:3900`, bucket `zot-registry`, region `fci-local`).
-- S3 credentials from ExternalSecret `zot-s3-credentials`.
-- Bucket and key created by second run using Zot's distinct OpenBao credentials: `GARAGE_BUCKET=zot-registry GARAGE_KEY_NAME=zot GARAGE_ACCESS_KEY=... GARAGE_SECRET_KEY=... ./scripts/garage-bootstrap.sh`.
-- Public endpoint: `https://ghcr.io/freecloudinitiative` — Let's Encrypt.
-- Auth via Authentik SSO (ForwardAuth).
-- GC enabled, 24h delay.
-- Prometheus metrics at `/metrics`.
 
 ---
 
@@ -378,9 +355,9 @@ Chart Service name expected by most backends: `opentelemetry-collector.monitorin
 
 ## Applications
 
-All seven Applications source `https://github.com/freecloudinitiative/k3s-manifests.git` at `applications/<name>`. Charts live next to `app.yaml`. Helm parameters set `image.tag` and `imagePullSecrets[0].name=zot-registry-pull-credentials`.
+All seven Applications source `https://github.com/freecloudinitiative/k3s-manifests.git` at `applications/<name>`. Charts live next to `app.yaml`. Helm parameters set `image.tag` and `imagePullSecrets[0].name=ghcr-pull-credentials`.
 
-**Note on Image Registries:** For non-prod/testing, applications pull from `ghcr.io`. For production, they will pull from `registry.freecloudinitiative.com` (Zot). The `values.yaml` for each application contains a commented-out Zot repository line (`# uncomment when deploying to prod`) to make this transition easy. The `zot-registry-pull-credentials` Secret contains authentication for both registries.
+**Image registry:** Applications pull from the private `ghcr.io/freecloudinitiative` organization using `ghcr-pull-credentials`.
 
 ---
 
@@ -565,7 +542,7 @@ No Ingress. NetworkPolicy admits `backend` only. frontend nginx proxies `/ws/` �
 
 **Ingress**: `https://freecloudinitiative.com` — Let's Encrypt (`frontend-public-tls`), Traefik `websecure` + `traefik-security-headers`. nginx proxies `/api/` and `/ws/` to `http://api-gateway.backend.svc.cluster.local:80`.
 
-**Secrets**: `zot-registry-pull-credentials` only (image pull). No OpenBao app secret.
+**Secrets**: `ghcr-pull-credentials` only (image pull). No OpenBao app secret.
 
 ---
 
@@ -588,10 +565,8 @@ asynchronously after a commit lands, so the script walks back through recent com
 assuming the branch tip is already published. `--tag <tag>` compares against an exact tag instead.
 It exits non-zero listing any service whose pin is stale,
 and requires `crane`, `yq`, and an authenticated `gh` (GitHub CLI) on `PATH`. Registry auth: set
-`GHCR_USERNAME`/`GHCR_TOKEN` (for `ghcr.io` repositories) and/or
-`REGISTRY_USERNAME`/`REGISTRY_PASSWORD` (for `registry.freecloudinitiative.com`, once charts switch
-to it) — these mirror the `ghcr-username`/`ghcr-token` and `pull-username`/`pull-password` keys
-already stored at OpenBao `secret/data/zot-registry` for `zot-registry-pull-credentials`. If unset,
+`GHCR_USERNAME`/`GHCR_TOKEN`; these mirror the `ghcr-username`/`ghcr-token`
+keys stored at OpenBao `secret/data/ghcr-registry` for `ghcr-pull-credentials`. If unset,
 the script falls back to crane's default docker-config auth (i.e. a prior manual
 `docker login`/`crane auth login`).
 

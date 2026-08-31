@@ -1,7 +1,6 @@
 # image -- OCI image settings.
 # Exactly one of tag or digest must be set; the chart fails if both are empty.
 image:
-  # repository: registry.freecloudinitiative.com/freecloudinitiative/frontend # uncomment when deploying to prod
   repository: ghcr.io/freecloudinitiative/frontend
   # tag is used when digest is empty.
   tag: ""
@@ -11,9 +10,8 @@ image:
 # replicaCount -- number of pods.
 replicaCount: 2
 
-# imagePullSecrets -- pull credentials for ghcr.io/freecloudinitiative, which sits
-# behind Traefik basicAuth (infrastructure/zot-registry/middleware.yaml). Set via the
-# app.yaml helm parameter to ghcr-pull-credentials.
+# imagePullSecrets -- pull credentials for the private GHCR organization. Set
+# via the app.yaml Helm parameter to ghcr-pull-credentials.
 imagePullSecrets: []
 
 # service -- Kubernetes Service settings.

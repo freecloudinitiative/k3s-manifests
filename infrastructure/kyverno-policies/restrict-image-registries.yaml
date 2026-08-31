@@ -47,10 +47,6 @@ spec:
                       - "quay.io/*"
                       - "docker.io/*"
                       - "registry.k8s.io/*"
-                      # Platform's own Zot registry: source of customer
-                      # compute-instance OS images, and the eventual source
-                      # of all backend images.
-                      - "registry.freecloudinitiative.com/*"
           - list: "request.object.spec.initContainers"
             deny:
               conditions:

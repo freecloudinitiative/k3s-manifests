@@ -13,20 +13,14 @@ image:
   # ArgoCD Application helm.parameters, which prefers image.digest) — an
   # empty tag is a hard error in
   # applications/storage-service/templates/_helpers.tpl.  Never falls back to Chart.appVersion.
-  # repository: registry.freecloudinitiative.com/freecloudinitiative/storage-service # uncomment when deploying to prod
   repository: ghcr.io/freecloudinitiative/storage-service
   tag: ""
   digest: ""
   pullPolicy: IfNotPresent
 
-# imagePullSecrets is required: ghcr.io/freecloudinitiative sits behind
-# Traefik's basicAuth middleware (zot-registry-registry-auth@kubernetescrd,
-# k3s-manifests/infrastructure/zot-registry/middleware.yaml).  The zot
-# config.json carries no auth block of its own, so auth is enforced at the
-# ingress layer only; pods cannot bypass it by hitting the ClusterIP Service
-# because the container runtime resolves the external hostname and goes
-# through HTTPS + basicAuth.  Create a Secret of type kubernetes.io/dockerconfigjson
-# with credentials for ghcr.io/freecloudinitiative and reference it here.
+# imagePullSecrets is required for the private GHCR organization. Create a
+# Secret of type kubernetes.io/dockerconfigjson with GHCR credentials and
+# reference it here.
 imagePullSecrets: []
 
 nameOverride: ""
@@ -110,7 +104,7 @@ objectStore:
   # the Service is garage.garage.svc.cluster.local, not object-storage —
   # confirmed by rendering the upstream chart (script/helm/garage at
   # c3c8af9a66714c5697f6fd123d2e9b5b32027772) with release name "garage",
-  # and cross-checked against zot-registry's identical endpoint.
+  # and cross-checked against the chart's S3 endpoint.
   endpoint: "http://garage.garage.svc.cluster.local:3900"
   bucket: platform
   # fci-local matches garage.s3.api.region in

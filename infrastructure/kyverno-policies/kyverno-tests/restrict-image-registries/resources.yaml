@@ -55,12 +55,12 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: pod-zot
+  name: pod-retired-registry
   namespace: frontend
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: frontend
+    - name: retired-registry
       image: registry.freecloudinitiative.com/freecloudinitiative/frontend:x
       resources:
         requests:

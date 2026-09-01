@@ -393,9 +393,17 @@ data:
             }
 
             ak-flow-executor::part(branding) {
-              width: 112px;
-              margin: 0 auto 18px;
-              opacity: 0.9;
+              display: none !important;
+            }
+
+            ak-flow-executor::part(header) {
+              display: none !important;
+            }
+
+            .pf-c-title,
+            .pf-v5-c-title,
+            .pf-v6-c-title {
+              display: none !important;
             }
 
             ak-flow-executor::part(challenge) {
@@ -436,19 +444,23 @@ data:
             input,
             select,
             textarea {
-              background: #050b10 !important;
-              border: 1px solid var(--fci-border) !important;
-              border-radius: 4px !important;
+              background: transparent !important;
+              border: none !important;
+              border-bottom: 1px solid var(--fci-border) !important;
+              border-radius: 0 !important;
               color: var(--fci-text) !important;
               font-family: "Courier New", Courier, monospace !important;
               box-shadow: none !important;
+              padding: 0 4px !important;
+              caret-color: var(--fci-accent) !important;
+              caret-shape: block;
             }
 
             input:focus,
             select:focus,
             textarea:focus {
-              border-color: var(--fci-border-bright) !important;
-              box-shadow: 0 0 0 1px var(--fci-border-bright) !important;
+              border-bottom-color: var(--fci-border-bright) !important;
+              box-shadow: none !important;
               outline: none !important;
             }
 
@@ -484,6 +496,80 @@ data:
             ak-brand-links {
               color: var(--fci-muted);
               font-family: "Courier New", Courier, monospace;
+            }
+
+            /* Footer layout for Google & Sign Up buttons side-by-side */
+            .pf-c-login__main-footer,
+            .pf-v5-c-login__main-footer,
+            .pf-v6-c-login__main-footer {
+              display: grid !important;
+              grid-template-columns: 1fr 1fr;
+              gap: 12px;
+              margin-top: 24px !important;
+              align-items: stretch;
+            }
+
+            .pf-c-login__main-footer-links,
+            .pf-v5-c-login__main-footer-links,
+            .pf-v6-c-login__main-footer-links,
+            .pf-c-login__main-footer-band,
+            .pf-v5-c-login__main-footer-band,
+            .pf-v6-c-login__main-footer-band {
+               margin: 0 !important;
+               font-size: 0 !important; /* Hide "Need an account?" */
+               display: flex;
+               height: 100%;
+            }
+
+            .pf-c-login__main-footer-links ul {
+               display: flex; 
+               width: 100%;
+               margin: 0; padding: 0;
+            }
+            .pf-c-login__main-footer-links li {
+               display: flex;
+               width: 100%;
+            }
+            .pf-c-login__main-footer-links .pf-c-button {
+               width: 100%;
+               display: flex;
+               justify-content: center;
+               align-items: center;
+               padding: 6px 16px !important;
+            }
+
+            .pf-c-login__main-footer-links img,
+            .pf-c-login__main-footer-links svg {
+               filter: grayscale(100%) contrast(200%);
+            }
+
+            .pf-c-login__main-footer-band a,
+            .pf-v5-c-login__main-footer-band a,
+            .pf-v6-c-login__main-footer-band a {
+               font-size: 14px !important;
+               flex: 1;
+               display: flex;
+               justify-content: center;
+               align-items: center;
+               padding: 6px 16px !important;
+               
+               background: var(--fci-bg) !important;
+               border: 1px solid var(--fci-border) !important;
+               border-radius: 4px !important;
+               color: var(--fci-accent) !important;
+               font-family: "Courier New", Courier, monospace !important;
+               font-weight: 700 !important;
+               letter-spacing: 0.055em;
+               text-decoration: none !important;
+               box-shadow: none !important;
+            }
+
+            .pf-c-login__main-footer-band a:hover,
+            .pf-v5-c-login__main-footer-band a:hover,
+            .pf-v6-c-login__main-footer-band a:hover {
+               background: #0d1b2a !important;
+               border-color: var(--fci-border-bright) !important;
+               color: #ffffff !important;
             }
 
             @media (max-width: 560px) {

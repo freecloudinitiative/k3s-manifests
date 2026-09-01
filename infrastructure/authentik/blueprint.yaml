@@ -604,7 +604,7 @@ data:
                color: transparent;
                transform: translateY(1px);
             }
-            
+
             .pf-c-login__main-footer-links .pf-c-button:hover::before {
                color: #ffffff;
                -webkit-text-stroke: 1px #ffffff;

@@ -668,13 +668,20 @@ data:
               font-size: 13px !important;
             }
 
-            .links a {
+            /* The "Not you?" <a> itself isn't in this tree either -- it's
+               assigned to .links's <slot name="link"> from ak-form-static's
+               light DOM (a real child of ak-form-static in the parent
+               ak-flow-card shadow root). "a" would only match a node that
+               actually exists in the tree the stylesheet is currently
+               evaluated against; slotted content needs ::slotted()
+               specifically to reach across that boundary. */
+            .links ::slotted(a) {
               color: var(--fci-accent) !important;
               font-family: "Courier New", Courier, monospace !important;
               text-decoration: none !important;
             }
 
-            .links a:hover {
+            .links ::slotted(a:hover) {
               color: #ffffff !important;
             }
 

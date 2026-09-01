@@ -613,7 +613,7 @@ data:
                transform: translateY(1px);
                line-height: 1 !important;
             }
-            
+
             .pf-c-login__main-footer-links .pf-c-button:hover::before {
                -webkit-text-stroke: 1.5px #ffffff !important;
             }
@@ -625,7 +625,7 @@ data:
                color: var(--fci-accent) !important;
                line-height: 1 !important;
             }
-            
+
             .pf-c-login__main-footer-links .pf-c-button:hover::after {
                color: #ffffff !important;
             }

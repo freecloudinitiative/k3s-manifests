@@ -38,3 +38,15 @@ spec:
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
       - CreateNamespace=true
+  # The external-secrets.io/v1 ExternalSecret CRD schema sets these three
+  # remoteRef fields to their defaults server-side on every create/update
+  # (conversionStrategy: Default, decodingStrategy: None, metadataPolicy:
+  # None). Git never sets them, so without this the app is permanently
+  # OutOfSync even immediately after a successful sync.
+  ignoreDifferences:
+    - group: external-secrets.io
+      kind: ExternalSecret
+      jqPathExpressions:
+        - '.spec.data[]?.remoteRef.conversionStrategy'
+        - '.spec.data[]?.remoteRef.decodingStrategy'
+        - '.spec.data[]?.remoteRef.metadataPolicy'

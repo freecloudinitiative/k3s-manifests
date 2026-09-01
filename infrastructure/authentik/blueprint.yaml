@@ -318,10 +318,185 @@ data:
       # default_application makes authentik immediately continue into this
       # application's own OIDC flow, which lands the user back on
       # freecloudinitiative.com/callback like a normal login does.
+      - model: authentik_flows.flow
+        identifiers:
+          slug: default-authentication-flow
+        attrs:
+          name: Free Cloud Initiative
+          title: Free Cloud Initiative
+          designation: authentication
+          authentication: none
+
       - model: authentik_brands.brand
         identifiers:
           domain: authentik-default
         attrs:
+          branding_title: Free Cloud Initiative
+          # Keep authentik visibly credited while the surrounding experience
+          # follows the frontend's terminal-style visual language.
+          branding_logo: /static/dist/assets/icons/icon_left_brand.svg
+          branding_custom_css: |
+            :root {
+              color-scheme: dark;
+              --fci-bg: #000000;
+              --fci-panel: #02070b;
+              --fci-border: #1e5b8f;
+              --fci-border-bright: #4fa8dc;
+              --fci-text: #d7e3eb;
+              --fci-muted: #7990a0;
+              --fci-accent: #4fa8dc;
+              --pf-global--FontFamily--sans-serif: "Courier New", Courier, monospace;
+              --pf-global--BackgroundColor--dark-100: var(--fci-bg);
+              --pf-global--BackgroundColor--100: var(--fci-panel);
+              --pf-global--primary-color--100: var(--fci-accent);
+              --pf-t--global--font--family--body: "Courier New", Courier, monospace;
+              --pf-t--global--background--color--primary--default: var(--fci-bg);
+              --pf-t--global--color--brand--default: var(--fci-accent);
+            }
+
+            html,
+            body {
+              background: var(--fci-bg) !important;
+              color: var(--fci-text) !important;
+              font-family: "Courier New", Courier, monospace !important;
+            }
+
+            ak-flow-executor::part(login) {
+              min-height: 100dvh;
+              background: var(--fci-bg) !important;
+              background-image: none !important;
+              color: var(--fci-text);
+              font-family: "Courier New", Courier, monospace;
+            }
+
+            ak-flow-executor::part(main) {
+              position: relative;
+              width: min(420px, calc(100vw - 32px));
+              margin: auto;
+              padding: 34px 28px 26px;
+              background: var(--fci-panel) !important;
+              border: 1px solid var(--fci-border);
+              border-radius: 6px;
+              box-shadow: 0 0 28px rgba(30, 91, 143, 0.18);
+            }
+
+            ak-flow-executor::part(main)::before {
+              content: "FREE CLOUD INITIATIVE";
+              position: absolute;
+              top: -9px;
+              left: 16px;
+              padding: 0 7px;
+              background: var(--fci-bg);
+              color: var(--fci-accent);
+              font-size: 12px;
+              letter-spacing: 0.12em;
+            }
+
+            ak-flow-executor::part(branding) {
+              width: 112px;
+              margin: 0 auto 18px;
+              opacity: 0.9;
+            }
+
+            ak-flow-executor::part(challenge) {
+              color: var(--fci-text);
+            }
+
+            ak-flow-executor::part(locale-select) {
+              display: none;
+            }
+
+            ak-flow-executor::part(footer) {
+              background: transparent !important;
+              color: var(--fci-muted);
+              font-family: "Courier New", Courier, monospace;
+            }
+
+            .pf-c-login,
+            .pf-c-login__main,
+            .pf-c-card,
+            .pf-v5-c-card,
+            .pf-v6-c-card {
+              background: transparent !important;
+              color: var(--fci-text) !important;
+              font-family: "Courier New", Courier, monospace !important;
+            }
+
+            h1,
+            h2,
+            h3,
+            p,
+            label,
+            legend {
+              color: var(--fci-text) !important;
+              font-family: "Courier New", Courier, monospace !important;
+              letter-spacing: 0.035em;
+            }
+
+            input,
+            select,
+            textarea {
+              background: #050b10 !important;
+              border: 1px solid var(--fci-border) !important;
+              border-radius: 4px !important;
+              color: var(--fci-text) !important;
+              font-family: "Courier New", Courier, monospace !important;
+              box-shadow: none !important;
+            }
+
+            input:focus,
+            select:focus,
+            textarea:focus {
+              border-color: var(--fci-border-bright) !important;
+              box-shadow: 0 0 0 1px var(--fci-border-bright) !important;
+              outline: none !important;
+            }
+
+            button,
+            .pf-c-button,
+            .pf-v5-c-button,
+            .pf-v6-c-button {
+              background: var(--fci-bg) !important;
+              border: 1px solid var(--fci-border) !important;
+              border-radius: 4px !important;
+              color: var(--fci-accent) !important;
+              font-family: "Courier New", Courier, monospace !important;
+              font-weight: 700 !important;
+              letter-spacing: 0.055em;
+              box-shadow: none !important;
+            }
+
+            button:hover,
+            button:focus-visible,
+            .pf-c-button:hover,
+            .pf-v5-c-button:hover,
+            .pf-v6-c-button:hover {
+              background: #0d1b2a !important;
+              border-color: var(--fci-border-bright) !important;
+              color: #ffffff !important;
+            }
+
+            a {
+              color: var(--fci-accent) !important;
+              font-family: "Courier New", Courier, monospace !important;
+            }
+
+            ak-brand-links {
+              color: var(--fci-muted);
+              font-family: "Courier New", Courier, monospace;
+            }
+
+            @media (max-width: 560px) {
+              ak-flow-executor::part(main) {
+                width: calc(100vw - 24px);
+                padding: 30px 20px 22px;
+              }
+            }
+          attributes:
+            settings:
+              locale: en
+              theme:
+                base: dark
           default_application: !Find [authentik_core.application, [slug, freecloudinitiative]]
 
       # "Sign in with Google" button on the login screen. Client

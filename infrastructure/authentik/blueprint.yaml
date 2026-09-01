@@ -345,6 +345,11 @@ data:
               --fci-text: #d7e3eb;
               --fci-muted: #7990a0;
               --fci-accent: #4fa8dc;
+              /* Matches frontend/src/pages/tui-dashboard.css's
+                 --dash-input-bg -- the same "recessed terminal box" look
+                 the app's own service-search inputs use, rather than a
+                 flat transparent field sitting on the panel background. */
+              --fci-input-bg: #0d0d0d;
               --pf-global--FontFamily--sans-serif: "Courier New", Courier, monospace;
               --pf-global--BackgroundColor--dark-100: var(--fci-bg);
               --pf-global--BackgroundColor--100: var(--fci-panel);
@@ -531,19 +536,40 @@ data:
                width: 100%;
             }
 
+            /* frontend/src/pages/tui-dashboard.css's .fci-terminal-input /
+               .fci-service-search: a recessed dark box (not flat
+               transparent-on-panel), monospace, small line-height, slight
+               letter-spacing, italic dim placeholder. The dashboard also
+               draws a blinking block cursor, but that's a fake ::after
+               element positioned by a --fci-chars custom property that a
+               React wrapper updates on every keystroke (TerminalInput.tsx)
+               -- branding_custom_css is CSS-only with no hook to run that
+               JS, so caret-shape:block (unsupported in shipping browsers
+               as of writing) plus caret-color is the closest equivalent
+               achievable here; it degrades to a plain accent-colored
+               caret rather than breaking. */
             input,
             select,
             textarea {
-              background: transparent !important;
+              background: var(--fci-input-bg) !important;
               border: none !important;
-              border-radius: 0 !important;
+              border-radius: 2px !important;
               color: var(--fci-text) !important;
               font-family: "Courier New", Courier, monospace !important;
               box-shadow: none !important;
-              padding: 0 4px !important;
+              padding: 4px 6px !important;
+              line-height: 1.2 !important;
+              letter-spacing: 0.02em !important;
               caret-color: var(--fci-accent) !important;
               caret-shape: block;
               width: 100% !important;
+            }
+
+            input::placeholder,
+            textarea::placeholder {
+              color: var(--fci-muted) !important;
+              font-style: italic !important;
+              opacity: 1 !important;
             }
 
             input:focus,

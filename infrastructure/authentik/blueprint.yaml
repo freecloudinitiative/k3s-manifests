@@ -444,13 +444,12 @@ data:
             .pf-c-form__group,
             .pf-v5-c-form__group,
             .pf-v6-c-form__group {
-               position: relative;
                border: 1px solid var(--fci-border) !important;
-               border-radius: 6px;
-               padding: 14px 10px 8px 10px;
-               background: var(--fci-bg);
-               margin-top: 18px;
-               margin-bottom: 24px;
+               border-radius: 6px !important;
+               padding: 0 10px 8px 10px !important;
+               background: var(--fci-bg) !important;
+               margin-top: 24px !important;
+               margin-bottom: 24px !important;
                transition: border-color 0.15s, box-shadow 0.15s;
             }
 
@@ -464,12 +463,12 @@ data:
             .pf-c-form__group-label,
             .pf-v5-c-form__group-label,
             .pf-v6-c-form__group-label {
-               position: absolute;
-               top: -9px;
-               left: 10px;
-               background: var(--fci-bg);
-               padding: 0 6px;
-               z-index: 2;
+               display: inline-block !important;
+               background: var(--fci-bg) !important;
+               padding: 0 6px !important;
+               margin-top: -10px !important;
+               margin-left: 2px !important;
+               margin-bottom: 8px !important;
             }
 
             .pf-c-form__label,
@@ -477,8 +476,11 @@ data:
             .pf-v6-c-form__label {
                color: var(--fci-accent) !important;
                font-size: 11px !important;
-               letter-spacing: 0.05em;
+               letter-spacing: 0.05em !important;
                font-weight: normal !important;
+               display: inline-block !important;
+               margin: 0 !important;
+               padding: 0 !important;
             }
 
             .pf-c-form__label-required {
@@ -580,40 +582,52 @@ data:
                display: flex;
                width: 100%;
             }
-            .pf-c-login__main-footer-links .pf-c-button {
-               width: 100%;
-               display: flex;
-               justify-content: center;
-               align-items: center;
-               padding: 6px 16px !important;
-               gap: 10px;
+            ak-provider-button,
+            .pf-c-login__main-footer-links form {
+               display: block !important;
+               width: 100% !important;
             }
 
-            .pf-c-login__main-footer-links img,
-            .pf-c-login__main-footer-links svg,
-            .pf-c-login__main-footer-links i {
+            .pf-c-login__main-footer-links .pf-c-button {
+               width: 100% !important;
+               display: flex !important;
+               justify-content: center !important;
+               align-items: center !important;
+               padding: 6px 16px !important;
+               gap: 12px !important;
+               box-sizing: border-box !important;
+            }
+
+            /* Hide default Google icon and text */
+            .pf-c-login__main-footer-links .pf-c-button > * {
                display: none !important;
             }
 
             .pf-c-login__main-footer-links .pf-c-button::before {
-               content: "G";
-               font-family: "Arial", sans-serif;
-               font-size: 16px;
-               font-weight: 900;
-               -webkit-text-stroke: 1px var(--fci-accent);
-               color: transparent;
+               content: "G" !important;
+               font-family: "Arial", sans-serif !important;
+               font-size: 17px !important;
+               font-weight: 900 !important;
+               -webkit-text-stroke: 1.5px var(--fci-accent) !important;
+               color: transparent !important;
                transform: translateY(1px);
+               line-height: 1 !important;
             }
 
             .pf-c-login__main-footer-links .pf-c-button:hover::before {
-               color: #ffffff;
-               -webkit-text-stroke: 1px #ffffff;
+               -webkit-text-stroke: 1.5px #ffffff !important;
             }
 
             .pf-c-login__main-footer-links .pf-c-button::after {
-               content: "Sign in";
-               font-size: 14px;
-               font-family: "Courier New", Courier, monospace;
+               content: "Sign in" !important;
+               font-size: 14px !important;
+               font-family: "Courier New", Courier, monospace !important;
+               color: var(--fci-accent) !important;
+               line-height: 1 !important;
+            }
+
+            .pf-c-login__main-footer-links .pf-c-button:hover::after {
+               color: #ffffff !important;
             }
 
             .pf-c-login__main-footer-band a,

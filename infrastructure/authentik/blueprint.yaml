@@ -621,6 +621,63 @@ data:
               font-family: "Courier New", Courier, monospace;
             }
 
+            /* The "you're continuing as <user>" row shown on the password
+               stage (after identification) and on the post-logout screen
+               is <ak-form-static>, a web component with its own shadow
+               root -- its internal .pf-c-avatar/.username/.links classes
+               are unstyled by anything above since nothing here targets
+               them. Reached the same way every other cross-shadow-root fix
+               in this file works: the branding stylesheet is shared via
+               adoptedStyleSheets across every authentik web component, not
+               scoped to one shadow root, so plain class selectors here
+               still apply inside ak-form-static's shadow DOM. */
+            ak-form-static {
+              display: block !important;
+              border: 1px solid var(--fci-border) !important;
+              border-radius: 6px !important;
+              padding: 10px !important;
+              margin-bottom: 24px !important;
+              background: var(--fci-bg) !important;
+            }
+
+            .primary-content {
+              display: flex !important;
+              align-items: center !important;
+              gap: 10px !important;
+            }
+
+            .pf-c-avatar {
+              border-radius: 2px !important;
+              border: 1px solid var(--fci-border) !important;
+            }
+
+            .username {
+              color: var(--fci-text) !important;
+              font-family: "Courier New", Courier, monospace !important;
+              font-weight: 700 !important;
+              letter-spacing: 0.02em !important;
+            }
+
+            /* Unqualified, unlike the ak-form-static rule above: this
+               stylesheet is also adopted directly into ak-form-static's
+               OWN shadow root, and evaluated there the host element isn't
+               an ancestor of .links inside its own tree (only reachable
+               via :host) -- "ak-form-static .links" would silently never
+               match. */
+            .links {
+              font-size: 13px !important;
+            }
+
+            .links a {
+              color: var(--fci-accent) !important;
+              font-family: "Courier New", Courier, monospace !important;
+              text-decoration: none !important;
+            }
+
+            .links a:hover {
+              color: #ffffff !important;
+            }
+
             /* Footer layout for Google & Sign Up buttons side-by-side */
             .pf-c-login__main-footer,
             .pf-v5-c-login__main-footer,

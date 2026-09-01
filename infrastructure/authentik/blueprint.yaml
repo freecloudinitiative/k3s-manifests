@@ -345,6 +345,11 @@ data:
               --fci-text: #d7e3eb;
               --fci-muted: #7990a0;
               --fci-accent: #4fa8dc;
+              /* Matches frontend/src/pages/tui-dashboard.css's
+                 --dash-input-bg -- the same "recessed terminal box" look
+                 the app's own service-search inputs use, rather than a
+                 flat transparent field sitting on the panel background. */
+              --fci-input-bg: #0d0d0d;
               --pf-global--FontFamily--sans-serif: "Courier New", Courier, monospace;
               --pf-global--BackgroundColor--dark-100: var(--fci-bg);
               --pf-global--BackgroundColor--100: var(--fci-panel);
@@ -444,9 +449,10 @@ data:
             .pf-c-form__group,
             .pf-v5-c-form__group,
             .pf-v6-c-form__group {
+               position: relative;
                border: 1px solid var(--fci-border) !important;
                border-radius: 6px !important;
-               padding: 0 10px 8px 10px !important;
+               padding: 16px 10px 8px 10px !important;
                background: var(--fci-bg) !important;
                margin-top: 24px !important;
                margin-bottom: 24px !important;
@@ -460,6 +466,19 @@ data:
                box-shadow: 0 0 10px rgba(79, 168, 220, 0.15) !important;
             }
 
+            /* .pf-c-form__group.pf-m-action wraps the submit button using
+               the same class as real form fields, so it was getting the
+               same bordered box above -- nesting the button's own border
+               inside it and producing a double-outline "Log in" button.
+               It isn't a field; it never needs the box. */
+            .pf-c-form__group.pf-m-action,
+            .pf-v5-c-form__group.pf-m-action,
+            .pf-v6-c-form__group.pf-m-action {
+               border: none !important;
+               padding: 0 !important;
+               background: transparent !important;
+            }
+
             .pf-c-form__group-label,
             .pf-v5-c-form__group-label,
             .pf-v6-c-form__group-label {
@@ -471,16 +490,39 @@ data:
                margin-bottom: 8px !important;
             }
 
+            /* Sit the label directly on the box's top border, cutting a gap
+               into the line, the same way the panel title
+               (ak-flow-executor::part(main)::before, "FREE CLOUD
+               INITIATIVE") sits on the outer panel border. */
             .pf-c-form__label,
             .pf-v5-c-form__label,
             .pf-v6-c-form__label {
+               position: absolute !important;
+               top: -9px !important;
+               left: 8px !important;
                color: var(--fci-accent) !important;
                font-size: 11px !important;
                letter-spacing: 0.05em !important;
                font-weight: normal !important;
                display: inline-block !important;
+               background: var(--fci-bg) !important;
                margin: 0 !important;
-               padding: 0 !important;
+               padding: 0 7px !important;
+            }
+
+            /* The visible label text isn't on the <label> itself but on a
+               nested <span class="pf-c-form__label-text"> -- authentik's
+               own dark-theme stylesheet sets that span's color directly
+               (:is([data-theme="dark"]) .pf-c-form__label-text), which
+               beats the rule above by specificity since it targets the
+               span, not an ancestor. Match the panel-title look (small,
+               accent-colored, letter-spaced) here explicitly instead of
+               relying on inheritance from .pf-c-form__label. */
+            .pf-c-form__label-text {
+               color: var(--fci-accent) !important;
+               font-size: 11px !important;
+               font-weight: normal !important;
+               letter-spacing: 0.05em !important;
             }
 
             .pf-c-form__label-required {
@@ -494,19 +536,48 @@ data:
                width: 100%;
             }
 
+            /* frontend/src/pages/tui-dashboard.css's .fci-terminal-input /
+               .fci-service-search: a recessed dark box (not flat
+               transparent-on-panel), monospace, small line-height, slight
+               letter-spacing, italic dim placeholder, blinking block
+               cursor. The dashboard's own cursor is a fake ::after element
+               whose position a React wrapper recomputes from every
+               keystroke -- not portable to authentik's CSS-only
+               branding_custom_css -- but caret-shape: block turns out to
+               be supported in current Chromium and gives a real,
+               natively-tracking block caret for free with none of that
+               complexity: confirmed via CSS.supports('caret-shape',
+               'block') and by typing into the live field, where the block
+               correctly follows the text as typed rather than only
+               showing on an empty field. Browsers without support just
+               keep the default thin caret -- this can't visually break. */
             input,
             select,
             textarea {
-              background: transparent !important;
+              background: var(--fci-input-bg) !important;
               border: none !important;
-              border-radius: 0 !important;
+              border-radius: 2px !important;
               color: var(--fci-text) !important;
               font-family: "Courier New", Courier, monospace !important;
               box-shadow: none !important;
-              padding: 0 4px !important;
+              padding: 4px 6px !important;
+              line-height: 1.2 !important;
+              letter-spacing: 0.02em !important;
               caret-color: var(--fci-accent) !important;
               caret-shape: block;
+              /* input's width:100% is a content-box width by default, so
+                 without this it added its own left+right padding on top
+                 of 100% of the group's content area and overflowed past
+                 the group's right padding and border. */
+              box-sizing: border-box !important;
               width: 100% !important;
+            }
+
+            input::placeholder,
+            textarea::placeholder {
+              color: var(--fci-muted) !important;
+              font-style: italic !important;
+              opacity: 1 !important;
             }
 
             input:focus,
@@ -556,89 +627,130 @@ data:
             .pf-v6-c-login__main-footer {
               display: grid !important;
               grid-template-columns: 1fr 1fr;
-              gap: 12px;
+              gap: 8px;
               margin-top: 24px !important;
-              align-items: stretch;
+              /* The Sign Up link isn't in a flex container that honors its
+                 own flex:1 (see .pf-c-login__main-footer-band-item below),
+                 so it never grows to fill a stretched row -- center both
+                 columns on their natural (equal, once reset below) height
+                 instead of stretching the row to the taller column. */
+              align-items: center;
             }
 
-            .pf-c-login__main-footer-links,
-            .pf-v5-c-login__main-footer-links,
-            .pf-v6-c-login__main-footer-links,
+            /* The Google source button actually ships in a
+               <fieldset slot="footer" class="ak-c-fieldset pf-c-form__group">
+               -- there is no .pf-c-login__main-footer-links wrapper in this
+               authentik version, so every selector that targeted that class
+               below never matched anything. The fieldset instead fell
+               through to the generic .pf-c-form__group rule above (border
+               plus padding/margin meant for actual form fields), producing
+               an oversized outer box around a small, unstyled button while
+               "Sign up." rendered correctly next to it. Target the real
+               elements instead: the attribute selector out-specifies the
+               generic class rule regardless of source order. */
+            fieldset[slot="footer"],
+            fieldset.ak-c-fieldset[slot="footer"] {
+               border: none !important;
+               padding: 0 !important;
+               margin: 0 !important;
+               background: transparent !important;
+               display: flex !important;
+               height: auto !important;
+            }
+
             .pf-c-login__main-footer-band,
             .pf-v5-c-login__main-footer-band,
             .pf-v6-c-login__main-footer-band {
+               /* <fieldset> has a UA-default border and padding that
+                  neither this stylesheet nor the browser reset above
+                  cleared -- it was invisible before because the mismatched
+                  Google button box was even bigger, but with that fixed
+                  this fieldset's own border/padding shows up as a second,
+                  larger box around "Sign up.", with the actual link
+                  floating inside it rather than filling the grid column. */
+               border: none !important;
+               padding: 0 !important;
                margin: 0 !important;
                font-size: 0 !important; /* Hide "Need an account?" */
                display: flex;
-               height: 100%;
+               height: auto !important;
             }
 
-            .pf-c-login__main-footer-links ul {
+            .pf-c-login__main-footer-band-item {
+               margin: 0 !important;
                display: flex;
                width: 100%;
-               margin: 0; padding: 0;
-            }
-            .pf-c-login__main-footer-links li {
-               display: flex;
-               width: 100%;
-            }
-            ak-provider-button,
-            .pf-c-login__main-footer-links form {
-               display: block !important;
-               width: 100% !important;
+               height: auto !important;
             }
 
-            .pf-c-login__main-footer-links .pf-c-button {
+            .source-button {
                width: 100% !important;
+               /* The Google button has a 16px icon; Sign Up is text only.
+                  Left to size on content alone the two buttons never land
+                  on the same height, so both get an explicit shared
+                  min-height instead. */
+               min-height: 38px !important;
+               height: auto !important;
                display: flex !important;
                justify-content: center !important;
                align-items: center !important;
                padding: 6px 16px !important;
-               gap: 12px !important;
+               gap: 10px !important;
                box-sizing: border-box !important;
+               background: var(--fci-bg) !important;
+               border: 1px solid var(--fci-border) !important;
+               border-radius: 4px !important;
+               color: var(--fci-accent) !important;
+               font-family: "Courier New", Courier, monospace !important;
+               font-weight: 700 !important;
+               letter-spacing: 0.055em;
+               box-shadow: none !important;
             }
 
-            /* Hide default Google icon and text */
-            .pf-c-login__main-footer-links .pf-c-button > * {
-               display: none !important;
+            .source-button:hover {
+               background: #0d1b2a !important;
+               border-color: var(--fci-border-bright) !important;
+               color: #ffffff !important;
             }
 
-            .pf-c-login__main-footer-links .pf-c-button::before {
-               content: "G" !important;
-               font-family: "Arial", sans-serif !important;
-               font-size: 17px !important;
-               font-weight: 900 !important;
-               -webkit-text-stroke: 1.5px var(--fci-accent) !important;
-               color: transparent !important;
-               transform: translateY(1px);
-               line-height: 1 !important;
+            .source-button img[part="source-icon"] {
+               width: 16px;
+               height: 16px;
+               filter: grayscale(100%) contrast(200%) brightness(1.6);
             }
 
-            .pf-c-login__main-footer-links .pf-c-button:hover::before {
-               -webkit-text-stroke: 1.5px #ffffff !important;
-            }
-
-            .pf-c-login__main-footer-links .pf-c-button::after {
-               content: "Sign in" !important;
+            .source-button::after {
+               content: "Sign in";
                font-size: 14px !important;
                font-family: "Courier New", Courier, monospace !important;
                color: var(--fci-accent) !important;
                line-height: 1 !important;
             }
 
-            .pf-c-login__main-footer-links .pf-c-button:hover::after {
+            .source-button:hover::after {
                color: #ffffff !important;
             }
 
             .pf-c-login__main-footer-band a,
             .pf-v5-c-login__main-footer-band a,
             .pf-v6-c-login__main-footer-band a {
-               font-size: 14px !important;
+               /* authentik's own translated string is "Sign up." with a
+                  trailing period -- there's no separate element for just
+                  the label to target, so hide the real text the same way
+                  the parent fieldset already hides "Need an account? "
+                  (font-size: 0) and substitute clean text via ::after,
+                  the same pattern .source-button uses for its own label. */
+               font-size: 0 !important;
                flex: 1;
                display: flex;
                justify-content: center;
                align-items: center;
                padding: 6px 16px !important;
+               box-sizing: border-box !important;
+               /* Match .source-button's explicit min-height -- see the
+                  comment there for why content-based sizing alone leaves
+                  this shorter than the Google button. */
+               min-height: 38px !important;
 
                background: var(--fci-bg) !important;
                border: 1px solid var(--fci-border) !important;
@@ -649,6 +761,22 @@ data:
                letter-spacing: 0.055em;
                text-decoration: none !important;
                box-shadow: none !important;
+            }
+
+            .pf-c-login__main-footer-band a::after,
+            .pf-v5-c-login__main-footer-band a::after,
+            .pf-v6-c-login__main-footer-band a::after {
+               content: "Sign up";
+               font-size: 14px !important;
+               font-family: "Courier New", Courier, monospace !important;
+               color: var(--fci-accent) !important;
+               line-height: 1 !important;
+            }
+
+            .pf-c-login__main-footer-band a:hover::after,
+            .pf-v5-c-login__main-footer-band a:hover::after,
+            .pf-v6-c-login__main-footer-band a:hover::after {
+               color: #ffffff !important;
             }
 
             .pf-c-login__main-footer-band a:hover,

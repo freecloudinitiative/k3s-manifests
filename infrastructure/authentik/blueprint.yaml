@@ -558,75 +558,85 @@ data:
               grid-template-columns: 1fr 1fr;
               gap: 12px;
               margin-top: 24px !important;
-              align-items: stretch;
+              /* The Sign Up link isn't in a flex container that honors its
+                 own flex:1 (see .pf-c-login__main-footer-band-item below),
+                 so it never grows to fill a stretched row -- center both
+                 columns on their natural (equal, once reset below) height
+                 instead of stretching the row to the taller column. */
+              align-items: center;
             }
 
-            .pf-c-login__main-footer-links,
-            .pf-v5-c-login__main-footer-links,
-            .pf-v6-c-login__main-footer-links,
+            /* The Google source button actually ships in a
+               <fieldset slot="footer" class="ak-c-fieldset pf-c-form__group">
+               -- there is no .pf-c-login__main-footer-links wrapper in this
+               authentik version, so every selector that targeted that class
+               below never matched anything. The fieldset instead fell
+               through to the generic .pf-c-form__group rule above (border
+               plus padding/margin meant for actual form fields), producing
+               an oversized outer box around a small, unstyled button while
+               "Sign up." rendered correctly next to it. Target the real
+               elements instead: the attribute selector out-specifies the
+               generic class rule regardless of source order. */
+            fieldset[slot="footer"],
+            fieldset.ak-c-fieldset[slot="footer"] {
+               border: none !important;
+               padding: 0 !important;
+               margin: 0 !important;
+               background: transparent !important;
+               display: flex !important;
+               height: auto !important;
+            }
+
             .pf-c-login__main-footer-band,
             .pf-v5-c-login__main-footer-band,
-            .pf-v6-c-login__main-footer-band {
+            .pf-v6-c-login__main-footer-band,
+            .pf-c-login__main-footer-band-item {
                margin: 0 !important;
                font-size: 0 !important; /* Hide "Need an account?" */
                display: flex;
-               height: 100%;
+               height: auto !important;
             }
 
-            .pf-c-login__main-footer-links ul {
-               display: flex;
-               width: 100%;
-               margin: 0; padding: 0;
-            }
-            .pf-c-login__main-footer-links li {
-               display: flex;
-               width: 100%;
-            }
-            ak-provider-button,
-            .pf-c-login__main-footer-links form {
-               display: block !important;
+            .source-button {
                width: 100% !important;
-            }
-
-            .pf-c-login__main-footer-links .pf-c-button {
-               width: 100% !important;
+               height: auto !important;
                display: flex !important;
                justify-content: center !important;
                align-items: center !important;
                padding: 6px 16px !important;
-               gap: 12px !important;
+               gap: 10px !important;
                box-sizing: border-box !important;
+               background: var(--fci-bg) !important;
+               border: 1px solid var(--fci-border) !important;
+               border-radius: 4px !important;
+               color: var(--fci-accent) !important;
+               font-family: "Courier New", Courier, monospace !important;
+               font-weight: 700 !important;
+               letter-spacing: 0.055em;
+               box-shadow: none !important;
             }
 
-            /* Hide default Google icon and text */
-            .pf-c-login__main-footer-links .pf-c-button > * {
-               display: none !important;
+            .source-button:hover {
+               background: #0d1b2a !important;
+               border-color: var(--fci-border-bright) !important;
+               color: #ffffff !important;
             }
 
-            .pf-c-login__main-footer-links .pf-c-button::before {
-               content: "G" !important;
-               font-family: "Arial", sans-serif !important;
-               font-size: 17px !important;
-               font-weight: 900 !important;
-               -webkit-text-stroke: 1.5px var(--fci-accent) !important;
-               color: transparent !important;
-               transform: translateY(1px);
-               line-height: 1 !important;
+            .source-button img[part="source-icon"] {
+               width: 16px;
+               height: 16px;
+               filter: grayscale(100%) contrast(200%) brightness(1.6);
             }
 
-            .pf-c-login__main-footer-links .pf-c-button:hover::before {
-               -webkit-text-stroke: 1.5px #ffffff !important;
-            }
-
-            .pf-c-login__main-footer-links .pf-c-button::after {
-               content: "Sign in" !important;
+            .source-button::after {
+               content: "Sign in";
                font-size: 14px !important;
                font-family: "Courier New", Courier, monospace !important;
                color: var(--fci-accent) !important;
                line-height: 1 !important;
             }
 
-            .pf-c-login__main-footer-links .pf-c-button:hover::after {
+            .source-button:hover::after {
                color: #ffffff !important;
             }
 

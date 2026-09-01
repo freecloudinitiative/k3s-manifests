@@ -27,3 +27,17 @@ spec:
     syncOptions:
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
+  # Kyverno's own controller back-fills deprecated/defaulted fields onto
+  # every ClusterPolicy after admission (admission, emitWarning,
+  # skipBackgroundRequests, allowExistingViolations, and the deprecated
+  # top-level validationFailureAction). None of these are set in git, so
+  # the app is permanently OutOfSync without ignoring them.
+  ignoreDifferences:
+    - group: kyverno.io
+      kind: ClusterPolicy
+      jqPathExpressions:
+        - '.spec.admission'
+        - '.spec.emitWarning'
+        - '.spec.validationFailureAction'
+        - '.spec.rules[]?.skipBackgroundRequests'
+        - '.spec.rules[]?.validate.allowExistingViolations'

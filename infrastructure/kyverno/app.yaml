@@ -46,7 +46,11 @@ spec:
       jsonPointers:
         - /spec/conversion/webhook/clientConfig/caBundle
         - /status
-      # Some Kyverno CRDs render an empty label map, which the API server
-      # normalizes away. Ignore only that empty-map normalization.
-      jqPathExpressions:
-        - '.metadata.labels | select(. == {})'
+        # The policies.kyverno.io CRDs (validatingpolicies, mutatingpolicies,
+        # imagevalidatingpolicies, etc.) sit near etcd's per-object size
+        # limit. Argo cannot safely stamp its tracking annotation or the
+        # chart's helm.sh/app.kubernetes.io labels onto them without risking
+        # a write rejection, so these CRDs are applied with no metadata at
+        # all and will never match the chart's desired labels/annotations.
+        - /metadata/labels
+        - /metadata/annotations

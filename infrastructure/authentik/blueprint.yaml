@@ -539,20 +539,18 @@ data:
             /* frontend/src/pages/tui-dashboard.css's .fci-terminal-input /
                .fci-service-search: a recessed dark box (not flat
                transparent-on-panel), monospace, small line-height, slight
-               letter-spacing, italic dim placeholder. The dashboard's own
-               blinking block cursor is a fake ::after element whose
-               position a React wrapper (TerminalInput.tsx) recomputes
-               from every keystroke via a --fci-chars custom property --
-               branding_custom_css is CSS-only with no hook to run that JS.
-               What's below is a CSS-only approximation of the same idea,
-               good enough to read as "terminal": while the field is both
-               focused and still empty, hide the real caret and draw a
-               static blinking block over the placeholder's start instead,
-               via :has() on the wrapping .pf-c-form__group (a "before you
-               start typing" cursor, not one that tracks per character).
-               The moment a character is typed the block disappears
-               (:placeholder-shown stops matching) and the real
-               accent-colored text caret takes over normally. */
+               letter-spacing, italic dim placeholder, blinking block
+               cursor. The dashboard's own cursor is a fake ::after element
+               whose position a React wrapper recomputes from every
+               keystroke -- not portable to authentik's CSS-only
+               branding_custom_css -- but caret-shape: block turns out to
+               be supported in current Chromium and gives a real,
+               natively-tracking block caret for free with none of that
+               complexity: confirmed via CSS.supports('caret-shape',
+               'block') and by typing into the live field, where the block
+               correctly follows the text as typed rather than only
+               showing on an empty field. Browsers without support just
+               keep the default thin caret -- this can't visually break. */
             input,
             select,
             textarea {
@@ -565,14 +563,14 @@ data:
               padding: 4px 6px !important;
               line-height: 1.2 !important;
               letter-spacing: 0.02em !important;
-              caret-color: transparent !important;
-              width: 100% !important;
-            }
-
-            input:not(:placeholder-shown),
-            select:not(:placeholder-shown),
-            textarea:not(:placeholder-shown) {
               caret-color: var(--fci-accent) !important;
+              caret-shape: block;
+              /* input's width:100% is a content-box width by default, so
+                 without this it added its own left+right padding on top
+                 of 100% of the group's content area and overflowed past
+                 the group's right padding and border. */
+              box-sizing: border-box !important;
+              width: 100% !important;
             }
 
             input::placeholder,
@@ -580,31 +578,6 @@ data:
               color: var(--fci-muted) !important;
               font-style: italic !important;
               opacity: 1 !important;
-            }
-
-            @keyframes fci-blink {
-              0%, 49% { opacity: 1; }
-              50%, 100% { opacity: 0; }
-            }
-
-            .pf-c-form__group:focus-within:has(input:placeholder-shown)::after,
-            .pf-v5-c-form__group:focus-within:has(input:placeholder-shown)::after,
-            .pf-v6-c-form__group:focus-within:has(input:placeholder-shown)::after {
-               content: "";
-               position: absolute;
-               left: 17px;
-               bottom: 9px;
-               width: 8px;
-               height: 15px;
-               background: var(--fci-accent);
-               animation: fci-blink 1s step-end infinite;
-               pointer-events: none;
-               /* The native <input> widget paints above regular sibling
-                  boxes regardless of DOM/paint order in some engines --
-                  without this the block renders (confirmed via
-                  getComputedStyle) but is invisibly occluded by the
-                  input's own background. */
-               z-index: 5;
             }
 
             input:focus,

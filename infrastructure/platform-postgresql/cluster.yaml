@@ -50,14 +50,17 @@ spec:
       # outside a transaction; idle_in_transaction_session_timeout does the
       # same for one stuck mid-transaction (e.g. a client that opened a
       # transaction and then hung or errored before committing/rolling
-      # back); tcp_keepalives_* catches a peer that's actually gone dark at
+      # back). Keep that timeout long enough for Authentik's startup
+      # migrations: on the Raspberry Pi cluster they can legitimately hold
+      # the migration lock for several minutes before gunicorn starts.
+      # tcp_keepalives_* catches a peer that's actually gone dark at
       # the network level (packet loss, a node problem) faster than the OS
       # default (~2 hours) -- notably NOT the normal case of a process
       # exiting (SIGTERM or SIGKILL alike), since the kernel closes that
       # process's socket file descriptors and sends FIN/RST on its own,
       # independent of the process, the moment it exits.
       idle_session_timeout: "300000"
-      idle_in_transaction_session_timeout: "60000"
+      idle_in_transaction_session_timeout: "600000"
       tcp_keepalives_idle: "60"
       tcp_keepalives_interval: "10"
       tcp_keepalives_count: "6"

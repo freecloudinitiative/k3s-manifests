@@ -589,11 +589,26 @@ data:
 
             .pf-c-login__main-footer-band,
             .pf-v5-c-login__main-footer-band,
-            .pf-v6-c-login__main-footer-band,
-            .pf-c-login__main-footer-band-item {
+            .pf-v6-c-login__main-footer-band {
+               /* <fieldset> has a UA-default border and padding that
+                  neither this stylesheet nor the browser reset above
+                  cleared -- it was invisible before because the mismatched
+                  Google button box was even bigger, but with that fixed
+                  this fieldset's own border/padding shows up as a second,
+                  larger box around "Sign up.", with the actual link
+                  floating inside it rather than filling the grid column. */
+               border: none !important;
+               padding: 0 !important;
                margin: 0 !important;
                font-size: 0 !important; /* Hide "Need an account?" */
                display: flex;
+               height: auto !important;
+            }
+
+            .pf-c-login__main-footer-band-item {
+               margin: 0 !important;
+               display: flex;
+               width: 100%;
                height: auto !important;
             }
 

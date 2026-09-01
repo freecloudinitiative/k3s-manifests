@@ -444,9 +444,10 @@ data:
             .pf-c-form__group,
             .pf-v5-c-form__group,
             .pf-v6-c-form__group {
+               position: relative;
                border: 1px solid var(--fci-border) !important;
                border-radius: 6px !important;
-               padding: 0 10px 8px 10px !important;
+               padding: 16px 10px 8px 10px !important;
                background: var(--fci-bg) !important;
                margin-top: 24px !important;
                margin-bottom: 24px !important;
@@ -484,16 +485,24 @@ data:
                margin-bottom: 8px !important;
             }
 
+            /* Sit the label directly on the box's top border, cutting a gap
+               into the line, the same way the panel title
+               (ak-flow-executor::part(main)::before, "FREE CLOUD
+               INITIATIVE") sits on the outer panel border. */
             .pf-c-form__label,
             .pf-v5-c-form__label,
             .pf-v6-c-form__label {
+               position: absolute !important;
+               top: -9px !important;
+               left: 8px !important;
                color: var(--fci-accent) !important;
                font-size: 11px !important;
                letter-spacing: 0.05em !important;
                font-weight: normal !important;
                display: inline-block !important;
+               background: var(--fci-bg) !important;
                margin: 0 !important;
-               padding: 0 !important;
+               padding: 0 7px !important;
             }
 
             /* The visible label text isn't on the <label> itself but on a

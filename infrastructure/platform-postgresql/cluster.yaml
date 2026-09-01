@@ -37,6 +37,25 @@ spec:
       # replication, and pg_monitor. Higher max_connections increases per-backend
       # memory on Raspberry Pi nodes; shared_buffers remains 256MB.
       max_connections: "260"
+      # 2026-09-01 incident: repeated authentik-server crash-loops (pods
+      # SIGKILLed mid-request) left connections open on the postgres side
+      # that were never cleanly closed by the client. With no idle timeout
+      # configured, those held their slot in the authentik role's
+      # connectionLimit indefinitely -- "too many connections for role
+      # authentik" persisted even after scaling authentik-server down to a
+      # single, healthy replica, because the accumulated dead connections
+      # from the incident window, not live traffic, were consuming the
+      # budget. idle_session_timeout reaps any session sitting idle outside
+      # a transaction (the common case for a pooled/reused Django
+      # connection whose client vanished); idle_in_transaction_session_timeout
+      # is the same for a connection stuck mid-transaction. tcp_keepalives_*
+      # detects a peer that died without sending FIN/RST at all (a SIGKILL,
+      # not a clean shutdown) faster than the OS default (~2 hours).
+      idle_session_timeout: "300000"
+      idle_in_transaction_session_timeout: "60000"
+      tcp_keepalives_idle: "60"
+      tcp_keepalives_interval: "10"
+      tcp_keepalives_count: "6"
     pg_hba:
       - hostnossl all all all reject
 

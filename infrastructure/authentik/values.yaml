@@ -69,7 +69,16 @@ blueprints:
     - authentik-blueprints
 
 server:
-  replicas: 2
+  # Temporarily dropped from 2 -> 1 (2026-09-01): the authentik role's
+  # postgresql connectionLimit (60, see
+  # infrastructure/platform-postgresql/database-role.yaml) was exhausted by
+  # a crash-loop amplification cycle -- probe failures due to DB connection
+  # errors caused restarts, and each restart opened more connections before
+  # the old ones were reclaimed, digging the hole deeper. Revert to 2 once
+  # the role's live connection count has stayed well under 60 for a while
+  # after this is deployed. See also the connectionLimit bump in the same
+  # incident's follow-up.
+  replicas: 1
   serviceAccountName: authentik-runtime
   automountServiceAccountToken: false
   pdb:

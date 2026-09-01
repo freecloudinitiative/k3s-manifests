@@ -658,17 +658,23 @@ data:
               letter-spacing: 0.02em !important;
             }
 
-            ak-form-static .links {
+            /* Unqualified, unlike the ak-form-static rule above: this
+               stylesheet is also adopted directly into ak-form-static's
+               OWN shadow root, and evaluated there the host element isn't
+               an ancestor of .links inside its own tree (only reachable
+               via :host) -- "ak-form-static .links" would silently never
+               match. */
+            .links {
               font-size: 13px !important;
             }
 
-            ak-form-static .links a {
+            .links a {
               color: var(--fci-accent) !important;
               font-family: "Courier New", Courier, monospace !important;
               text-decoration: none !important;
             }
 
-            ak-form-static .links a:hover {
+            .links a:hover {
               color: #ffffff !important;
             }
 

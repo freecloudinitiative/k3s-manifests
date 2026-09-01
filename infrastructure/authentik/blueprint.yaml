@@ -584,11 +584,7 @@ data:
             .pf-v6-c-login__main-footer {
               display: grid !important;
               grid-template-columns: 1fr 1fr;
-              /* Sign in / Sign up sit flush against each other as one
-                 segmented control -- see the border-radius split and
-                 border-left removal below, which is what actually avoids
-                 a doubled center line, not the gap. */
-              gap: 0;
+              gap: 8px;
               margin-top: 24px !important;
               /* The Sign Up link isn't in a flex container that honors its
                  own flex:1 (see .pf-c-login__main-footer-band-item below),
@@ -646,10 +642,10 @@ data:
 
             .source-button {
                width: 100% !important;
-               /* The Google button has a 16px icon; "Sign up." is text
-                  only. Left to size on content alone the two halves of the
-                  segmented control never land on the same height, so both
-                  get the same explicit min-height instead. */
+               /* The Google button has a 16px icon; Sign Up is text only.
+                  Left to size on content alone the two buttons never land
+                  on the same height, so both get an explicit shared
+                  min-height instead. */
                min-height: 38px !important;
                height: auto !important;
                display: flex !important;
@@ -660,8 +656,7 @@ data:
                box-sizing: border-box !important;
                background: var(--fci-bg) !important;
                border: 1px solid var(--fci-border) !important;
-               /* Left half of the segmented Sign in / Sign up control. */
-               border-radius: 4px 0 0 4px !important;
+               border-radius: 4px !important;
                color: var(--fci-accent) !important;
                font-family: "Courier New", Courier, monospace !important;
                font-weight: 700 !important;
@@ -696,7 +691,13 @@ data:
             .pf-c-login__main-footer-band a,
             .pf-v5-c-login__main-footer-band a,
             .pf-v6-c-login__main-footer-band a {
-               font-size: 14px !important;
+               /* authentik's own translated string is "Sign up." with a
+                  trailing period -- there's no separate element for just
+                  the label to target, so hide the real text the same way
+                  the parent fieldset already hides "Need an account? "
+                  (font-size: 0) and substitute clean text via ::after,
+                  the same pattern .source-button uses for its own label. */
+               font-size: 0 !important;
                flex: 1;
                display: flex;
                justify-content: center;
@@ -710,18 +711,29 @@ data:
 
                background: var(--fci-bg) !important;
                border: 1px solid var(--fci-border) !important;
-               /* Right half of the segmented Sign in / Sign up control --
-                  no left border, so the shared center line is a single
-                  1px rule instead of the Sign in button's right border
-                  and this left border stacking into a visibly thicker one. */
-               border-left: none !important;
-               border-radius: 0 4px 4px 0 !important;
+               border-radius: 4px !important;
                color: var(--fci-accent) !important;
                font-family: "Courier New", Courier, monospace !important;
                font-weight: 700 !important;
                letter-spacing: 0.055em;
                text-decoration: none !important;
                box-shadow: none !important;
+            }
+
+            .pf-c-login__main-footer-band a::after,
+            .pf-v5-c-login__main-footer-band a::after,
+            .pf-v6-c-login__main-footer-band a::after {
+               content: "Sign up";
+               font-size: 14px !important;
+               font-family: "Courier New", Courier, monospace !important;
+               color: var(--fci-accent) !important;
+               line-height: 1 !important;
+            }
+
+            .pf-c-login__main-footer-band a:hover::after,
+            .pf-v5-c-login__main-footer-band a:hover::after,
+            .pf-v6-c-login__main-footer-band a:hover::after {
+               color: #ffffff !important;
             }
 
             .pf-c-login__main-footer-band a:hover,

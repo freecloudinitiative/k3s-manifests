@@ -685,6 +685,9 @@ data:
 
             .source-button {
                width: 100% !important;
+               /* Anchor for the icon and ::after text below, both
+                  explicitly absolutely positioned. */
+               position: relative !important;
                /* The Google button has a 16px icon; Sign Up is text only.
                   Left to size on content alone the two buttons never land
                   on the same height, so both get an explicit shared
@@ -713,7 +716,26 @@ data:
                color: #ffffff !important;
             }
 
+            /* This icon and the ::after text below are both explicitly
+               positioned rather than left to lay out in the button's flex
+               row. Generated content (::after) in this PatternFly build
+               computes to position:absolute against .source-button (no
+               single rule sets it directly -- every stylesheet was
+               searched -- but per the Flexbox spec an absolutely
+               positioned flex child is placed at a "static position"
+               derived from the container's justify-content/align-items,
+               which here is dead center on both axes). With the icon left
+               as a normal in-flow flex item, it also flex-centers itself
+               (as the only flow child) landing on that exact same point,
+               so icon and text stacked exactly on top of each other
+               instead of sitting side by side. Positioning both explicitly
+               removes the ambiguity instead of fighting it. */
             .source-button img[part="source-icon"] {
+               position: absolute !important;
+               left: 16px !important;
+               top: 50% !important;
+               transform: translateY(-50%) !important;
+               margin: 0 !important;
                width: 16px;
                height: 16px;
                filter: grayscale(100%) contrast(200%) brightness(1.6);
@@ -721,6 +743,12 @@ data:
 
             .source-button::after {
                content: "Sign in";
+               position: absolute !important;
+               left: 0 !important;
+               right: 0 !important;
+               top: 50% !important;
+               transform: translateY(-50%) !important;
+               text-align: center !important;
                font-size: 14px !important;
                font-family: "Courier New", Courier, monospace !important;
                color: var(--fci-accent) !important;
@@ -741,6 +769,7 @@ data:
                   (font-size: 0) and substitute clean text via ::after,
                   the same pattern .source-button uses for its own label. */
                font-size: 0 !important;
+               position: relative;
                flex: 1;
                display: flex;
                justify-content: center;
@@ -767,6 +796,12 @@ data:
             .pf-v5-c-login__main-footer-band a::after,
             .pf-v6-c-login__main-footer-band a::after {
                content: "Sign up";
+               position: absolute !important;
+               left: 0 !important;
+               right: 0 !important;
+               top: 50% !important;
+               transform: translateY(-50%) !important;
+               text-align: center !important;
                font-size: 14px !important;
                font-family: "Courier New", Courier, monospace !important;
                color: var(--fci-accent) !important;

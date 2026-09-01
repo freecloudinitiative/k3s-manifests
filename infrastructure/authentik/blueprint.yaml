@@ -90,6 +90,7 @@ data:
           name: grafana
         attrs:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           client_type: confidential
           client_id: grafana-oidc
           client_secret: !Env GRAFANA_OIDC_SECRET
@@ -115,6 +116,7 @@ data:
           name: argocd
         attrs:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           client_type: confidential
           client_id: argocd-oidc
           client_secret: !Env ARGOCD_OIDC_SECRET
@@ -140,6 +142,7 @@ data:
           name: prometheus
         attrs:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           external_host: https://prometheus.freecloudinitiative.com
           mode: forward_single
       - model: authentik_core.application
@@ -155,6 +158,7 @@ data:
           name: alloy
         attrs:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           external_host: https://alloy.freecloudinitiative.com
           mode: forward_single
       - model: authentik_core.application
@@ -170,6 +174,7 @@ data:
           name: longhorn
         attrs:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           external_host: https://longhorn.freecloudinitiative.com
           mode: forward_single
       - model: authentik_core.application
@@ -178,3 +183,179 @@ data:
         attrs:
           name: Longhorn
           provider: !KeyOf longhorn-proxy
+  enrollment.yaml: |
+    version: 1
+    metadata:
+      name: Free Cloud Initiative self-service enrollment
+      labels:
+        blueprints.goauthentik.io/instantiate: "true"
+    entries:
+      # Checks the two password prompts match. authentik ships no built-in
+      # policy for this -- every "add a signup flow" example defines its own
+      # tiny expression policy, so this mirrors that pattern.
+      - model: authentik_policies_expression.expressionpolicy
+        id: enrollment-password-match-policy
+        identifiers:
+          name: enrollment-password-match
+        attrs:
+          expression: |
+            return request.context.get('prompt_data', {}).get('password') == request.context.get('prompt_data', {}).get('password_repeat')
+
+      - model: authentik_stages_prompt.prompt
+        id: enrollment-prompt-username
+        identifiers:
+          field_key: username
+          name: enrollment-username
+        attrs:
+          label: Username
+          type: username
+          required: true
+          placeholder: Username
+          order: 0
+      - model: authentik_stages_prompt.prompt
+        id: enrollment-prompt-name
+        identifiers:
+          field_key: name
+          name: enrollment-name
+        attrs:
+          label: Name
+          type: text
+          required: true
+          placeholder: Name
+          order: 1
+      - model: authentik_stages_prompt.prompt
+        id: enrollment-prompt-email
+        identifiers:
+          field_key: email
+          name: enrollment-email
+        attrs:
+          label: Email
+          type: email
+          required: true
+          placeholder: Email
+          order: 2
+      - model: authentik_stages_prompt.prompt
+        id: enrollment-prompt-password
+        identifiers:
+          field_key: password
+          name: enrollment-password
+        attrs:
+          label: Password
+          type: password
+          required: true
+          placeholder: Password
+          order: 3
+      - model: authentik_stages_prompt.prompt
+        id: enrollment-prompt-password-repeat
+        identifiers:
+          field_key: password_repeat
+          name: enrollment-password-repeat
+        attrs:
+          label: Password (repeat)
+          type: password
+          required: true
+          placeholder: Repeat password
+          order: 4
+
+      - model: authentik_stages_prompt.promptstage
+        id: enrollment-prompt-stage
+        identifiers:
+          name: enrollment-details-prompt
+        attrs:
+          fields:
+            - !KeyOf enrollment-prompt-username
+            - !KeyOf enrollment-prompt-name
+            - !KeyOf enrollment-prompt-email
+            - !KeyOf enrollment-prompt-password
+            - !KeyOf enrollment-prompt-password-repeat
+          validation_policies:
+            - !KeyOf enrollment-password-match-policy
+
+      - model: authentik_stages_user_write.userwritestage
+        id: enrollment-user-write-stage
+        identifiers:
+          name: enrollment-user-write
+
+      - model: authentik_stages_user_login.userloginstage
+        id: enrollment-user-login-stage
+        identifiers:
+          name: enrollment-user-login
+
+      - model: authentik_flows.flow
+        id: enrollment-flow
+        identifiers:
+          slug: default-enrollment-flow
+        attrs:
+          name: Free Cloud Initiative signup
+          title: Welcome to Free Cloud Initiative!
+          designation: enrollment
+          authentication: require_unauthenticated
+
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          target: !KeyOf enrollment-flow
+          stage: !KeyOf enrollment-prompt-stage
+        attrs:
+          order: 10
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          target: !KeyOf enrollment-flow
+          stage: !KeyOf enrollment-user-write-stage
+        attrs:
+          order: 20
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          target: !KeyOf enrollment-flow
+          stage: !KeyOf enrollment-user-login-stage
+        attrs:
+          order: 30
+
+      # Without this, a login or signup started directly at
+      # auth.freecloudinitiative.com (no app/client_id context -- exactly
+      # what a fresh signup is, since the enrollment flow above runs on
+      # this domain with no redirect_uri) lands on authentik's own "My
+      # applications" page instead of the app. Setting the default Brand's
+      # default_application makes authentik immediately continue into this
+      # application's own OIDC flow, which lands the user back on
+      # freecloudinitiative.com/callback like a normal login does.
+      - model: authentik_brands.brand
+        identifiers:
+          domain: authentik-default
+        attrs:
+          default_application: !Find [authentik_core.application, [slug, freecloudinitiative]]
+
+      # "Sign in with Google" button on the login screen. Client
+      # credentials come from OpenBao via external-secret-authentik.yaml
+      # (GOOGLE_OAUTH_CLIENT_ID/SECRET), seeded by
+      # ansible-automation's AUTHENTIK_GOOGLE_CLIENT_ID/SECRET. Redirect
+      # URI registered on the Google Cloud OAuth client must be
+      # https://auth.freecloudinitiative.com/source/oauth/callback/google/
+      # -- the slug below ("google") is baked into that URL.
+      - model: authentik_sources_oauth.oauthsource
+        id: google-oauth-source
+        identifiers:
+          slug: google
+        attrs:
+          name: Google
+          provider_type: google
+          consumer_key: !Env GOOGLE_OAUTH_CLIENT_ID
+          consumer_secret: !Env GOOGLE_OAUTH_CLIENT_SECRET
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          enrollment_flow: !Find [authentik_flows.flow, [slug, default-source-enrollment]]
+          pre_authentication_flow: !Find [authentik_flows.flow, [slug, default-source-pre-authentication]]
+
+      # Puts the "Sign up" and "Sign in with Google" affordances on the
+      # login screen. state: present + matching identifiers updates this
+      # existing built-in object rather than creating a new one -- doing
+      # so re-validates the whole serializer, so user_fields has to be
+      # repeated here even though it isn't changing.
+      - model: authentik_stages_identification.identificationstage
+        identifiers:
+          name: default-authentication-identification
+        attrs:
+          user_fields:
+            - email
+            - username
+          enrollment_flow: !KeyOf enrollment-flow
+          sources:
+            - !KeyOf google-oauth-source

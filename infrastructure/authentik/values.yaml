@@ -37,6 +37,15 @@ global:
       value: verify-full
     - name: AUTHENTIK_POSTGRESQL__SSLROOTCERT
       value: /certs/platform-postgresql/ca.crt
+    # Default is 0 (a brand-new connection per request, closed at the end
+    # of it). authentik-server and platform-postgresql routinely land on
+    # different nodes, and a fresh sslmode=verify-full TLS handshake
+    # measured ~0.8-1s cross-node on this fleet -- paid on every single
+    # HTTP request, which is most of why login felt slow (each step of
+    # the flow is its own request). 60s lets gunicorn's sync workers keep
+    # a connection alive across a login's several round trips.
+    - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
+      value: "60"
   volumeMounts:
     - name: platform-postgresql-ca
       mountPath: /certs/platform-postgresql
@@ -88,6 +97,18 @@ server:
     limits:
       cpu: "2"
       memory: 2Gi
+  # Chart default timeoutSeconds (3s) is too tight for this fleet:
+  # /-/health/ready/ does a real DB round-trip and routinely takes ~3s
+  # under load here, so kubelet was marking the pod NotReady on
+  # "context deadline exceeded" even though authentik itself was fine
+  # a moment later -- pulling it out of the Service endpoints and
+  # making auth.freecloudinitiative.com 502 with no healthy backend.
+  livenessProbe:
+    timeoutSeconds: 10
+  readinessProbe:
+    timeoutSeconds: 10
+  startupProbe:
+    timeoutSeconds: 10
   metrics:
     enabled: true
     serviceMonitor:
@@ -141,6 +162,14 @@ worker:
     limits:
       cpu: "2"
       memory: 2Gi
+  # See server.readinessProbe above -- same too-tight-for-this-fleet
+  # default timeout, this time on the `ak healthcheck` exec probe.
+  livenessProbe:
+    timeoutSeconds: 10
+  readinessProbe:
+    timeoutSeconds: 10
+  startupProbe:
+    timeoutSeconds: 10
   metrics:
     enabled: true
     serviceMonitor:

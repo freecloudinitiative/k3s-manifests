@@ -36,6 +36,8 @@ out-of-band deployment provides.
 ## Components
 
 - `argocd`: GitOps reconciliation and configuration.
+- `coredns`: cluster-local rewrite of the public Authentik hostname to
+  Traefik, avoiding a Cloudflare tunnel hairpin for OIDC clients.
 - `cert-manager`: public and internal certificate issuance.
 - `external-secrets`: least-privilege synchronization from OpenBao.
 - `cloudnative-pg`: PostgreSQL lifecycle, failover, TLS, role, and database management.
@@ -79,7 +81,7 @@ material and bootstrap credentials must remain outside both Git and Kubernetes.
 
 ## Identity and data bootstrap
 
-App-of-Apps waves: namespaces (0), cert-manager / kyverno / External Secrets
+App-of-Apps waves: namespaces / CoreDNS internal routing (0), cert-manager / kyverno / External Secrets
 operator (1), longhorn / loki / kyverno-policies / cloudnative-pg / OpenBao
 (2), External Secrets OpenBao configuration + issuers (3), Garage / MetalLB /
 platform-postgresql / Valkey (4), Authentik (5). Full table in

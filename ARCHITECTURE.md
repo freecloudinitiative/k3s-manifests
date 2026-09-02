@@ -45,6 +45,7 @@ Lower wave runs first. Application-level waves on `app.yaml` / `app-config.yaml`
 
 ```
 Wave  0  namespaces/*.yaml     ← Namespace objects (no Application)
+         coredns-internal-routing
 
 Wave  1  cert-manager
          kyverno
@@ -122,6 +123,11 @@ Apex DNS and the Cloudflare Tunnel ingress rule for `freecloudinitiative.com`
 already exist in `terraform-cloudflare-infra` (`cloudflare_record.root` name
 `@`, tunnel ingress `var.domain_name`) — this chart just needs to bind that
 host for HTTP-01 ACME and real traffic to work.
+
+Inside the cluster, the `coredns-custom` fragment rewrites only
+`auth.freecloudinitiative.com` to Traefik's ClusterIP. Argo CD and Grafana keep
+using the public OIDC issuer and TLS hostname, but their Authentik requests do
+not leave the cluster or traverse the Cloudflare tunnel.
 
 ### Internal HTTP (cluster LAN access)
 

@@ -37,6 +37,10 @@ infrastructure/namespaces/
   traefik.yaml                                Namespace: traefik
   valkey.yaml                                 Namespace: valkey
 
+infrastructure/coredns/
+  app.yaml                                    ArgoCD Application for the K3s CoreDNS extension.
+  configmap.yaml                              Internal auth.freecloudinitiative.com → Traefik DNS rewrite.
+
 infrastructure/metallb/
   app.yaml                                    ArgoCD Application for MetalLB Helm chart.
   app-config.yaml                             ArgoCD Application for MetalLB config resources.

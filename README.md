@@ -198,6 +198,7 @@ caveman.md            Terse writing rules for these docs.
 
 infrastructure/
   namespaces/         Namespace definitions. Sync-wave 0 on each object.
+  coredns/            Internal Authentik hostname routing to Traefik.
   metallb/            Bare-metal load balancer (L2 mode, IP pool 192.168.1.100-120).
   cert-manager/       TLS certificate lifecycle. 3 issuers: self-signed, private CA, Let's Encrypt.
   longhorn/           Distributed block storage. 2 StorageClasses.

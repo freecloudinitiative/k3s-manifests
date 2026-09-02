@@ -329,7 +329,7 @@ data:
 
       - model: authentik_brands.brand
         identifiers:
-          domain: authentik-default
+          domain: auth.freecloudinitiative.com
         attrs:
           branding_title: Free Cloud Initiative
           # Keep authentik visibly credited while the surrounding experience

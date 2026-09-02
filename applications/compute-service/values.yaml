@@ -106,11 +106,14 @@ kubernetes:
   terminalGatewayServiceAccountNamespace: backend
 
 # Source Secret compute-service copies into each customer namespace as the
-# instance image-pull Secret. Cross-repo contract: must equal
-# compute-service/internal/k8s/config.go's INSTANCE_PULL_SECRET_SOURCE default.
+# instance image-pull Secret. The deployment passes these values explicitly;
+# do not rely on compute-service's development defaults.
 # Created by infrastructure/external-secrets/external-secret-ghcr.yaml.
 instancePullSecret:
+  # Name of the reconciled copy mounted by customer workloads.
+  name: instance-registry-pull
   sourceName: ghcr-pull-credentials
+  sourceNamespace: backend
 
 reconcile:
   interval: 2s

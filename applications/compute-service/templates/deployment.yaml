@@ -113,6 +113,12 @@ spec:
               value: {{ .Values.kubernetes.terminalGatewayServiceAccountName | quote }}
             - name: TERMINAL_GATEWAY_SERVICE_ACCOUNT_NAMESPACE
               value: {{ .Values.kubernetes.terminalGatewayServiceAccountNamespace | quote }}
+            - name: INSTANCE_PULL_SECRET_NAME
+              value: {{ .Values.instancePullSecret.name | quote }}
+            - name: INSTANCE_PULL_SECRET_SOURCE
+              value: {{ .Values.instancePullSecret.sourceName | quote }}
+            - name: INSTANCE_PULL_SECRET_SOURCE_NAMESPACE
+              value: {{ .Values.instancePullSecret.sourceNamespace | quote }}
             - name: RECONCILE_INTERVAL
               value: {{ .Values.reconcile.interval | quote }}
             - name: RECONCILE_BATCH_SIZE

@@ -14,6 +14,21 @@ Namespaces in this folder: `authentik`, `backend`, `cert-manager`, `cloudflared`
 
 ---
 
+### coredns
+
+**What**: Adds a K3s-supported `coredns-custom` server block for internal
+Authentik resolution.
+
+Inside the cluster only, `auth.freecloudinitiative.com` resolves to
+`traefik.traefik.svc.cluster.local`. The original hostname remains the HTTP
+Host, TLS SNI, and OIDC issuer, so certificate and token validation are
+unchanged while Argo CD and Grafana avoid a Cloudflare tunnel hairpin.
+
+**Sync-wave**: `0`. The rule can exist before Traefik; it becomes resolvable as
+soon as the Traefik Service is created.
+
+---
+
 ### metallb
 
 **What**: Bare-metal load balancer. `type: LoadBalancer` Services get LAN IPs.

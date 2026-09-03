@@ -23,13 +23,32 @@ data:
           session_duration: hours=24
           remember_me_offset: seconds=0
 
+      # RP-initiated sign-out must also terminate the Authentik SSO session.
+      # The stock provider invalidation flow only ends the application's
+      # session, which would let the next login silently reuse Authentik SSO.
+      - model: authentik_flows.flow
+        id: freecloudinitiative-invalidation-flow
+        identifiers:
+          slug: freecloudinitiative-invalidation-flow
+        attrs:
+          designation: invalidation
+          name: Free Cloud Initiative logout
+          title: Signing out of Free Cloud Initiative
+          authentication: none
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          stage: !Find [authentik_stages_user_logout.userlogoutstage, [name, default-invalidation-logout]]
+          target: !KeyOf freecloudinitiative-invalidation-flow
+        attrs:
+          order: 0
+
       - model: authentik_providers_oauth2.oauth2provider
         id: freecloudinitiative-frontend-provider
         identifiers:
           name: freecloudinitiative-frontend
         attrs:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
-          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          invalidation_flow: !KeyOf freecloudinitiative-invalidation-flow
           client_type: public
           client_id: freecloudinitiative-frontend
           grant_types:

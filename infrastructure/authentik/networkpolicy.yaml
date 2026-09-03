@@ -34,6 +34,14 @@ spec:
       ports:
         - protocol: TCP
           port: 9000
+    # Allows the tenant-settings Job to apply the login footer links.
+    - from:
+        - podSelector:
+            matchLabels:
+              fci.io/role: authentik-footer-links
+      ports:
+        - protocol: TCP
+          port: 9000
   egress:
     - to:
         - namespaceSelector:

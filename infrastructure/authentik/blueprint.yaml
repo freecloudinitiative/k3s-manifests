@@ -886,10 +886,198 @@ data:
                color: #ffffff !important;
             }
 
+            /* Footer links, set by footer-links-job.yaml. */
+            ak-brand-links[name="flow-links"] {
+               display: block !important;
+               position: relative !important;
+               width: fit-content !important;
+               max-width: min(560px, calc(100vw - 32px)) !important;
+               margin: 0 auto !important;
+               padding: 14px 14px 11px !important;
+               border: 1px solid var(--fci-border) !important;
+               border-radius: 6px !important;
+               background: var(--fci-bg) !important;
+            }
+            ak-brand-links[name="flow-links"]::before {
+               content: "LINKS";
+               position: absolute;
+               top: -9px;
+               left: 12px;
+               padding: 0 6px;
+               background: var(--fci-bg);
+               color: var(--fci-muted);
+               font-size: 12px;
+               font-family: "Courier New", Courier, monospace;
+               letter-spacing: 0.06em;
+            }
+            ak-brand-links[name="flow-links"] ul {
+               display: flex !important;
+               flex-wrap: wrap !important;
+               gap: 8px !important;
+               align-items: center !important;
+               justify-content: center !important;
+               margin: 0 !important;
+               padding: 0 !important;
+            }
+            ak-brand-links[name="flow-links"] li[data-kind="text"] {
+               color: var(--fci-muted) !important;
+               font-size: 11px !important;
+            }
+            ak-brand-links[name="flow-links"] li[data-kind="link"] a {
+               display: inline-flex !important;
+               align-items: center !important;
+               padding: 3px 10px !important;
+               border-radius: 4px !important;
+               border: 1px solid !important;
+               font-size: 11px !important;
+               font-weight: bold !important;
+               letter-spacing: 0.04em !important;
+               text-decoration: none !important;
+               font-family: "Courier New", Courier, monospace !important;
+            }
+            ak-brand-links[name="flow-links"] li[data-kind="link"] a:hover {
+               filter: brightness(1.2) !important;
+            }
+            ak-brand-links li[data-kind="link"]:nth-of-type(1) a {
+               background: #4f46e5 !important; border-color: #6366f1 !important; color: #ffffff !important;
+            }
+            ak-brand-links li[data-kind="link"]:nth-of-type(2) a {
+               background: #2563eb !important; border-color: #3b82f6 !important; color: #ffffff !important;
+            }
+            ak-brand-links li[data-kind="link"]:nth-of-type(3) a {
+               background: #0d9488 !important; border-color: #14b8a6 !important; color: #ffffff !important;
+            }
+
+            /* Match the dashboard's framed page shell and prevent Authentik's
+               three grid rows from stretching the password card. */
+            ak-flow-executor::part(login) {
+              width: calc(100% - 40px) !important;
+              min-height: calc(100dvh - 40px) !important;
+              margin: 20px !important;
+              box-sizing: border-box !important;
+              border: 1px solid var(--fci-border) !important;
+              border-radius: 6px !important;
+              grid-template-rows: 104px minmax(0, 1fr) auto !important;
+              justify-content: stretch !important;
+              overflow: auto !important;
+            }
+
+            ak-flow-executor::part(main) {
+              display: block !important;
+              align-self: center !important;
+              justify-self: center !important;
+              width: min(420px, calc(100vw - 72px)) !important;
+              min-height: 0 !important;
+              height: fit-content !important;
+              margin: 36px auto 24px !important;
+              padding: 34px 28px 26px !important;
+              box-sizing: border-box !important;
+            }
+
+            ak-flow-executor::part(main)::before {
+              content: "[FREE CLOUD INITIATIVE]";
+              position: fixed;
+              top: 50px;
+              left: 50%;
+              z-index: 2;
+              transform: translateX(-50%);
+              width: max-content;
+              padding: 0 12px;
+              background: var(--fci-bg);
+              color: #e8a020;
+              font-size: clamp(20px, 3.2vw, 42px);
+              font-weight: 700;
+              letter-spacing: 0.08em;
+              line-height: 1;
+              text-shadow: 0 0 18px rgba(232, 160, 32, 0.72), 0 0 5px rgba(232, 160, 32, 0.9);
+            }
+
+            ak-flow-executor::part(main)::after {
+              content: "AUTHENTICATION";
+              position: absolute;
+              top: -9px;
+              left: 16px;
+              padding: 0 7px;
+              background: var(--fci-bg);
+              color: var(--fci-accent);
+              font-size: 12px;
+              letter-spacing: 0.12em;
+            }
+
+            ak-flow-executor::part(challenge),
+            ak-flow-card,
+            .pf-c-form,
+            .pf-v5-c-form,
+            .pf-v6-c-form {
+              width: 100% !important;
+              max-width: none !important;
+              box-sizing: border-box !important;
+            }
+
+            ak-flow-executor::part(challenge) {
+              padding: 0 !important;
+            }
+
+            .pf-c-form,
+            .pf-v5-c-form,
+            .pf-v6-c-form {
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 18px !important;
+            }
+
+            .pf-c-form__group,
+            .pf-v5-c-form__group,
+            .pf-v6-c-form__group {
+              margin-top: 8px !important;
+              margin-bottom: 8px !important;
+            }
+
+            .pf-c-form__group.pf-m-action,
+            .pf-v5-c-form__group.pf-m-action,
+            .pf-v6-c-form__group.pf-m-action {
+              margin-top: 4px !important;
+              margin-bottom: 0 !important;
+            }
+
+            ak-flow-executor::part(additional-actions),
+            .pf-c-login__main-footer,
+            .pf-v5-c-login__main-footer,
+            .pf-v6-c-login__main-footer,
+            .pf-c-login__main-footer-band,
+            .pf-v5-c-login__main-footer-band,
+            .pf-v6-c-login__main-footer-band {
+              width: 100% !important;
+              box-sizing: border-box !important;
+            }
+
+            ak-flow-executor::part(footer) {
+              align-self: end !important;
+              padding: 12px 24px 18px !important;
+            }
+
             @media (max-width: 560px) {
+              ak-flow-executor::part(login) {
+                width: calc(100% - 24px) !important;
+                min-height: calc(100dvh - 24px) !important;
+                margin: 12px !important;
+                grid-template-rows: 80px minmax(0, 1fr) auto !important;
+              }
+
               ak-flow-executor::part(main) {
-                width: calc(100vw - 24px);
-                padding: 30px 20px 22px;
+                width: calc(100vw - 48px) !important;
+                margin-top: 24px !important;
+                padding: 30px 20px 22px !important;
+              }
+
+              ak-flow-executor::part(main)::before {
+                top: 38px;
+                font-size: clamp(16px, 6vw, 24px);
+                letter-spacing: 0.055em;
+              }
+
+              ak-flow-executor::part(footer) {
+                padding: 10px 12px 14px !important;
               }
             }
           attributes:

@@ -22,7 +22,7 @@ spec:
       path: infrastructure/authentik
       ref: values
       directory:
-        include: '{blueprint.yaml,certificate.yaml,networkpolicy.yaml,service-account.yaml}'
+        include: '{blueprint.yaml,certificate.yaml,footer-links-job.yaml,networkpolicy.yaml,service-account.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: authentik

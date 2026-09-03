@@ -22,7 +22,7 @@ spec:
       path: infrastructure/authentik
       ref: values
       directory:
-        include: '{blueprint.yaml,certificate.yaml,networkpolicy.yaml,service-account.yaml}'
+        include: '{blueprint.yaml,certificate.yaml,footer-links-job.yaml,networkpolicy.yaml,service-account.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: authentik
@@ -31,6 +31,12 @@ spec:
       prune: true
       selfHeal: true
       allowEmpty: true
+    retry:
+      limit: -1
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 2m
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true

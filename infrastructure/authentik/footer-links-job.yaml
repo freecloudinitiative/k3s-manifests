@@ -1,0 +1,87 @@
+# Authentik stores footer links on its internally managed Tenant model, so a
+# blueprint cannot declare them. This idempotent Job applies the shared FCI
+# links through the supported admin API after Authentik is available.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: authentik-footer-links
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+automountServiceAccountToken: false
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: authentik-footer-links
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+    argocd.argoproj.io/sync-options: Force=true,Replace=true
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        fci.io/role: authentik-footer-links
+    spec:
+      serviceAccountName: authentik-footer-links
+      automountServiceAccountToken: false
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: footer-links
+          image: alpine/k8s:1.30.4@sha256:129291af93e2b5df392f619cee8564cac4b377d66ff45f52f165af87688b68b9
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+              ephemeral-storage: 16Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+              ephemeral-storage: 64Mi
+          env:
+            - name: AUTHENTIK_BOOTSTRAP_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-bootstrap
+                  key: AUTHENTIK_BOOTSTRAP_TOKEN
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              api=http://authentik-server.authentik.svc.cluster.local/api/v3/admin/settings/
+              attempt=1
+              while [ "$attempt" -le 30 ]; do
+                if curl -sS --fail-with-body --connect-timeout 5 --max-time 30 \
+                     -X PATCH "$api" \
+                     -H "Authorization: Bearer ${AUTHENTIK_BOOTSTRAP_TOKEN}" \
+                     -H "Content-Type: application/json" \
+                     --data '{"footer_links":[
+                       {"name":"About Creator","href":"https://theomerkaratas.github.io/resume/"},
+                       {"name":"Docs","href":"https://freecloudinitiative.github.io/docs/"},
+                       {"name":"GitHub","href":"https://github.com/freecloudinitiative"}
+                     ]}'; then
+                  echo
+                  echo "footer links applied"
+                  exit 0
+                fi
+                echo "attempt ${attempt}/30 failed; retrying in 10s"
+                attempt=$((attempt + 1))
+                sleep 10
+              done
+              echo "could not reach ${api}" >&2
+              exit 1

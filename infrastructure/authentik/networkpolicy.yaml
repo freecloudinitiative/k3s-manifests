@@ -34,6 +34,18 @@ spec:
       ports:
         - protocol: TCP
           port: 9000
+    # Allows the tenant-settings Job to apply the login footer links. k3s
+    # SNATs cross-node Service traffic to the private node-overlay address,
+    # so keep the pod selector and admit that CIDR as a fallback.
+    - from:
+        - podSelector:
+            matchLabels:
+              fci.io/role: authentik-footer-links
+        - ipBlock:
+            cidr: 10.1.1.0/24
+      ports:
+        - protocol: TCP
+          port: 9000
   egress:
     - to:
         - namespaceSelector:

@@ -47,6 +47,9 @@ data:
               url: https://freecloudinitiative.com/callback
               redirect_uri_type: authorization
             - matching_mode: strict
+              url: https://freecloudinitiative.com/
+              redirect_uri_type: logout
+            - matching_mode: strict
               url: https://freecloudinitiative.com/login
               redirect_uri_type: logout
             - matching_mode: strict

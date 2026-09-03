@@ -17,7 +17,7 @@ metadata:
   namespace: authentik
   annotations:
     argocd.argoproj.io/sync-wave: "10"
-    argocd.argoproj.io/sync-options: Replace=true
+    argocd.argoproj.io/sync-options: Force=true,Replace=true
 spec:
   backoffLimit: 6
   template:
@@ -66,7 +66,8 @@ spec:
               api=http://authentik-server.authentik.svc.cluster.local/api/v3/admin/settings/
               attempt=1
               while [ "$attempt" -le 30 ]; do
-                if curl -sS --fail-with-body -X PATCH "$api" \
+                if curl -sS --fail-with-body --connect-timeout 5 --max-time 30 \
+                     -X PATCH "$api" \
                      -H "Authorization: Bearer ${AUTHENTIK_BOOTSTRAP_TOKEN}" \
                      -H "Content-Type: application/json" \
                      --data '{"footer_links":[

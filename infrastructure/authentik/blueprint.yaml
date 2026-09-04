@@ -532,7 +532,7 @@ data:
             .pf-v5-c-form__group.pf-m-action,
             .pf-v6-c-form__group.pf-m-action {
                border: none !important;
-               width: calc(50% - 5px) !important;
+               width: 100% !important;
                padding: 0 !important;
                background: transparent !important;
             }
@@ -763,24 +763,20 @@ data:
             .pf-c-login__main-footer,
             .pf-v5-c-login__main-footer,
             .pf-v6-c-login__main-footer {
-              display: grid !important;
-              grid-template-columns: repeat(2, minmax(0, 1fr));
-              grid-template-areas:
-                ". google"
-                "signup signup";
-              gap: 10px;
-              margin-top: calc(-1 * var(--fci-control-height)) !important;
-              align-items: center;
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 16px !important;
+              margin-top: 16px !important;
+              align-items: stretch !important;
             }
 
-            slot[name="footer"] {
-              grid-area: google;
-              min-width: 0;
-            }
-
+            slot[name="footer"],
             slot[name="footer-band"] {
-              grid-area: signup;
-              min-width: 0;
+              display: flex !important;
+              flex-direction: column !important;
+              width: 100% !important;
+              gap: 16px !important;
+              margin: 0 !important;
             }
 
             /* The Google source button actually ships in a
@@ -1145,9 +1141,14 @@ data:
                rather than font-size:0 -- the <p> carries margin the sibling
                fields would otherwise inherit a gap from, and removing the
                box removes that gap with it. */
-            .pf-c-form > p:first-child,
-            .pf-v5-c-form > p:first-child,
-            .pf-v6-c-form > p:first-child {
+            .pf-c-form > p,
+            .pf-v5-c-form > p,
+            .pf-v6-c-form > p,
+            ak-stage-identification > p,
+            ak-stage-identification > div > p,
+            .pf-c-login__main-header-desc,
+            .pf-v5-c-login__main-header-desc,
+            .pf-v6-c-login__main-header-desc {
               display: none !important;
             }
 

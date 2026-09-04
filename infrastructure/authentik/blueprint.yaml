@@ -1099,6 +1099,33 @@ data:
               padding: 0 !important;
             }
 
+            /* The hidden PatternFly title left its header padding behind,
+               moving every stage down despite rendering no header content. */
+            .pf-c-login__main-header,
+            .pf-v5-c-login__main-header,
+            .pf-v6-c-login__main-header {
+              display: none !important;
+              min-height: 0 !important;
+              padding: 0 !important;
+            }
+
+            /* Authentik swaps this placeholder for ak-flow-card after the
+               flow loads. Giving both hosts the same minimum block size keeps
+               the centered panel and footer stationary during that swap. */
+            .ak-c-placeholder,
+            ak-flow-card {
+              display: block !important;
+              width: 100% !important;
+              min-height: 360px !important;
+              box-sizing: border-box !important;
+            }
+
+            .ak-c-placeholder {
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+            }
+
             .pf-c-form,
             .pf-v5-c-form,
             .pf-v6-c-form {
@@ -1165,7 +1192,53 @@ data:
               ak-flow-executor::part(main) {
                 width: calc(100vw - 48px) !important;
                 margin-top: 24px !important;
-                padding: 30px 20px 22px !important;
+                padding: 30px 12px 22px !important;
+              }
+
+              .pf-c-login__main-body,
+              .pf-v5-c-login__main-body,
+              .pf-v6-c-login__main-body {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding-inline: 0 !important;
+                box-sizing: border-box !important;
+              }
+
+              .pf-c-form__group,
+              .pf-v5-c-form__group,
+              .pf-v6-c-form__group,
+              input,
+              select,
+              textarea {
+                width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+              }
+
+              input::placeholder,
+              textarea::placeholder {
+                font-size: clamp(11px, 3.2vw, 14px) !important;
+                letter-spacing: 0 !important;
+              }
+
+              ak-brand-links[name="flow-links"] {
+                width: calc(100vw - 50px) !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+              }
+
+              ak-brand-links[name="flow-links"] ul {
+                flex-direction: column !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 8px !important;
+              }
+
+              ak-brand-links[name="flow-links"] li,
+              ak-brand-links[name="flow-links"] li[data-kind="link"] a {
+                max-width: 100% !important;
+                box-sizing: border-box !important;
               }
 
               ak-flow-executor::part(main)::before {

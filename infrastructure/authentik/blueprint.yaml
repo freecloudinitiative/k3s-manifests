@@ -629,6 +629,7 @@ data:
                  the group's right padding and border. */
               box-sizing: border-box !important;
               width: 100% !important;
+              height: 30px !important;
               min-height: 30px !important;
             }
 

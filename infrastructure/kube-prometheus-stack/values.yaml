@@ -86,7 +86,10 @@ grafana:
       wal: true
       cache_mode: shared
     server:
-      root_url: "%(protocol)s://%(domain)s/grafana/"
+      # OAuth callback URLs are derived from root_url. Grafana's built-in
+      # protocol/domain defaults resolve to http://localhost inside the pod,
+      # which Authentik correctly rejects as an unregistered redirect_uri.
+      root_url: "https://grafana.freecloudinitiative.com/grafana/"
       serve_from_sub_path: true
     auth.generic_oauth:
       enabled: true
@@ -100,6 +103,12 @@ grafana:
       token_url: https://auth.freecloudinitiative.com/application/o/token/
       api_url: https://auth.freecloudinitiative.com/application/o/userinfo/
       allow_sign_up: true
+      # Authentik is the source of truth for organization roles. Re-apply the
+      # mapping at every sign-in so a role cannot be elevated permanently from
+      # Grafana's local user administration.
+      skip_org_role_sync: false
+      role_attribute_strict: true
+      allow_assign_grafana_admin: false
       role_attribute_path: "contains(groups[*], 'grafana-admins') && 'Admin' || 'Viewer'"
 
 prometheus-node-exporter:

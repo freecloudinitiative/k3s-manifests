@@ -1104,6 +1104,23 @@ data:
               gap: 18px !important;
             }
 
+            /* ak-stage-identification renders its own copy -- "Log in to
+               continue to {app}." -- as a bare <p>, the form's first child,
+               ahead of the username field. It repeats what the panel title
+               above already says and is the only <p> any form in this
+               deployment renders: confirmed live on both the identification
+               stage (this text) and the enrollment stage (its form's first
+               child is the username field's own div, no <p> at all), so this
+               cannot hide a legitimate stage intro elsewhere. display:none
+               rather than font-size:0 -- the <p> carries margin the sibling
+               fields would otherwise inherit a gap from, and removing the
+               box removes that gap with it. */
+            .pf-c-form > p:first-child,
+            .pf-v5-c-form > p:first-child,
+            .pf-v6-c-form > p:first-child {
+              display: none !important;
+            }
+
             .pf-c-form__group,
             .pf-v5-c-form__group,
             .pf-v6-c-form__group {

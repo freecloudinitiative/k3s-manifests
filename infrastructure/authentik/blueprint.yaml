@@ -387,6 +387,7 @@ data:
               --fci-text: #d7e3eb;
               --fci-muted: #7990a0;
               --fci-accent: #4fa8dc;
+              --fci-control-height: 44px;
               /* Matches frontend/src/pages/tui-dashboard.css's
                  --dash-input-bg -- the same "recessed terminal box" look
                  the app's own service-search inputs use, rather than a
@@ -494,7 +495,9 @@ data:
                position: relative;
                border: 1px solid var(--fci-border) !important;
                border-radius: 6px !important;
-               padding: 16px 10px 8px 10px !important;
+               min-height: var(--fci-control-height);
+               padding: 6px 10px !important;
+               box-sizing: border-box !important;
                background: var(--fci-bg) !important;
                margin-top: 24px !important;
                margin-bottom: 24px !important;
@@ -508,6 +511,18 @@ data:
                box-shadow: 0 0 10px rgba(79, 168, 220, 0.15) !important;
             }
 
+            /* Inline password entry is a pf-c-form__group host containing
+               its own real pf-c-form__group. Do not draw and pad both;
+               that produces a nested, oversized password box. */
+            ak-flow-input-password.pf-c-form__group {
+               border: none !important;
+               min-height: 0 !important;
+               padding: 0 !important;
+               margin: 0 !important;
+               background: transparent !important;
+               box-shadow: none !important;
+            }
+
             /* .pf-c-form__group.pf-m-action wraps the submit button using
                the same class as real form fields, so it was getting the
                same bordered box above -- nesting the button's own border
@@ -517,6 +532,7 @@ data:
             .pf-v5-c-form__group.pf-m-action,
             .pf-v6-c-form__group.pf-m-action {
                border: none !important;
+               width: calc(50% - 5px) !important;
                padding: 0 !important;
                background: transparent !important;
             }
@@ -613,6 +629,7 @@ data:
                  the group's right padding and border. */
               box-sizing: border-box !important;
               width: 100% !important;
+              min-height: 30px !important;
             }
 
             input::placeholder,
@@ -641,6 +658,14 @@ data:
               font-weight: 700 !important;
               letter-spacing: 0.055em;
               box-shadow: none !important;
+            }
+
+            button[type="submit"],
+            .pf-c-button.pf-m-block,
+            .pf-v5-c-button.pf-m-block,
+            .pf-v6-c-button.pf-m-block {
+              min-height: var(--fci-control-height) !important;
+              box-sizing: border-box !important;
             }
 
             button:hover,
@@ -727,20 +752,31 @@ data:
               color: #ffffff !important;
             }
 
-            /* Footer layout for Google & Sign Up buttons side-by-side */
+            /* Pull the Google source up beside the local Log in action and
+               keep Sign up on a full-width row below both. The footer is a
+               sibling of the form in ak-flow-card, so its first row overlaps
+               the form's final, half-width action row. */
             .pf-c-login__main-footer,
             .pf-v5-c-login__main-footer,
             .pf-v6-c-login__main-footer {
               display: grid !important;
-              grid-template-columns: 1fr 1fr;
-              gap: 8px;
-              margin-top: 24px !important;
-              /* The Sign Up link isn't in a flex container that honors its
-                 own flex:1 (see .pf-c-login__main-footer-band-item below),
-                 so it never grows to fill a stretched row -- center both
-                 columns on their natural (equal, once reset below) height
-                 instead of stretching the row to the taller column. */
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              grid-template-areas:
+                ". google"
+                "signup signup";
+              gap: 10px;
+              margin-top: calc(-1 * var(--fci-control-height)) !important;
               align-items: center;
+            }
+
+            slot[name="footer"] {
+              grid-area: google;
+              min-width: 0;
+            }
+
+            slot[name="footer-band"] {
+              grid-area: signup;
+              min-width: 0;
             }
 
             /* The Google source button actually ships in a
@@ -798,7 +834,7 @@ data:
                   Left to size on content alone the two buttons never land
                   on the same height, so both get an explicit shared
                   min-height instead. */
-               min-height: 38px !important;
+               min-height: var(--fci-control-height) !important;
                height: auto !important;
                display: flex !important;
                justify-content: center !important;
@@ -822,33 +858,29 @@ data:
                color: #ffffff !important;
             }
 
-            /* This icon and the ::after text below are both explicitly
-               positioned rather than left to lay out in the button's flex
-               row. Generated content (::after) in this PatternFly build
-               computes to position:absolute against .source-button (no
-               single rule sets it directly -- every stylesheet was
-               searched -- but per the Flexbox spec an absolutely
-               positioned flex child is placed at a "static position"
-               derived from the container's justify-content/align-items,
-               which here is dead center on both axes). With the icon left
-               as a normal in-flow flex item, it also flex-centers itself
-               (as the only flow child) landing on that exact same point,
-               so icon and text stacked exactly on top of each other
-               instead of sitting side by side. Positioning both explicitly
-               removes the ambiguity instead of fighting it. */
+            /* Hide the source's multicolour bitmap and draw the approved
+               terminal-style mark instead. This data SVG uses Google's
+               actual four-segment Super G geometry, unions the segments,
+               then renders only the cyan outline so there are no internal
+               join lines. */
             .source-button img[part="source-icon"] {
-               position: absolute !important;
-               left: 16px !important;
-               top: 50% !important;
-               transform: translateY(-50%) !important;
-               margin: 0 !important;
-               width: 16px;
-               height: 16px;
-               filter: grayscale(100%) contrast(200%) brightness(1.6);
+               display: none !important;
+            }
+
+            .source-button::before {
+               content: "";
+               position: absolute;
+               left: 16px;
+               top: 50%;
+               width: 20px;
+               height: 20px;
+               transform: translateY(-50%);
+               background: center / contain no-repeat url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOCAxOCI+CiAgPGRlZnM+CiAgICA8ZmlsdGVyIGlkPSJvIiB4PSItMjAlIiB5PSItMjAlIiB3aWR0aD0iMTQwJSIgaGVpZ2h0PSIxNDAlIj4KICAgICAgPGZlTW9ycGhvbG9neSBpbj0iU291cmNlQWxwaGEiIG9wZXJhdG9yPSJkaWxhdGUiIHJhZGl1cz0iMC4zOCIgcmVzdWx0PSJvdXRlciIvPgogICAgICA8ZmVNb3JwaG9sb2d5IGluPSJTb3VyY2VBbHBoYSIgb3BlcmF0b3I9ImVyb2RlIiByYWRpdXM9IjAuMzgiIHJlc3VsdD0iaW5uZXIiLz4KICAgICAgPGZlQ29tcG9zaXRlIGluPSJvdXRlciIgaW4yPSJpbm5lciIgb3BlcmF0b3I9Im91dCIgcmVzdWx0PSJyaW5nIi8+CiAgICAgIDxmZUZsb29kIGZsb29kLWNvbG9yPSIjNGZhOGRjIiByZXN1bHQ9ImNvbG9yIi8+CiAgICAgIDxmZUNvbXBvc2l0ZSBpbj0iY29sb3IiIGluMj0icmluZyIgb3BlcmF0b3I9ImluIi8+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CiAgPGcgZmlsdGVyPSJ1cmwoI28pIiBmaWxsPSIjZmZmIj4KICAgIDxwYXRoIGQ9Ik0xNy42NCA5LjIwNWMwLS42MzgtLjA1Ny0xLjI1Mi0uMTY0LTEuODQxSDl2My40ODFoNC44NDRhNC4xNCA0LjE0IDAgMCAxLTEuNzk3IDIuNzE1djIuMjU4aDIuOTA5YzEuNzAyLTEuNTY3IDIuNjg0LTMuODc0IDIuNjg0LTYuNjEzeiIvPgogICAgPHBhdGggZD0iTTkgMThjMi40MyAwIDQuNDY4LS44MDYgNS45NTYtMi4xOGwtMi45MDktMi4yNThjLS44MDYuNTQtMS44MzUuODU5LTMuMDQ3Ljg1OS0yLjM0NCAwLTQuMzI4LTEuNTg1LTUuMDM3LTMuNzE0SC45NTZ2Mi4zMzJBOSA5IDAgMCAwIDkgMTh6Ii8+CiAgICA8cGF0aCBkPSJNMy45NjMgMTAuNzA3QTUuNDEgNS40MSAwIDAgMSAzLjY4MiA5YzAtLjU5My4xMDItMS4xNy4yODEtMS43MDdWNC45NjFILjk1NkE5IDkgMCAwIDAgMCA5YzAgMS40NTIuMzQ3IDIuODI3Ljk1NiA0LjAzOWwzLjAwNy0yLjMzMnoiLz4KICAgIDxwYXRoIGQ9Ik05IDMuNThjMS4zMjIgMCAyLjUwOC40NTQgMy40NDEgMS4zNDZsMi41ODEtMi41ODFDMTMuNDY0Ljg5MiAxMS40MjcgMCA5IDBBOSA5IDAgMCAwIC45NTYgNC45NjFsMy4wMDcgMi4zMzJDNC42NzIgNS4xNjUgNi42NTYgMy41OCA5IDMuNTh6Ii8+CiAgPC9nPgo8L3N2Zz4K");
+               filter: drop-shadow(0 0 4px rgba(79, 168, 220, 0.45));
             }
 
             .source-button::after {
-               content: "Sign in";
+               content: "Google";
                position: absolute !important;
                left: 0 !important;
                right: 0 !important;
@@ -885,7 +917,7 @@ data:
                /* Match .source-button's explicit min-height -- see the
                   comment there for why content-based sizing alone leaves
                   this shorter than the Google button. */
-               min-height: 38px !important;
+               min-height: var(--fci-control-height) !important;
 
                background: var(--fci-bg) !important;
                border: 1px solid var(--fci-border) !important;
@@ -1161,6 +1193,14 @@ data:
           user_fields:
             - email
             - username
+          # Render password entry in the identification form. The stock
+          # password binding remains guarded by Authentik's dynamic
+          # "password optional" policy and is skipped after this inline
+          # stage authenticates the pending user.
+          password_stage: !Find
+            - authentik_stages_password.passwordstage
+            - - name
+              - default-authentication-password
           enrollment_flow: !KeyOf enrollment-flow
           sources:
             - !KeyOf google-oauth-source

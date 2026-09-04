@@ -623,14 +623,17 @@ data:
               letter-spacing: 0.02em !important;
               caret-color: var(--fci-accent) !important;
               caret-shape: block;
-              /* input's width:100% is a content-box width by default, so
+              /* A control's width:100% is a content-box width by default, so
                  without this it added its own left+right padding on top
                  of 100% of the group's content area and overflowed past
                  the group's right padding and border. */
               box-sizing: border-box !important;
               width: 100% !important;
-              height: 30px !important;
               min-height: 30px !important;
+            }
+
+            input.pf-c-form-control {
+              height: 30px !important;
             }
 
             input::placeholder,

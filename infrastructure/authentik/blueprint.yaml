@@ -1070,8 +1070,11 @@ data:
               text-shadow: 0 0 18px rgba(232, 160, 32, 0.72), 0 0 5px rgba(232, 160, 32, 0.9);
             }
 
+            /* Names the OIDC provider actually running this, not a
+               generic "AUTHENTICATION" label -- there is exactly one login
+               path here and it is Authentik. */
             ak-flow-executor::part(main)::after {
-              content: "AUTHENTICATION";
+              content: "AUTHENTIK";
               position: absolute;
               top: -9px;
               left: 16px;

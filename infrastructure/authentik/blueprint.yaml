@@ -11,14 +11,44 @@ data:
       name: Free Cloud Initiative frontend OIDC
       labels:
         blueprints.goauthentik.io/instantiate: "true"
+        blueprints.goauthentik.io/depends-on: "default-stages"
     entries:
+      # Bound the Authentik browser SSO session even when an application's
+      # local OIDC session is continuously renewed. Per-account inactivity is
+      # enforced by the frontend; this is the platform-wide absolute ceiling.
+      - model: authentik_stages_user_login.userloginstage
+        identifiers:
+          name: default-authentication-login
+        attrs:
+          session_duration: hours=24
+          remember_me_offset: seconds=0
+
+      # RP-initiated sign-out must also terminate the Authentik SSO session.
+      # The stock provider invalidation flow only ends the application's
+      # session, which would let the next login silently reuse Authentik SSO.
+      - model: authentik_flows.flow
+        id: freecloudinitiative-invalidation-flow
+        identifiers:
+          slug: freecloudinitiative-invalidation-flow
+        attrs:
+          designation: invalidation
+          name: Free Cloud Initiative logout
+          title: Signing out of Free Cloud Initiative
+          authentication: none
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          stage: !Find [authentik_stages_user_logout.userlogoutstage, [name, default-invalidation-logout]]
+          target: !KeyOf freecloudinitiative-invalidation-flow
+        attrs:
+          order: 0
+
       - model: authentik_providers_oauth2.oauth2provider
         id: freecloudinitiative-frontend-provider
         identifiers:
           name: freecloudinitiative-frontend
         attrs:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
-          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          invalidation_flow: !KeyOf freecloudinitiative-invalidation-flow
           client_type: public
           client_id: freecloudinitiative-frontend
           grant_types:
@@ -30,11 +60,23 @@ data:
           sub_mode: hashed_user_id
           access_code_validity: minutes=1
           access_token_validity: minutes=10
-          refresh_token_validity: days=14
+          refresh_token_validity: hours=24
           redirect_uris:
             - matching_mode: strict
               url: https://freecloudinitiative.com/callback
               redirect_uri_type: authorization
+            - matching_mode: strict
+              url: https://freecloudinitiative.com/
+              redirect_uri_type: logout
+            - matching_mode: strict
+              url: https://freecloudinitiative.com/login
+              redirect_uri_type: logout
+            - matching_mode: strict
+              url: https://freecloudinitiative.com/login?reauth=1
+              redirect_uri_type: logout
+            - matching_mode: strict
+              url: https://freecloudinitiative.com/login?reason=idle&reauth=1
+              redirect_uri_type: logout
           property_mappings:
             - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
             - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]

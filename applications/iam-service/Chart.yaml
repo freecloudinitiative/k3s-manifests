@@ -3,7 +3,7 @@ name: iam-service
 description: FCI IAM Service — account management, quota enforcement, internal JWT verification and Authentik OIDC integration.
 type: application
 version: 0.1.0
-appVersion: "v0.5.901"
+appVersion: "0.1.0"
 home: https://github.com/freecloudinitiative/iam-service
 sources:
   - https://github.com/freecloudinitiative/iam-service

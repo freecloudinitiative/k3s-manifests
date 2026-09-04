@@ -3,7 +3,7 @@ name: terminal-gateway
 description: FCI terminal WebSocket gateway with tightly scoped customer-namespace exec access.
 type: application
 version: 0.1.0
-appVersion: "v0.5.901"
+appVersion: "0.1.0"
 home: https://github.com/freecloudinitiative/terminal-gateway
 sources:
   - https://github.com/freecloudinitiative/terminal-gateway

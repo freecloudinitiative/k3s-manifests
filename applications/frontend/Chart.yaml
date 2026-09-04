@@ -3,4 +3,4 @@ name: frontend
 description: FreeCloud Initiative frontend — nginx static SPA with same-origin API and WebSocket proxy.
 type: application
 version: 0.1.0
-appVersion: "v0.5.901"
+appVersion: "0.1.0"

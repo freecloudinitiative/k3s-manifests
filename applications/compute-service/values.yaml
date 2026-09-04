@@ -14,7 +14,7 @@ image:
   # empty tag is a hard error in
   # applications/compute-service/templates/_helpers.tpl.  Never falls back to Chart.appVersion.
   repository: ghcr.io/freecloudinitiative/compute-service
-  tag: "v0.5.901"
+  tag: ""
   digest: ""
   pullPolicy: IfNotPresent
 

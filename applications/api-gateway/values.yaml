@@ -9,7 +9,7 @@ image:
   # (image.digest is preferred). Leave empty here so that a missing parameter
   # causes an explicit helm template failure rather than a silent fallback.
   # See applications/api-gateway/templates/_helpers.tpl: api-gateway.image.
-  tag: "v0.5.901"
+  tag: ""
   # digest pins a release immutably; when set it overrides tag.
   # Example: sha256:abc123...
   digest: ""

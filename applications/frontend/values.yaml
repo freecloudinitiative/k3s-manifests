@@ -21,7 +21,6 @@ service:
 # config -- runtime configuration written into /usr/share/nginx/html/config.js.
 # Field names must match the RuntimeConfig interface in src/lib/runtimeConfig.ts exactly.
 config:
-  appEnv: prod
   # apiBaseUrl: empty string means same-origin through nginx — the intended production mode.
   # The frontend never needs to know the backend's internal address.
   apiBaseUrl: ""

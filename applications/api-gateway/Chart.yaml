@@ -3,7 +3,7 @@ name: api-gateway
 description: FCI API Gateway — authentication, account resolution, proxy, rate-limiting, WebSocket passthrough and metrics.
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "v0.5.901"
 keywords:
   - api-gateway
   - fci

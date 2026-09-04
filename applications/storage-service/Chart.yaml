@@ -3,4 +3,4 @@ name: storage-service
 description: Helm chart for storage-service — bucket/object control plane and NetworkPolicy projection
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "v0.5.901"
